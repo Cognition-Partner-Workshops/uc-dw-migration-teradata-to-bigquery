@@ -1,0 +1,14 @@
+check,metric,value
+00_dimensions,dim_customer_rows,15.0
+00_dimensions,dim_account_rows,20.0
+00_dimensions,dim_product_rows,10.0
+00_dimensions,dim_branch_rows,14.0
+10_regulatory,row_count,140.0
+10_regulatory,sum_base_amount,89626796.63
+10_regulatory,n_categories,2.0
+20_branch_performance,row_count,240.0
+20_branch_performance,sum_cumulative_fees,208824.74
+20_branch_performance,sum_moving_avg_volume,6789480.28
+30_customer_360,row_count,15.0
+30_customer_360,sum_total_accounts,20.0
+30_customer_360,sum_lifetime_txn_amount,91260509.57
