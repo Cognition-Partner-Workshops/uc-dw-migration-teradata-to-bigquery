@@ -203,7 +203,7 @@ out for the cutover owners to decide on.
     If backfills of historical months are ever required, parameterize the monthly
     DAG/SQL on `{{ ds }}` the same way the daily load was.
 
-### Staging schema
+### Staging schema notes
 
 `bigquery/scripts/bq_load_daily_transactions.sh` loads CSV into
 `stg_transactions` using `bigquery/schemas/stg_transactions.json`. There is no
