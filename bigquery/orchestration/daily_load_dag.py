@@ -36,6 +36,7 @@ from airflow.utils.trigger_rule import TriggerRule
 PROJECT = "{{ var.value.gcp_project }}"  # rendered by operator template_fields
 DATASET = "banking_dw"
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "..", "scripts")
+LOAD_SCRIPT = os.path.join(SCRIPTS_DIR, "bq_load_daily_transactions.sh")
 GCP_CONN_ID = "google_cloud_default"
 
 default_args = {
@@ -87,7 +88,8 @@ with DAG(
             "PROJECT={{ var.value.gcp_project }} "
             "LOAD_DATE={{ ds }} "
             "SRC_URI=gs://banking-dw-landing/stg_transactions/{{ ds_nodash }}/*.csv "
-            "bash bigquery/scripts/bq_load_daily_transactions.sh"
+            # Absolute path so the task does not depend on the worker CWD.
+            f"bash {LOAD_SCRIPT}"
         ),
     )
 
@@ -108,6 +110,15 @@ with DAG(
             "query": {
                 "query": _read_sql("01_daily_load.sql"),
                 "useLegacySql": False,
+                # Bind the batch date to the Airflow logical date so the script
+                # processes the same date the staging load/validation used.
+                "queryParameters": [
+                    {
+                        "name": "batch_date",
+                        "parameterType": {"type": "DATE"},
+                        "parameterValue": {"value": "{{ ds }}"},
+                    }
+                ],
             }
         },
     )
@@ -122,7 +133,9 @@ with DAG(
                 "query": (
                     f"UPDATE `{PROJECT}.{DATASET}.etl_batch_control` "
                     "SET batch_status='FAILED', end_ts=CURRENT_TIMESTAMP() "
-                    "WHERE batch_status='RUNNING'"
+                    # Scope the sweep to this run's date so a concurrent run's
+                    # batch is not collaterally marked FAILED.
+                    "WHERE batch_status='RUNNING' AND batch_date = DATE('{{ ds }}')"
                 ),
                 "useLegacySql": False,
             }

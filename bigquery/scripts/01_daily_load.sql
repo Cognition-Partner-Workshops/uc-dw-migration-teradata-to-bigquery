@@ -23,7 +23,13 @@
 -- bigquery/scripts/bq_load_daily_transactions.sh.
 -- ============================================================================
 
-DECLARE v_batch_date  DATE    DEFAULT CURRENT_DATE();
+-- The batch date flows in from the orchestrator as the @batch_date query
+-- parameter (bound to Airflow's logical date {{ ds }}), so this script processes
+-- the SAME date the staging load and validation used. Do NOT default to
+-- CURRENT_DATE(): on a daily schedule {{ ds }} is the prior day, so CURRENT_DATE()
+-- would look for staging on the wrong date and always raise NOSTAGING.
+-- For a manual/standalone run, bind a DATE parameter named `batch_date`.
+DECLARE v_batch_date  DATE    DEFAULT @batch_date;
 DECLARE v_batch_id    INT64;
 DECLARE v_staged_rows INT64;
 DECLARE v_new_rows    INT64;

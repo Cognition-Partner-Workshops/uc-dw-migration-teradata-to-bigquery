@@ -105,8 +105,18 @@ Step sequence (BTEQ step → task):
    - mark the batch `COMPLETED`.
 4. **Error handling** (BTEQ `.LABEL ERRORHANDLER`): the script's
    `EXCEPTION WHEN ERROR` marks the batch `FAILED`, logs `@@error.message`, and
-   re-raises; the `error_handler` task (`trigger_rule=one_failed`) is a
-   belt-and-suspenders sweep of any stranded `RUNNING` row.
+   re-raises; the `error_handler` task (`trigger_rule=one_failed`) sweeps any
+   stranded `RUNNING` row **for this run's `batch_date` only**, so a concurrent
+   run's batch is never collaterally marked `FAILED`.
+
+**Batch date flows from the orchestrator.** `01_daily_load.sql` takes the batch
+date as the `@batch_date` query parameter, which the DAG binds to Airflow's
+logical date `{{ ds }}`. This keeps the SQL processing the *same* date that
+`load_staging` (`LOAD_DATE={{ ds }}`) and `check_staging` used. It deliberately
+does **not** default to `CURRENT_DATE()`: on a daily schedule `{{ ds }}` is the
+prior day, so `CURRENT_DATE()` would probe staging for the wrong date and raise
+`NOSTAGING` on every run. A manual/standalone execution must bind a `batch_date`
+DATE parameter.
 
 ### 2.3 Monthly extract DAG (`banking_dw_monthly_extract`)
 
