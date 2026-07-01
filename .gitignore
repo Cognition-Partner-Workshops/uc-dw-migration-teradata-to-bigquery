@@ -1,15 +1,1 @@
-# Python
-__pycache__/
-*.pyc
 .venv/
-venv/
-
-# DuckDB / local artifacts
-*.duckdb
-*.duckdb.wal
-parity_*.db
-
-# OS / editor
-.DS_Store
-.idea/
-.vscode/
