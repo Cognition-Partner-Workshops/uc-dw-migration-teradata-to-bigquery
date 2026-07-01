@@ -69,6 +69,13 @@ model, so the views join on natural keys (`ACCOUNT_ID`, `CUSTOMER_ID`,
   in production; omitted from the harness-facing view (not in the parity
   signature).
 - `(NOT CASESPECIFIC)` on `FIRST_NAME`/`LAST_NAME` dropped.
+- **⚠ Flagged (dropped columns):** the seed/parity `fact_transaction` model does
+  not carry `TRANSACTION_TS`, `TRANSACTION_SUBTYPE`, `COUNTERPARTY_ACCT`,
+  `REFERENCE_NUMBER`, or `DESCRIPTION_TEXT`, so those source columns are omitted
+  from the harness-facing view (including them would break execution against the
+  seeds). When deploying to production BigQuery against the full
+  `FACT_TRANSACTION`, re-add these passthrough columns so the production view
+  contract matches the Teradata source and downstream consumers are unaffected.
 - Signature: `row_count=140`, `sum_base_amount=89626796.63`, `n_categories=2`.
 
 ### `vw_branch_monthly_performance`
@@ -146,6 +153,12 @@ model); they are the migrated procedural logic.
 - `ZEROIFNULL(fx.EXCHANGE_RATE)` → `IFNULL(fx.EXCHANGE_RATE, 0)`.
 - Duration in the completion log: `(ts2 - ts1) SECOND(4)` →
   `TIMESTAMP_DIFF(ts2, ts1, SECOND)`.
+- **⚠ Flagged source behavior (reproduced):** `BASE_CURRENCY_AMOUNT` for a
+  foreign-currency transaction is `TRANSACTION_AMOUNT * IFNULL(fx.EXCHANGE_RATE,
+  0)` (source `ZEROIFNULL`). When the FX-rate lookup misses, the multiplier is 0,
+  so the base amount is silently recorded as **0** rather than being rejected or
+  flagged. Preserved to match source; consider rejecting/flagging missing-rate
+  rows in a hardened production version.
 - **⚠ Flagged mapping:** Teradata `SQLCODE` is numeric; BigQuery scripting
   exposes only `@@error.message`. `p_return_code` is set to a nonzero sentinel
   (`1`) on failure and the original error text is logged. Callers relying on a
@@ -164,6 +177,19 @@ model); they are the migrated procedural logic.
   `(period_end - period_start + 1) → DATE_DIFF(...) + 1`.
 - `@@row_count → p_rows_merged`; `DROP TABLE` retained; `COLLECT STATISTICS`
   dropped.
+- **⚠ Flagged source defect (reproduced, not fixed):** `v_prev_snapshot_date =
+  ADD_MONTHS(v_period_start, -1)` is the FIRST day of the prior month
+  (`2023-12-01` for Jan 2024), but snapshots are keyed on `SNAPSHOT_DATE =
+  v_period_end` = the month-END (`2023-12-31`). The prior-snapshot LEFT JOIN
+  (`prev.SNAPSHOT_DATE = v_prev_snapshot_date`) therefore never matches, so
+  `OPENING_BALANCE`/`CLOSING_BALANCE` always default to `0`. Present in the
+  Teradata source (`dml/stored_procedures/sp_monthly_snapshot.sql:31`); the
+  corrected value is `DATE_SUB(v_period_start, INTERVAL 1 DAY)`.
+- **⚠ Flagged (no error handler, faithful):** unlike `sp_load_daily_transactions`
+  the source has no `EXIT HANDLER`, so this procedure has no
+  `BEGIN ... EXCEPTION` block; a failing MERGE/TEMP step raises and leaves
+  `p_return_code = 0`. Preserved as-is; add a handler if orchestration needs a
+  nonzero code on failure.
 
 ---
 

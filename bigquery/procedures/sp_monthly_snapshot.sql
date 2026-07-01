@@ -25,6 +25,23 @@
 --
 -- Note: TEMP tables live for the duration of the multi-statement script, which
 -- matches ON COMMIT PRESERVE ROWS semantics for a single-session procedure.
+--
+-- ⚠ FLAGGED SOURCE DEFECT (reproduced faithfully, NOT fixed):
+--   v_prev_snapshot_date = ADD_MONTHS(v_period_start, -1) yields the FIRST day
+--   of the previous month (e.g. 2023-12-01 for Jan 2024), but snapshots are
+--   stored with SNAPSHOT_DATE = v_period_end = the LAST day of the month
+--   (2023-12-31). The prior-snapshot LEFT JOIN (prev.SNAPSHOT_DATE =
+--   v_prev_snapshot_date) therefore never matches, so OPENING_BALANCE (and thus
+--   CLOSING_BALANCE) always default to 0. This defect exists in the Teradata
+--   source (dml/stored_procedures/sp_monthly_snapshot.sql:31) and is preserved
+--   here per the migration ground rule (reproduce faithfully; flag, don't fix).
+--   A corrected version would use DATE_SUB(v_period_start, INTERVAL 1 DAY).
+--
+-- ⚠ FLAGGED (no error handler, faithful): unlike sp_load_daily_transactions,
+--   the source sp_monthly_snapshot has no EXIT HANDLER, so this conversion has
+--   no BEGIN...EXCEPTION block; a failing MERGE/TEMP-table step raises and
+--   leaves p_return_code = 0. Preserved as-is; add a handler if orchestration
+--   needs a nonzero return code on failure.
 -- ============================================================================
 CREATE OR REPLACE PROCEDURE BANKING_DW.sp_monthly_snapshot(
     IN p_snapshot_year INT64,
@@ -48,6 +65,9 @@ BEGIN
     SET v_period_end = DATE_SUB(DATE_ADD(v_period_start, INTERVAL 1 MONTH), INTERVAL 1 DAY);
     SET v_snapshot_date = v_period_end;
     SET v_snapshot_month_key = (p_snapshot_year * 100) + p_snapshot_month;
+    -- ⚠ faithful source defect: this is the FIRST day of the prior month, but
+    -- snapshots are keyed on month-END, so the prior-snapshot join never matches
+    -- (see header). Correct value would be DATE_SUB(v_period_start, INTERVAL 1 DAY).
     SET v_prev_snapshot_date = DATE_ADD(v_period_start, INTERVAL -1 MONTH);
 
     -- Volatile table -> TEMP table for aggregated transaction data.
