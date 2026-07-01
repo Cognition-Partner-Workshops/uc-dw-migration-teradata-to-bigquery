@@ -189,3 +189,36 @@ corrected. The parity model faithfully reproduces the deterministic behaviour.
    `BASE_CURRENCY_AMOUNT` (the NOK-normalised value), which is correct for a
    threshold report denominated in base currency. Noted so downstream consumers
    don't confuse it with raw `TRANSACTION_AMOUNT`.
+
+8. **`vw_customer_360` amount column — source vs parity contract.** The Teradata
+   source (`ddl/views/01_vw_customer_360.sql:49`) sums
+   `ABS(ft.TRANSACTION_AMOUNT)` (raw original-currency amount). The parity golden
+   (`30_customer_360.sum_lifetime_txn_amount = 91260509.57`) is the NOK-
+   normalised total, i.e. `SUM(ABS(BASE_CURRENCY_AMOUNT))`. Verified against the
+   seeds: `TRANSACTION_AMOUNT` totals 17,627,194.42 (would FAIL the harness)
+   whereas `BASE_CURRENCY_AMOUNT` totals 91,260,509.57 (matches golden). The
+   conversion therefore uses `BASE_CURRENCY_AMOUNT` to honour the golden
+   contract. This is a real semantic shift for customers with non-NOK
+   transactions and should be confirmed with stakeholders before the production
+   view is used downstream (the source-currency sum mixes currencies and is
+   arguably the buggier of the two).
+
+## 5. Next steps for production BigQuery deployment
+
+The parity views and the table DDLs are intentionally on **different key models**:
+
+- The parity views join on **natural keys** (`ACCOUNT_ID`, `CUSTOMER_ID`,
+  `BRANCH_ID`) because the DuckDB seed model is single-version per entity (see
+  `SKILL.md`: "Tables are referenced by natural keys in the harness model — not
+  the production surrogate keys").
+- The migrated table DDLs (`bigquery/tables/`) keep the **production surrogate
+  keys** (`ACCOUNT_KEY`, `CUSTOMER_KEY`) and SCD columns (`CURRENT_FLAG`,
+  `EFFECTIVE_FROM/TO`).
+
+Consequently the views as written run against the seed/parity model but will
+**not** run unmodified against tables created from `bigquery/tables/*.sql`.
+Before deploying both to a real BigQuery dataset, rewrite the view joins back to
+surrogate keys with the `CURRENT_FLAG = 'Y'` SCD filters (as in the original
+Teradata views), and restore the deterministic-vs-`CURRENT_DATE` decisions per
+the flags above. The surrogate keys must be populated by the ETL load (BigQuery
+has no IDENTITY).
