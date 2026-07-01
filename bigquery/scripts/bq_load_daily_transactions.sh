@@ -23,7 +23,15 @@ PROJECT="${PROJECT:?set PROJECT}"
 DATASET="${DATASET:-banking_dw}"
 LOAD_DATE="${LOAD_DATE:-$(date -u +%F)}"                 # resolves BTEQ's YYYYMMDD
 SRC_URI="${SRC_URI:?set SRC_URI, e.g. gs://banking-dw-landing/stg_transactions/${LOAD_DATE}/*.csv}"
-SCHEMA="${SCHEMA:-bigquery/schemas/stg_transactions.json}"
+# Default the schema to the file shipped alongside this script (resolved from the
+# script's own location, not the caller's CWD) so the load does not depend on the
+# worker working directory.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCHEMA="${SCHEMA:-${SCRIPT_DIR}/../schemas/stg_transactions.json}"
+if [[ ! -f "${SCHEMA}" ]]; then
+  echo "schema file not found: ${SCHEMA} (set SCHEMA=/path/to/schema.json)" >&2
+  exit 2
+fi
 
 DEST="${PROJECT}:${DATASET}.stg_transactions\$${LOAD_DATE//-/}"
 

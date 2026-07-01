@@ -14,6 +14,13 @@
 --   QUALIFY ROW_NUMBER()   -> QUALIFY (native GoogleSQL)
 --   surrogate *_KEY joins  -> natural-key joins (ACCOUNT_ID / CUSTOMER_ID /
 --                             BRANCH_ID) per the harness seed model.
+--
+-- COLUMNS OMITTED vs. the Teradata source: TRANSACTION_TS, TRANSACTION_SUBTYPE,
+-- COUNTERPARTY_ACCT, REFERENCE_NUMBER, DESCRIPTION_TEXT and ROW_HASH (HASHROW).
+-- These are NOT present in the parity harness seed model (data/seed/
+-- fact_transaction_sample.csv), so selecting them would break the local run; they
+-- are outside the parity contract. Restore them against the real FACT_TRANSACTION
+-- at cutover if downstream consumers need them (see MIGRATION_RUNBOOK flag #9).
 CREATE OR REPLACE VIEW vw_regulatory_large_transactions AS
 SELECT
     ft.TRANSACTION_ID,

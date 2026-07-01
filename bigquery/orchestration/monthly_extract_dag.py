@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import datetime
 import os
+import re
 
 from airflow import DAG
 from airflow.models import Variable
@@ -36,6 +37,16 @@ GCP_CONN_ID = "google_cloud_default"
 
 default_args = {"owner": "data-platform", "retries": 1}
 
+# BigQuery cannot parameterize identifiers, so the project id is interpolated into
+# the branch-check SQL; validate it first so no injection payload can reach it.
+_PROJECT_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+
+
+def _safe_project(project: str) -> str:
+    if not _PROJECT_RE.fullmatch(project):
+        raise ValueError(f"invalid gcp_project: {project!r}")
+    return project
+
 
 def _read_sql(name: str) -> str:
     # Resolve relative to this file so parsing does not depend on the scheduler
@@ -50,7 +61,7 @@ def _has_large_txns(**context) -> str:
     Jinja is not rendered inside a PythonOperator callable body, so the project is
     resolved here from the Airflow Variable.
     """
-    project = Variable.get("gcp_project")
+    project = _safe_project(Variable.get("gcp_project"))
     sql = f"""
         SELECT COUNT(*) AS n
         FROM `{project}.{DATASET}.vw_regulatory_large_transactions`

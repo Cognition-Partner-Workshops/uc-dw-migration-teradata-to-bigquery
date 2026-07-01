@@ -188,6 +188,28 @@ out for the cutover owners to decide on.
    and the harness gates "done" against that golden, so the converted view uses
    `BASE_CURRENCY_AMOUNT`. Consumers comparing against the literal Teradata view
    will see different totals — confirm the intended metric before cutover.
+9. **`vw_regulatory_large_transactions` omits source columns not in the seed
+   model.** The Teradata source selects `TRANSACTION_TS`, `TRANSACTION_SUBTYPE`,
+   `COUNTERPARTY_ACCT`, `REFERENCE_NUMBER`, `DESCRIPTION_TEXT` and `ROW_HASH`
+   (HASHROW). None exist in the parity seed (`fact_transaction_sample.csv`), so
+   selecting them would break the local harness run; they are outside the parity
+   contract. The converted view drops them intentionally — restore them against
+   the real `FACT_TRANSACTION` at cutover if downstream consumers need them
+   (`ROW_HASH` → `FARM_FINGERPRINT(TRANSACTION_ID, TRANSACTION_DATE)`).
+10. **Monthly extract uses `CURRENT_DATE()`, not a parameterized date.** This
+    reproduces the source BTEQ (`bteq_extract_report.btq` uses `CURRENT_DATE`), so
+    the extract always targets the window relative to the run day and is **not
+    backfill-safe** the way the daily load (parameterized on `@batch_date`) is.
+    If backfills of historical months are ever required, parameterize the monthly
+    DAG/SQL on `{{ ds }}` the same way the daily load was.
+
+### Staging schema
+
+`bigquery/scripts/bq_load_daily_transactions.sh` loads CSV into
+`stg_transactions` using `bigquery/schemas/stg_transactions.json`. There is no
+`CREATE TABLE STG_TRANSACTIONS` DDL in the source estate; the schema was derived
+from the columns the source references (`sp_load_daily_transactions.sql` and
+`bteq_daily_load.btq`). Verify/extend it against the real staging feed at cutover.
 
 ---
 

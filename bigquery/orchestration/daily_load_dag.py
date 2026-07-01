@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import datetime
 import os
+import re
 
 from airflow import DAG
 from airflow.models import Variable
@@ -38,6 +39,25 @@ DATASET = "banking_dw"
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "..", "scripts")
 LOAD_SCRIPT = os.path.join(SCRIPTS_DIR, "bq_load_daily_transactions.sh")
 GCP_CONN_ID = "google_cloud_default"
+
+# BigQuery cannot parameterize table/dataset identifiers, so the project id must
+# be string-interpolated into the branch-check SQL. Validate it (and the date)
+# against strict patterns first so no injection payload can reach the query.
+_PROJECT_RE = re.compile(r"^[A-Za-z0-9._:-]+$")
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _safe_project(project: str) -> str:
+    if not _PROJECT_RE.fullmatch(project):
+        raise ValueError(f"invalid gcp_project: {project!r}")
+    return project
+
+
+def _safe_ds(ds: str) -> str:
+    if not _DATE_RE.fullmatch(ds):
+        raise ValueError(f"invalid execution date: {ds!r}")
+    return ds
+
 
 default_args = {
     "owner": "data-platform",
@@ -59,8 +79,8 @@ def _check_staging(**context) -> str:
     Airflow does not render Jinja inside a PythonOperator callable body, so the
     project and execution date are resolved here from the Variable/context.
     """
-    project = Variable.get("gcp_project")
-    ds = context["ds"]
+    project = _safe_project(Variable.get("gcp_project"))
+    ds = _safe_ds(context["ds"])
     sql = f"""
         SELECT COUNT(*) AS n
         FROM `{project}.{DATASET}.stg_transactions`

@@ -1,0 +1,20 @@
+[
+  {"name": "LOAD_DATE",          "type": "DATE",      "mode": "REQUIRED", "description": "Partition/business date of the staged batch (BTEQ .IF ACTIVITYCOUNT probe filters on this)."},
+  {"name": "TRANSACTION_ID",     "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "TRANSACTION_DATE",   "type": "DATE",      "mode": "NULLABLE"},
+  {"name": "TRANSACTION_TIME",   "type": "TIME",      "mode": "NULLABLE"},
+  {"name": "ACCOUNT_ID",         "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "TRANSACTION_TYPE",   "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "TRANSACTION_SUBTYPE","type": "STRING",    "mode": "NULLABLE"},
+  {"name": "CHANNEL",            "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "TRANSACTION_AMOUNT", "type": "NUMERIC",   "mode": "NULLABLE"},
+  {"name": "CURRENCY_CODE",      "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "MERCHANT_ID",        "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "MERCHANT_NAME",      "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "MERCHANT_CATEGORY",  "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "COUNTERPARTY_ACCT",  "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "REFERENCE_NUMBER",   "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "DESCRIPTION_TEXT",   "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "POSTING_DATE",       "type": "DATE",      "mode": "NULLABLE"},
+  {"name": "VALUE_DATE",         "type": "DATE",      "mode": "NULLABLE"}
+]
