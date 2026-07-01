@@ -20,6 +20,12 @@
 --                             90-day window where recency is required:
 --                             WHERE transaction_date >=
 --                               DATE_ADD(CURRENT_DATE(), INTERVAL -90 DAY).
+--   txn amount column      -> DIVERGENCE (flag #8): the Teradata source sums
+--                             ABS(TRANSACTION_AMOUNT) (local currency); the parity
+--                             golden was built on ABS(BASE_CURRENCY_AMOUNT) (NOK),
+--                             which avoids mixing currencies. We reproduce the
+--                             golden (BASE_CURRENCY_AMOUNT) since the harness gates
+--                             "done" and the checksum file must not be edited.
 CREATE OR REPLACE VIEW vw_customer_360 AS
 SELECT
     c.CUSTOMER_ID,

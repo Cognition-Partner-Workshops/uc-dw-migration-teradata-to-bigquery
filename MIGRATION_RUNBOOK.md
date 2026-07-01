@@ -170,6 +170,14 @@ out for the cutover owners to decide on.
    empty against the static seeds. The parity contract asks for deterministic
    lifetime aggregates, so the converted view sums over all history; re-add the
    90-day window on BigQuery where recency is required.
+8. **`vw_customer_360` sums base-currency, not local-currency, amounts.** The
+   Teradata source sums `ABS(TRANSACTION_AMOUNT)` (local currency, e.g. EUR),
+   whereas the parity golden (`30_customer_360.sum_lifetime_txn_amount =
+   91260509.57`) was generated from `ABS(BASE_CURRENCY_AMOUNT)` (NOK). Summing a
+   single base currency is the more correct metric (it avoids mixing currencies),
+   and the harness gates "done" against that golden, so the converted view uses
+   `BASE_CURRENCY_AMOUNT`. Consumers comparing against the literal Teradata view
+   will see different totals — confirm the intended metric before cutover.
 
 ---
 

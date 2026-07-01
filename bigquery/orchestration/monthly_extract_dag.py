@@ -18,8 +18,10 @@ same GCS prefix rather than appending.
 from __future__ import annotations
 
 import datetime
+import os
 
 from airflow import DAG
+from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.providers.google.cloud.hooks.bigquery import BigQueryHook
@@ -27,23 +29,31 @@ from airflow.providers.google.cloud.operators.bigquery import (
     BigQueryInsertJobOperator,
 )
 
-PROJECT = "{{ var.value.gcp_project }}"
+PROJECT = "{{ var.value.gcp_project }}"  # rendered by operator template_fields
 DATASET = "banking_dw"
+SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "..", "scripts")
 GCP_CONN_ID = "google_cloud_default"
 
 default_args = {"owner": "data-platform", "retries": 1}
 
 
-def _read_sql(path: str) -> str:
-    with open(path, encoding="utf-8") as fh:
+def _read_sql(name: str) -> str:
+    # Resolve relative to this file so parsing does not depend on the scheduler
+    # working directory (Composer parses DAGs from /home/airflow/gcs/dags/).
+    with open(os.path.join(SCRIPTS_DIR, name), encoding="utf-8") as fh:
         return fh.read()
 
 
 def _has_large_txns(**context) -> str:
-    """BTEQ `.IF ACTIVITYCOUNT = 0 THEN .GOTO NODATA` after Export 1."""
+    """BTEQ `.IF ACTIVITYCOUNT = 0 THEN .GOTO NODATA` after Export 1.
+
+    Jinja is not rendered inside a PythonOperator callable body, so the project is
+    resolved here from the Airflow Variable.
+    """
+    project = Variable.get("gcp_project")
     sql = f"""
         SELECT COUNT(*) AS n
-        FROM `{PROJECT}.{DATASET}.vw_regulatory_large_transactions`
+        FROM `{project}.{DATASET}.vw_regulatory_large_transactions`
         WHERE transaction_date
               BETWEEN DATE_ADD(CURRENT_DATE(), INTERVAL -1 MONTH) AND CURRENT_DATE()
     """
@@ -73,7 +83,7 @@ with DAG(
         gcp_conn_id=GCP_CONN_ID,
         configuration={
             "query": {
-                "query": _read_sql("bigquery/scripts/02_extract_report.sql"),
+                "query": _read_sql("02_extract_report.sql"),
                 "useLegacySql": False,
             }
         },

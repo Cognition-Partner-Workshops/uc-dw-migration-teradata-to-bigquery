@@ -85,7 +85,7 @@ BEGIN
   -- The date token in the destination URI is resolved by the orchestrator (BTEQ
   -- did NOT substitute YYYYMMDD -- flag #2); shown here with a bound value.
   EXPORT DATA OPTIONS (
-    uri = FORMAT('gs://banking-dw-reports/daily_recon_%t_*.csv',
+    uri = FORMAT('gs://banking-dw-reports/daily_recon_%s_*.csv',
                  FORMAT_DATE('%Y%m%d', v_batch_date)),
     format = 'CSV', overwrite = true, header = true
   ) AS

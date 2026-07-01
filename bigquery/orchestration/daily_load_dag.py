@@ -20,8 +20,10 @@ staging load truncates its date partition, so a full re-run for a date is safe.
 from __future__ import annotations
 
 import datetime
+import os
 
 from airflow import DAG
+from airflow.models import Variable
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator
@@ -31,8 +33,9 @@ from airflow.providers.google.cloud.operators.bigquery import (
 )
 from airflow.utils.trigger_rule import TriggerRule
 
-PROJECT = "{{ var.value.gcp_project }}"
+PROJECT = "{{ var.value.gcp_project }}"  # rendered by operator template_fields
 DATASET = "banking_dw"
+SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "..", "scripts")
 GCP_CONN_ID = "google_cloud_default"
 
 default_args = {
@@ -42,17 +45,25 @@ default_args = {
 }
 
 
-def _read_sql(path: str) -> str:
-    with open(path, encoding="utf-8") as fh:
+def _read_sql(name: str) -> str:
+    # Resolve relative to this file so parsing does not depend on the scheduler
+    # working directory (Composer parses DAGs from /home/airflow/gcs/dags/).
+    with open(os.path.join(SCRIPTS_DIR, name), encoding="utf-8") as fh:
         return fh.read()
 
 
 def _check_staging(**context) -> str:
-    """BTEQ Step 1 + `.IF ACTIVITYCOUNT = 0 THEN .GOTO NOSTAGING`."""
+    """BTEQ Step 1 + `.IF ACTIVITYCOUNT = 0 THEN .GOTO NOSTAGING`.
+
+    Airflow does not render Jinja inside a PythonOperator callable body, so the
+    project and execution date are resolved here from the Variable/context.
+    """
+    project = Variable.get("gcp_project")
+    ds = context["ds"]
     sql = f"""
         SELECT COUNT(*) AS n
-        FROM `{PROJECT}.{DATASET}.stg_transactions`
-        WHERE load_date = DATE('{{{{ ds }}}}')
+        FROM `{project}.{DATASET}.stg_transactions`
+        WHERE load_date = DATE('{ds}')
     """
     hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, use_legacy_sql=False)
     rows = hook.get_records(sql)
@@ -95,7 +106,7 @@ with DAG(
         gcp_conn_id=GCP_CONN_ID,
         configuration={
             "query": {
-                "query": _read_sql("bigquery/scripts/01_daily_load.sql"),
+                "query": _read_sql("01_daily_load.sql"),
                 "useLegacySql": False,
             }
         },
