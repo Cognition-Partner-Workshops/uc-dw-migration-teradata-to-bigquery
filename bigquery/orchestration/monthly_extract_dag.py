@@ -70,7 +70,7 @@ def _has_large_txns(**context) -> str:
     """
     hook = BigQueryHook(gcp_conn_id=GCP_CONN_ID, use_legacy_sql=False)
     rows = hook.get_records(sql)
-    return "run_extracts" if rows and rows[0][0] > 0 else "warn_no_data"
+    return "run_extracts_branch_aml" if rows and rows[0][0] > 0 else "warn_no_data"
 
 
 with DAG(
