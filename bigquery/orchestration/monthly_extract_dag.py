@@ -83,18 +83,32 @@ with DAG(
     tags=["banking-dw", "bteq-migration"],
 ) as dag:
 
+    # BTEQ Export 1 runs UNCONDITIONALLY (always writes a file, possibly empty).
+    run_export_large_txn = BigQueryInsertJobOperator(
+        task_id="run_export_large_txn",
+        gcp_conn_id=GCP_CONN_ID,
+        configuration={
+            "query": {
+                "query": _read_sql("02a_extract_large_txn.sql"),
+                "useLegacySql": False,
+            }
+        },
+    )
+
+    # BTEQ `.IF ACTIVITYCOUNT = 0 THEN .GOTO NODATA` AFTER Export 1: gates 2 & 3.
     check_data = BranchPythonOperator(
         task_id="check_data", python_callable=_has_large_txns
     )
 
     warn_no_data = EmptyOperator(task_id="warn_no_data")  # .LABEL NODATA (.QUIT 4)
 
-    run_extracts = BigQueryInsertJobOperator(
-        task_id="run_extracts",
+    # BTEQ Exports 2 & 3 run only when Export 1 produced rows.
+    run_extracts_branch_aml = BigQueryInsertJobOperator(
+        task_id="run_extracts_branch_aml",
         gcp_conn_id=GCP_CONN_ID,
         configuration={
             "query": {
-                "query": _read_sql("02_extract_report.sql"),
+                "query": _read_sql("02b_extract_branch_aml.sql"),
                 "useLegacySql": False,
             }
         },
@@ -102,4 +116,4 @@ with DAG(
 
     done = EmptyOperator(task_id="done", trigger_rule="none_failed_min_one_success")
 
-    check_data >> [run_extracts, warn_no_data] >> done
+    run_export_large_txn >> check_data >> [run_extracts_branch_aml, warn_no_data] >> done

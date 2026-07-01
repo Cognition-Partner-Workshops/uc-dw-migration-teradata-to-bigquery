@@ -10,7 +10,7 @@ Deliverables in this PR:
 |------|-------------------|----------------------|
 | Views (parity gate) | `ddl/views/0{1,2,3}_*.sql` | `bigquery/views/0{1,2,3}_*.sql` |
 | BTEQ daily load | `dml/scripts/bteq_daily_load.btq` | `bigquery/scripts/01_daily_load.sql`, `bigquery/scripts/bq_load_daily_transactions.sh` |
-| BTEQ monthly extract | `dml/scripts/bteq_extract_report.btq` | `bigquery/scripts/02_extract_report.sql` |
+| BTEQ monthly extract | `dml/scripts/bteq_extract_report.btq` | `bigquery/scripts/02a_extract_large_txn.sql` (Export 1), `bigquery/scripts/02b_extract_branch_aml.sql` (Exports 2 & 3) |
 | Orchestration | BTEQ `.IF/.GOTO/.LABEL` control flow | `bigquery/orchestration/daily_load_dag.py`, `bigquery/orchestration/monthly_extract_dag.py` |
 
 ---
@@ -120,12 +120,17 @@ DATE parameter.
 
 ### 2.3 Monthly extract DAG (`banking_dw_monthly_extract`)
 
-1. `check_data` branch (BTEQ `.IF ACTIVITYCOUNT = 0 THEN .GOTO NODATA`): no large
-   txns in window → `warn_no_data` (`.LABEL NODATA` / `.QUIT 4`).
-2. `run_extracts` executes `02_extract_report.sql` — three `EXPORT DATA`
-   statements:
-   - Export 1: large-transaction regulatory CSV (from
-     `vw_regulatory_large_transactions`);
+The task order mirrors the BTEQ exactly: Export 1 runs **unconditionally**, then
+the `ACTIVITYCOUNT` check gates Exports 2 & 3 (see flag #11).
+
+1. `run_export_large_txn` executes `02a_extract_large_txn.sql` — Export 1,
+   large-transaction regulatory CSV (from `vw_regulatory_large_transactions`).
+   Always runs (BTEQ writes this file even when empty).
+2. `check_data` branch (BTEQ `.IF ACTIVITYCOUNT = 0 THEN .GOTO NODATA`, evaluated
+   **after** Export 1): no large txns in the window → `warn_no_data`
+   (`.LABEL NODATA` / `.QUIT 4`).
+3. `run_extracts_branch_aml` executes `02b_extract_branch_aml.sql` — runs only
+   when Export 1 produced rows:
    - Export 2: branch-performance summary (from
      `vw_branch_monthly_performance`);
    - Export 3: AML screening results (`CALL tf_aml_screening(...)`).
@@ -162,9 +167,10 @@ out for the cutover owners to decide on.
 3. **Anchored vs. calendar-month window.** Export 1 filters
    `transaction_date BETWEEN ADD_MONTHS(CURRENT_DATE,-1) AND CURRENT_DATE` — a
    rolling ~1-month window anchored on run day, not the previous **calendar**
-   month (which Export 2's `SNAPSHOT_MONTH_KEY` filter implies). Kept faithfully;
-   `02_extract_report.sql` includes ready `v_month_start`/`v_month_end` if a
-   whole calendar month is intended.
+   month (which Export 2's `SNAPSHOT_MONTH_KEY` filter implies). Kept faithfully
+   in `02a_extract_large_txn.sql`; switch the `BETWEEN` to calendar-month bounds
+   (`DATE_TRUNC(..., MONTH)` / `LAST_DAY(...)`) if a whole calendar month is
+   intended.
 4. **`MAX(BATCH_ID) + 1` is not concurrency-safe.** Two simultaneous runs can
    allocate the same id. Serialize via the orchestrator (single active DAG run)
    or move to a sequence/`GENERATE_UUID()` surrogate.
@@ -202,6 +208,15 @@ out for the cutover owners to decide on.
     backfill-safe** the way the daily load (parameterized on `@batch_date`) is.
     If backfills of historical months are ever required, parameterize the monthly
     DAG/SQL on `{{ ds }}` the same way the daily load was.
+11. **Monthly `ACTIVITYCOUNT` check gates Exports 2 & 3 on Export 1's row count.**
+    In the BTEQ (`bteq_extract_report.btq`), Export 1 (large transactions) always
+    runs, then `.IF ACTIVITYCOUNT = 0 THEN .GOTO NODATA` skips Export 2 (branch
+    performance) and Export 3 (AML screening). Those two draw from **independent**
+    data sources, so skipping them because the large-transaction window is empty is
+    arguably a source bug — a month with no large transactions still has branch
+    performance and AML results. The conversion reproduces this faithfully (Export
+    1 in its own always-run task; 2 & 3 behind the `check_data` branch). If the
+    business wants 2 & 3 unconditionally, make them independent of the branch.
 
 ### Staging schema notes
 
