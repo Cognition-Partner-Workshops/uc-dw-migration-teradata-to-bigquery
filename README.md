@@ -67,8 +67,12 @@ and smoke-tests `/health` and `/openapi.json` on every PR touching `app/api`.
 
 [`docs/migration/mapping.yaml`](docs/migration/mapping.yaml) is the single source of
 truth for the 1:1 mapping from every Salesforce artifact to its target
-(Postgres table/column, API endpoint, React component, infra resource). Every PR
-that touches an artifact must keep it current.
+(Postgres table/column, API endpoint, React component, infra resource), one row per
+inventory id with `target`, `disposition`, `status` and `parity_tests`; the rendered
+view is [`mapping.md`](docs/migration/mapping.md). Every PR that touches an artifact
+must keep it current: `python3 tools/mapping/mapping.py --check` runs in CI and fails
+unless every inventory id appears exactly once, target names follow the conventions
+and `mapping.md` is regenerated (`--render`). See [`tools/mapping`](tools/mapping/README.md).
 
 ## Artifact inventory
 
