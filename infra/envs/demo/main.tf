@@ -77,3 +77,25 @@ module "web" {
   ])
   csp_connect_sources = ["https://cognito-idp.${var.aws_region}.amazonaws.com"]
 }
+
+module "cicd" {
+  source = "../../modules/cicd"
+
+  name                        = var.name
+  github_repository           = var.github_repository
+  github_branch               = var.github_branch
+  create_oidc_provider        = var.create_github_oidc_provider
+  state_bucket                = "sf2aws-tfstate-599083837640"
+  state_key                   = "demo/terraform.tfstate"
+  lock_table                  = "sf2aws-tflock"
+  ecr_repository_arn          = module.api.ecr_repository_arn
+  ecs_cluster_arn             = module.api.ecs_cluster_arn
+  ecs_cluster_name            = module.api.ecs_cluster_name
+  ecs_service_arn             = module.api.ecs_service_arn
+  ecs_task_families           = [module.api.migrate_task_family]
+  ecs_execution_role_arn      = module.api.execution_role_arn
+  ecs_task_role_arn           = module.api.task_role_arn
+  api_log_group_arn           = module.api.log_group_arn
+  web_bucket_arn              = module.web.bucket_arn
+  cloudfront_distribution_arn = module.web.cloudfront_distribution_arn
+}

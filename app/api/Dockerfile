@@ -10,6 +10,14 @@ COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
 RUN npx prisma generate && npm run build
 
+# One-off migration image (ECS task `<name>-api-migrate`, pushed as `:migrate`): the build stage
+# plus the schema engine so `prisma migrate deploy` needs no download at run time.
+FROM build AS migrate
+RUN npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script >/dev/null \
+  && chown -R node:node /app
+USER node
+CMD ["npx", "prisma", "migrate", "deploy"]
+
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./

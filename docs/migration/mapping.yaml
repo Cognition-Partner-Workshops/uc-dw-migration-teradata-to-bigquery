@@ -24,6 +24,7 @@ target:
   web: app/web (Vite + React 18 + TypeScript, React Router, TanStack Query, Mantine, Leaflet) on S3 + CloudFront
   auth: Amazon Cognito user pool; groups dreamhouse and dreamhouse-admin; NestJS RolesGuard
   infra: infra/ (Terraform, AWS 599083837640, us-east-1)
+  ci: '.github/workflows/ - PRs: api.yml + web.yml (lint, unit tests, Prisma migrations on a Postgres service container), salesforce-source.yml (mapping/schema/inventory checks), infra.yml (terraform fmt/validate/plan via the OIDC plan role); pushes to salesforce-to-aws-demo: deploy.yml (ECR push, one-off ECS migration task, ECS roll-out, S3 + CloudFront) via the OIDC deploy role of infra/modules/cicd'
   local_dev: docker-compose.yml + Makefile (make up / migrate / seed / test / e2e) - Postgres 16, API hot reload, web HMR; make seed loads data/migrated/ (written by UNT3-12/13)
   parity: tests/parity/ (live against both apps); characterisation specs under tests/parity/characterisation
 conventions:

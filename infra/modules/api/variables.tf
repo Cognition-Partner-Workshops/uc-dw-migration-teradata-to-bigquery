@@ -77,3 +77,9 @@ variable "user_pool_arn" {
 variable "user_pool_client_id" {
   type = string
 }
+
+variable "migrate_image_tag" {
+  description = "Tag of the migration image (Dockerfile target `migrate`, pushed next to the API image) run by the one-off migration task"
+  type        = string
+  default     = "migrate"
+}

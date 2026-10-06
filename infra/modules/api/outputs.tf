@@ -37,3 +37,27 @@ output "log_group_name" {
 output "task_role_arn" {
   value = aws_iam_role.task.arn
 }
+
+output "ecr_repository_arn" {
+  value = aws_ecr_repository.api.arn
+}
+
+output "ecs_cluster_arn" {
+  value = aws_ecs_cluster.this.arn
+}
+
+output "ecs_service_arn" {
+  value = aws_ecs_service.api.id
+}
+
+output "migrate_task_family" {
+  value = aws_ecs_task_definition.migrate.family
+}
+
+output "execution_role_arn" {
+  value = aws_iam_role.execution.arn
+}
+
+output "log_group_arn" {
+  value = aws_cloudwatch_log_group.api.arn
+}

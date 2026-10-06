@@ -79,3 +79,26 @@ output "cognito_groups" {
 output "vpc_id" {
   value = module.network.vpc_id
 }
+
+# ----- CI/CD (GitHub Actions via OIDC) -----
+output "github_plan_role_arn" {
+  description = "Role assumed by pull-request workflows (terraform plan, read-only)"
+  value       = module.cicd.plan_role_arn
+}
+
+output "github_deploy_role_arn" {
+  description = "Role assumed by the deploy workflow on pushes to the demo branch"
+  value       = module.cicd.deploy_role_arn
+}
+
+output "ecs_migrate_task_family" {
+  value = module.api.migrate_task_family
+}
+
+output "api_private_subnet_ids" {
+  value = module.network.private_subnet_ids
+}
+
+output "api_task_security_group_id" {
+  value = module.api.task_security_group_id
+}
