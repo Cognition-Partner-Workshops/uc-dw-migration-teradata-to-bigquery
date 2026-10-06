@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { adminUser, asUser, standardUser } from './support/test-users';
+import { asUser, standardUser } from './support/test-users';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import './setup-env';
 import { AppModule } from '../src/app.module';
@@ -62,6 +62,8 @@ describe('Dreamhouse API (http)', () => {
         '/contacts',
         '/contacts/{id}',
         '/files',
+        '/files/presigned-upload',
+        '/files/{id}',
         '/geocode',
         '/geocoding/addresses',
         '/health',
@@ -89,18 +91,6 @@ describe('Dreamhouse API (http)', () => {
   it('GET /docs serves Swagger UI', async () => {
     const res = await request(app.getHttpServer()).get('/docs').expect(200);
     expect(res.text).toContain('swagger-ui');
-  });
-
-  it('not-yet-ported endpoints answer 501 and name the owning ticket', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/sample-data/import')
-      .set(asUser(adminUser))
-      .expect(501);
-    expect(res.body).toMatchObject({
-      statusCode: 501,
-      apexSource: 'SampleDataController.importSampleData',
-      ticket: 'UNT3-18',
-    });
   });
 
   it('validates query parameters like the Apex method normalises its inputs', async () => {

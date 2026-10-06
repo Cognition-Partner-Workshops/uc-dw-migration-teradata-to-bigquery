@@ -24,6 +24,7 @@ target:
   web: app/web (Vite + React 18 + TypeScript, React Router, TanStack Query, Mantine, Leaflet) on S3 + CloudFront
   auth: Amazon Cognito user pool; groups dreamhouse and dreamhouse-admin; NestJS AuthGuard (JWT) + PermissionsGuard (policy keys) + FieldSecurityInterceptor (FLS) in app/api/src/auth
   infra: infra/ (Terraform, AWS 599083837640, us-east-1)
+  ci: '.github/workflows/ - PRs: api.yml + web.yml (lint, unit tests, Prisma migrations on a Postgres service container), salesforce-source.yml (mapping/schema/inventory checks), infra.yml (terraform fmt/validate/plan via the OIDC plan role); pushes to salesforce-to-aws-demo: deploy.yml (ECR push, one-off ECS migration task, ECS roll-out, S3 + CloudFront) via the OIDC deploy role of infra/modules/cicd'
   local_dev: docker-compose.yml + Makefile (make up / migrate / seed / test / e2e) - Postgres 16, API hot reload, web HMR; make seed loads data/migrated/ (written by UNT3-12/13)
   parity: tests/parity/ (live against both apps); characterisation specs under tests/parity/characterisation
 conventions:
@@ -341,26 +342,26 @@ rows:
   source: used by Dreamhouse (tab standard-File), TestPropertyController (SOQL)
   target: {kind: table, name: files}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at, created_by) + S3 object; table + Prisma model File created by the UNT3-16 migration (read by GET /properties/{id}/pictures), S3 write path is the files module (UNT3-18)
+  notes: Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at, created_by) + object in the S3 files bucket (infra/modules/files; LocalFileStorage under FILES_LOCAL_DIR without FILES_BUCKET); written by FilesService.createFile (POST /files), read by GET /properties/{id}/pictures and served by GET /files/{id} (302 to a pre-signed S3 URL, streamed on local storage); FileType = upper-case extension or UNKNOWN
 - id: standardObject:ContentDocumentLink
   source: used by Create_property (record element), FileUtilities (DML), PropertyController (SOQL), TestPropertyController (DML)
   target: {kind: column, name: files.record_id, type: uuid}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: 'LinkedEntityId -> files.record_id (polymorphic: properties.id today); ShareType/Visibility dropped (no sharing model)'
+  notes: 'LinkedEntityId -> files.record_id (polymorphic: properties.id today, FilesService.requireRecord answers 404 like the failed link insert); ShareType/Visibility dropped (no sharing model)'
 - id: standardObject:ContentVersion
   source: used by Create_property (record element), FileUtilities (DML), FileUtilities (SOQL), PropertyController (SOQL), TestPropertyController (DML)
   target: {kind: table, name: files}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: VersionData -> S3 object (bucket from infra, key files/<id>/<filename>); Title/IsLatest/CreatedDate -> files columns; only the latest version is kept
+  notes: VersionData -> S3 object (key files/<id>/<filename>, written inside the files-row transaction so a storage failure rolls the row back); Title = filename minus extension, PathOnClient = filename (object key); IsLatest/CreatedDate -> files columns; only the latest version is kept; bodies above FILES_MAX_INLINE_BYTES go through POST /files/presigned-upload (uploads/<recordId>/<token>/<filename>) and are finalised with uploadKey
 - id: standardObject:PermissionSet
   source: used by TestPropertyController (SOQL)
   target: {kind: role, name: dreamhouse}
@@ -376,7 +377,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: []
-  reason: 'Test-only: group membership is a claim (cognito:groups) in the HS256 test token minted by asUser(standardUser); UNT3-20 makes the guard accept AUTH_TEST_JWT_SECRET tokens in NODE_ENV=test.'
+  reason: 'Test-only: group membership is a claim (cognito:groups) in the HS256 test token minted by asUser(standardUser); the global AuthGuard (src/auth/token-verifier.ts) accepts AUTH_TEST_JWT_SECRET tokens only under AUTH_MODE=test.'
 - id: standardObject:Profile
   source: used by TestPropertyController (SOQL)
   target: {kind: fixture, name: tests/parity/fixtures/users.ts}
@@ -389,7 +390,7 @@ rows:
   source: used by SampleDataController (SOQL)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
   reason: SampleDataController reads sample_data_* static resources via SOQL; the service reads the same JSON from bundled fixtures.
@@ -405,10 +406,10 @@ rows:
   source: class, with sharing, 1 methods
   target: {kind: service, name: FilesService}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: app/api/src/modules/files/files.service.ts
+  notes: app/api/src/modules/files/files.service.ts (createFile, createPresignedUpload, getDownload) over the FileStorage port (storage/s3-file-storage.ts in AWS, storage/local-file-storage.ts locally); HTTP surface files.controller.ts; specs file-names.spec.ts, test/files.e2e.spec.ts; characterisation tests/parity/characterisation/file-utilities.spec.ts (live, UNT3-18 in ported.ts)
 - id: apexClass:FileUtilitiesTest
   source: test class, with sharing, 4 methods
   target: {kind: spec, name: tests/parity/characterisation/file-utilities.spec.ts}
@@ -416,7 +417,7 @@ rows:
   status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now; unit variant app/api/src/modules/files/files.service.spec.ts
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); live since UNT3-18 added itself to tests/parity/characterisation/harness/ported.ts; HTTP variant app/api/test/files.e2e.spec.ts, unit variant app/api/src/modules/files/file-names.spec.ts
 - id: apexClass:GeocodingService
   source: class, with sharing, 1 methods
   target: {kind: service, name: GeocodingService}
@@ -453,10 +454,10 @@ rows:
   source: class, with sharing, 5 methods
   target: {kind: service, name: SampleDataService}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: app/api/src/modules/sample-data/sample-data.service.ts
+  notes: app/api/src/modules/sample-data/sample-data.service.ts (importSampleData, insertBrokers, insertProperties, insertContacts, randomizeDateListed); deployment fence sample-data.guard.ts (SampleDataImportGuard) + policy sample-data.policy.ts; who may call it = @RequirePermission('sampleData.invoke', ...) via the global AuthGuard/PermissionsGuard (SAMPLE_DATA_IMPORT_ENABLED; off by default in production / against *.rds.amazonaws.com); specs sample-data.service.spec.ts, sample-data.policy.spec.ts, test/sample-data.e2e.spec.ts
 - id: apexClass:TestPropertyController
   source: test class, omitted, 4 methods
   target: {kind: spec, name: tests/parity/characterisation/property-controller.spec.ts}
@@ -472,7 +473,7 @@ rows:
   status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); live since UNT3-18 added itself to tests/parity/characterisation/harness/ported.ts; guard/policy HTTP variant app/api/test/sample-data.e2e.spec.ts
 - id: apexInnerClass:GeocodingService.GeocodingAddress
   source: class, 5 fields
   target: {kind: dto, name: GeocodingAddressDto}
@@ -509,10 +510,10 @@ rows:
   source: '@AuraEnabled String createFile(String base64data, String filename, String recordId)'
   target: {kind: endpoint, name: POST /files}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: 'FilesService.createFile(base64data, filename, recordId): PUT to S3 + insert files row in one transaction; returns FileCreatedDto {id, url}; title = filename minus extension, file_type from the extension; must accept unpadded base64 like EncodingUtil.base64Decode (the Apex fixture is 659 chars); errors -> 400 (bad base64 / blank filename) and 404 (unknown recordId) like AuraHandledException'
+  notes: 'FilesService.createFile(base64data, filename, recordId): files row + object write in one transaction (storage failure rolls the row back); returns FileCreatedDto {id, url: /files/{id}, title, fileType, size}; title = filename minus extension, file_type from the extension; accepts unpadded base64 / data URLs like EncodingUtil.base64Decode (the Apex fixture is 659 chars); errors -> 400 (bad base64 / blank filename / path in filename) and 404 (unknown recordId) like AuraHandledException, 413 above FILES_MAX_INLINE_BYTES; large files: POST /files/presigned-upload then POST /files with uploadKey; GET /files/{id} serves the body; created_by from the bearer token when present'
 - id: apexMethod:FileUtilitiesTest.createFileSucceedsWhenCorrectInput
   source: '@isTest void createFileSucceedsWhenCorrectInput()'
   target: {kind: spec, name: 'tests/parity/characterisation/file-utilities.spec.ts::createFileSucceedsWhenCorrectInput'}
@@ -606,38 +607,42 @@ rows:
   source: '@AuraEnabled void importSampleData()'
   target: {kind: endpoint, name: POST /sample-data/import}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: admin-only (role dreamhouse-admin); deletes properties/brokers/contacts then inserts brokers, properties, contacts in one transaction; Case cleanup dropped
+  notes: 'admin-only (global AuthGuard verifies the bearer token -> 401; PermissionsGuard requires sampleData.invoke = dreamhouse-admin group -> 403) and fenced by SampleDataPolicy (SAMPLE_DATA_IMPORT_ENABLED explicit flag; default off in production and against an RDS endpoint); one prisma.$transaction: deleteMany properties (files cascade), brokers, contacts, then insertBrokers/insertProperties/insertContacts; answers 200 {deleted, inserted} counts; Case cleanup dropped'
 - id: apexMethod:SampleDataController.insertBrokers
   source: void insertBrokers()
   target: {kind: serviceMethod, name: SampleDataService.insertBrokers}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: createManyAndReturn from fixtures/brokers.json; returns Broker_Id__c -> brokers.id for the properties
 - id: apexMethod:SampleDataController.insertProperties
   source: void insertProperties()
   target: {kind: serviceMethod, name: SampleDataService.insertProperties}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: createMany from fixtures/properties.json; Broker__r.Broker_Id__c resolved against insertBrokers, Status__c label -> property_status enum, Date_Listed__c from randomizeDateListed
 - id: apexMethod:SampleDataController.insertContacts
   source: void insertContacts()
   target: {kind: serviceMethod, name: SampleDataService.insertContacts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: createMany from fixtures/contacts.json
 - id: apexMethod:SampleDataController.randomizeDateListed
   source: void randomizeDateListed(List<Property__c> properties)
   target: {kind: serviceMethod, name: SampleDataService.randomizeDateListed}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: today - floor(random * 90) days as a date-only value (UTC midnight), applied per property while building the createMany rows
 - id: apexMethod:TestPropertyController.createProperties
   source: void createProperties(Integer amount)
   target: {kind: fixture, name: tests/parity/fixtures/properties.ts}
@@ -703,18 +708,18 @@ rows:
   source: errorPanel (internal)
   target: {kind: component, name: ErrorPanel}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: props errors, friendlyMessage, type (inlineMessage|noDataIllustration); uses reduceErrors from app/web/src/lib/errors.ts
+  notes: 'app/web/src/components/ErrorPanel/ErrorPanel.tsx: props errors, friendlyMessage (default "Error retrieving data"), type (inlineMessage|noDataIllustration); "Show details" toggles the reduceErrors messages; data-testid error-panel (data-type), error-panel-message, error-panel-details'
 - id: lwc:ldsUtils
   source: ldsUtils (internal)
   target: {kind: util, name: 'app/web/src/lib/errors.ts::reduceErrors'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: reduceErrors(error | error[]) normalises API/fetch errors to string[] exactly like the LWC helper (TanStack Query error shape instead of LDS/Apex error shape)
+  notes: 'app/web/src/lib/errors.ts reduceErrors(error | error[]) -> string[]: same branches as the LWC helper (body[] / pageErrors / fieldErrors / body.message / message / statusText), so Error instances from TanStack Query and Nest error bodies reduce alike'
 - id: lwc:listContactsFromDevice
   source: Lists Contacts from Device (lightning__AppPage)
   target: null
@@ -735,10 +740,10 @@ rows:
   source: paginator (internal)
   target: {kind: component, name: Paginator}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: props pageNumber, pageSize, totalItemCount; emits previous/next
+  notes: 'app/web/src/components/Paginator/Paginator.tsx: "<count> items • page <n> of <total>", Previous hidden on page 1, Next hidden on the last page or at MAX_ITEM_OFFSET 2000; data-testid paginator, paginator-info, paginator-previous, paginator-next'
 - id: lwc:propertyCarousel
   source: Property Carousel (lightning__RecordPage)
   target: {kind: component, name: PropertyCarousel}
@@ -751,18 +756,18 @@ rows:
   source: Property Filter (lightning__AppPage)
   target: {kind: component, name: PropertyFilter}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: publishes FiltersChange -> propertyFilters store (URL search params searchKey, maxPrice, minBedrooms, minBathrooms)
+  notes: 'app/web/src/components/PropertyFilter/PropertyFilter.tsx: Search Key, Max Price (0-1200000 step 50000), Bedrooms, Bathrooms (0-6) + Reset, same labels/order; 350ms debounce then publish = usePropertyFilters().setFilters writes URL params searchKey, maxPrice, minBedrooms, minBathrooms (defaults omitted) so filters are linkable; data-testid property-filter*'
 - id: lwc:propertyListMap
   source: Property List Map (lightning__AppPage)
   target: {kind: component, name: PropertyListMap}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Leaflet (npm leaflet / react-leaflet) over GET /properties; subscribes propertyFilters, publishes selectedProperty
+  notes: 'app/web/src/components/PropertyListMap/PropertyListMap.tsx: Leaflet (react-leaflet MapView) centred 42.356045,-71.08565 zoom 13, first page of GET /properties for the URL filters, marker tooltip = name + beds/baths over the thumbnail, marker click -> selectProperty; query error -> Mantine notification "Error loading properties"; data-testid property-list-map, property-list-map-view (data-marker-count)'
 - id: lwc:propertyLocation
   source: Property Location (lightning__RecordPage)
   target: {kind: component, name: PropertyLocation}
@@ -775,34 +780,34 @@ rows:
   source: Property Map (lightning__AppPage, lightning__RecordPage)
   target: {kind: component, name: PropertyMap}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: lightning-map -> Leaflet marker; LDS getRecord -> GET /properties/{id}; subscribes selectedProperty
+  notes: 'app/web/src/components/PropertyMap/PropertyMap.tsx: subscribes the selected URL param; card title "Address, City", Leaflet MapView zoom 14 with one marker (popup Name / Address); empty "Select a property to see its location"; record from the selectedProperty store until GET /properties/{id} lands; data-testid property-map, property-map-address, property-map-view'
 - id: lwc:propertySummary
   source: Property Summary (lightning__AppPage, lightning__RecordPage)
   target: {kind: component, name: PropertySummary}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: LDS getRecord(Name, Picture, Beds, Baths, Price, Broker) -> GET /properties/{id}; subscribes selectedProperty; link to record page
+  notes: 'app/web/src/components/PropertySummary/PropertySummary.tsx: subscribes the selected URL param; name + picture + 2-column Beds/Baths/Price/Broker form, "Navigate to Record" -> /properties/:id; empty "Select a property to see details", error "Error retrieving data". getRecord -> GET /properties/{id} (propertyQuery; Picture__c), Broker__c lookup -> GET /brokers/{id} (brokerQuery, links /brokers/:id); the PropertySummaryDto already in the selectedProperty store paints while the record loads; data-testid property-summary*'
 - id: lwc:propertyTile
   source: propertyTile (internal)
   target: {kind: component, name: PropertyTile}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: '@salesforce/client/formFactor -> Mantine useMediaQuery; emits selected'
+  notes: 'app/web/src/components/PropertyTile/PropertyTile.tsx: thumbnail tile "City • Name", "Beds: n - Baths: n", USD price; @salesforce/client/formFactor Small -> useMediaQuery(max-width 48em) navigates to /properties/:id, otherwise onSelected(id); data-testid property-tile (data-property-id), property-tile-title/-beds-baths/-price'
 - id: lwc:propertyTileList
   source: Property Tile List (lightning__AppPage)
   target: {kind: component, name: PropertyTileList}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: GET /properties with propertyFilters + Paginator; publishes selectedProperty
+  notes: 'app/web/src/components/PropertyTileList/PropertyTileList.tsx: GET /properties with the URL filters, pageSize 9, page reset to 1 on FiltersChange; PropertyTile grid + Paginator; error -> ErrorPanel "Error retrieving data"; tile selected -> selectProperty (URL param selected) and the records are remembered in the selectedProperty store; data-testid property-tile-list, property-tiles'
 - id: lwc:sampleDataImporter
   source: Sample Property Importer (lightning__AppPage)
   target: {kind: component, name: SampleDataImporter}
@@ -839,17 +844,18 @@ rows:
   source: salesforce/force-app/main/default/lwc/errorPanel/__tests__/errorPanel.test.js
   target: {kind: spec, name: app/web/src/components/ErrorPanel/ErrorPanel.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: default / custom friendly message, no details without errors, details after Show details, inline and illustration variants'
 - id: lwcTest:ldsUtils/ldsUtils.test.js
   source: salesforce/force-app/main/default/lwc/ldsUtils/__tests__/ldsUtils.test.js
   target: {kind: spec, name: app/web/src/lib/errors.test.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
+  notes: Vitest port of the 5 reduceErrors cases + Error instance / empty item case (app/web/src/lib/errors.test.ts)
 - id: lwcTest:navigateToRecord/navigateToRecord.test.js
   source: salesforce/force-app/main/default/lwc/navigateToRecord/__tests__/navigateToRecord.test.js
   target: {kind: spec, name: app/web/src/components/NavigateToRecord/NavigateToRecord.test.tsx}
@@ -862,10 +868,10 @@ rows:
   source: salesforce/force-app/main/default/lwc/paginator/__tests__/paginator.test.js
   target: {kind: spec, name: app/web/src/components/Paginator/Paginator.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: next/previous events, zero items, some items, max page offset'
 - id: lwcTest:propertyCarousel/propertyCarousel.test.js
   source: salesforce/force-app/main/default/lwc/propertyCarousel/__tests__/propertyCarousel.test.js
   target: {kind: spec, name: app/web/src/components/PropertyCarousel/PropertyCarousel.test.tsx}
@@ -878,18 +884,18 @@ rows:
   source: salesforce/force-app/main/default/lwc/propertyFilter/__tests__/propertyFilter.test.js
   target: {kind: spec, name: app/web/src/components/PropertyFilter/PropertyFilter.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: same 6 cases (search key, 3 sliders, reset publishes, reset restores defaults) asserting the published URL params after the 350ms debounce (fake timers)'
 - id: lwcTest:propertyListMap/propertyListMap.test.js
   source: salesforce/force-app/main/default/lwc/propertyListMap/__tests__/propertyListMap.test.js
   target: {kind: spec, name: app/web/src/components/PropertyListMap/PropertyListMap.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port with MapView mocked (like the Jest suite mocks Leaflet): filter subscription = URL params sent to GET /properties, map rendered, toast on query error, markers updated from properties, marker click publishes `selected`'
 - id: lwcTest:propertyLocation/propertyLocation.test.js
   source: salesforce/force-app/main/default/lwc/propertyLocation/__tests__/propertyLocation.test.js
   target: {kind: spec, name: app/web/src/components/PropertyLocation/PropertyLocation.test.tsx}
@@ -902,42 +908,42 @@ rows:
   source: salesforce/force-app/main/default/lwc/propertyMap/__tests__/propertyMap.test.js
   target: {kind: spec, name: app/web/src/components/PropertyMap/PropertyMap.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port with MapView mocked: error panel when nothing selected, map + marker + address title when a property is selected'
 - id: lwcTest:propertySummary/propertySummary.test.js
   source: salesforce/force-app/main/default/lwc/propertySummary/__tests__/propertySummary.test.js
   target: {kind: spec, name: app/web/src/components/PropertySummary/PropertySummary.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: error panel when nothing selected, error panel when the record cannot be resolved, record form when selected, Navigate to Record'
 - id: lwcTest:propertyTile/propertyTile.small.test.js
   source: salesforce/force-app/main/default/lwc/propertyTile/__tests__/propertyTile.small.test.js
   target: {kind: spec, name: app/web/src/components/PropertyTile/PropertyTile.small.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: matchMedia stub matching the small form factor -> click navigates to /properties/:id'
 - id: lwcTest:propertyTile/propertyTile.test.js
   source: salesforce/force-app/main/default/lwc/propertyTile/__tests__/propertyTile.test.js
   target: {kind: spec, name: app/web/src/components/PropertyTile/PropertyTile.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: displays property, background image, selected event on click (non-small form factor); jest-axe case not ported (no axe in the web toolchain)'
 - id: lwcTest:propertyTileList/propertyTileList.test.js
   source: salesforce/force-app/main/default/lwc/propertyTileList/__tests__/propertyTileList.test.js
   target: {kind: spec, name: app/web/src/components/PropertyTileList/PropertyTileList.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: same cases (renders tiles / error panel, filter subscription = URL params sent to GET /properties, tile selection publishes `selected`) with fetch mocked; fixture app/web/src/test/fixtures/pagedProperties.json = data/getPagedPropertyList.json in API shape'
 - id: lwcTest:sampleDataImporter/sampleDataImporter.test.js
   source: salesforce/force-app/main/default/lwc/sampleDataImporter/__tests__/sampleDataImporter.test.js
   target: {kind: spec, name: app/web/src/components/SampleDataImporter/SampleDataImporter.test.tsx}
@@ -950,10 +956,10 @@ rows:
   source: 'component: Three columns layout (Just one on mobile)'
   target: {kind: component, name: ThreeColumnLayout}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'app/web/src/components/layout/ThreeColumnLayout.tsx: Mantine Grid 2/7/3 columns, stacked on mobile; used by PropertyExplorerPage and PropertyFinderPage'
+  notes: 'app/web/src/components/layout/ThreeColumnLayout.tsx: Mantine Grid 2/7/3 columns from md up, one stacked column below; data-testid layout-left/-center/-right; used by PropertyExplorerPage and PropertyFinderPage'
 - id: flow:Create_property
   source: Create Property (Flow, 17 elements)
   target: {kind: route, name: /properties/new}
@@ -974,18 +980,18 @@ rows:
   source: Property Explorer (AppPage)
   target: {kind: route, name: /property-explorer}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'PropertyExplorerPage in ThreeColumnLayout: PropertyFilter + create-property link (flowruntime:interview) | PropertyTileList | PropertySummary + PropertyMap'
+  notes: 'app/web/src/pages/PropertyExplorerPage.tsx in ThreeColumnLayout: PropertyFilter + "Create Property" link to /properties/new (flowruntime:interview Create_property, UNT3-23) | PropertyTileList | PropertySummary + PropertyMap'
 - id: flexipage:Property_Finder
   source: Property Finder (AppPage)
   target: {kind: route, name: /property-finder}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'PropertyFinderPage in ThreeColumnLayout: BarcodeScanner + PropertyFilter | PropertyListMap | PropertySummary + DaysOnMarket'
+  notes: 'app/web/src/pages/PropertyFinderPage.tsx in ThreeColumnLayout: BarcodeScanner placeholder (UNT3-23) + PropertyFilter | PropertyListMap | PropertySummary + DaysOnMarket placeholder (UNT3-22)'
 - id: flexipage:Property_Record_Page
   source: Property Record Page (RecordPage for Property__c)
   target: {kind: route, name: '/properties/:id'}
@@ -1439,26 +1445,26 @@ rows:
   source: Sample data used to initialize Broker__c records (2850 bytes)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures/brokers.json}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: same JSON content, keys renamed to camelCase DTO fields
+  notes: same JSON content, keys renamed to the Prisma field names (Broker__r.Broker_Id__c -> brokerId); app/api/src/modules/sample-data/sample-data.service.spec.ts asserts it equals the static resource
 - id: staticResource:sample_data_contacts
   source: Sample data used to initialize Contact records (723 bytes)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures/contacts.json}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: same JSON content, keys renamed to camelCase DTO fields
+  notes: same JSON content, keys renamed to the Prisma field names (Broker__r.Broker_Id__c -> brokerId); app/api/src/modules/sample-data/sample-data.service.spec.ts asserts it equals the static resource
 - id: staticResource:sample_data_properties
   source: Sample data used to initialize Property__c records (9088 bytes)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures/properties.json}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: same JSON content, keys renamed to camelCase DTO fields
+  notes: same JSON content, keys renamed to the Prisma field names (Broker__r.Broker_Id__c -> brokerId); app/api/src/modules/sample-data/sample-data.service.spec.ts asserts it equals the static resource
 - id: contentAsset:dreamhouselogosquare
   source: dreamhouselogosquare
   target: {kind: asset, name: app/web/public/dreamhouse-logo-square.png}
@@ -1471,18 +1477,18 @@ rows:
   source: 'Filters Change Message Channel: searchKey, maxPrice, minBedrooms, minBathrooms'
   target: {kind: store, name: app/web/src/state/propertyFilters.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: searchKey, maxPrice, minBedrooms, minBathrooms as URL search params (useSearchParams) so filters are linkable; publish = setFilters, subscribe = useFilters
+  notes: 'app/web/src/state/propertyFilters.ts: searchKey, maxPrice, minBedrooms, minBathrooms as URL search params (useSearchParams, defaults omitted) so filters are linkable; publish = usePropertyFilters().setFilters / resetFilters, subscribe = usePropertyFilters().filters'
 - id: messageChannel:PropertySelected
   source: 'Property Selected Message Channel: propertyId'
   target: {kind: store, name: app/web/src/state/selectedProperty.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: propertyId in URL search param `selected` + small store; publish = selectProperty, subscribe = useSelectedProperty
+  notes: 'app/web/src/state/selectedProperty.ts: propertyId in URL search param `selected` + small useSyncExternalStore store of the PropertySummaryDto records the list/map loaded (rememberProperties); publish = useSelectedProperty().selectProperty, subscribe = useSelectedProperty().property'
 - id: remoteSiteSetting:nominatim_openstreetmap
   source: https://nominatim.openstreetmap.org
   target: {kind: env, name: GEOCODING_BASE_URL}

@@ -1,0 +1,97 @@
+name: deploy
+
+# Deploys the demo environment on every push to salesforce-to-aws-demo (= every merged PR) that
+# touches the apps or the infra scripts. AWS access is the Terraform-created GitHub OIDC role
+# `sf2aws-demo-github-deploy` (infra/modules/cicd): no long-lived keys live in GitHub.
+# Terraform resource changes (infra/**) are NOT applied here; the plan job of infra.yml shows
+# them and a human runs `make -C infra apply`.
+
+on:
+  push:
+    branches: [salesforce-to-aws-demo]
+    paths:
+      - 'app/api/**'
+      - 'app/web/**'
+      - 'infra/scripts/**'
+      - 'infra/Makefile'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-demo
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ROLE_ARN: arn:aws:iam::599083837640:role/sf2aws-demo-github-deploy
+
+jobs:
+  api:
+    name: API — build + push to ECR, migrate (one-off ECS task), roll the service
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.x'
+          terraform_wrapper: false
+      - name: terraform init (outputs only)
+        run: make -C infra init
+      - name: Build app/api/Dockerfile and push :latest, :<sha>, :migrate to ECR
+        run: make -C infra push
+      - name: prisma migrate deploy (one-off ECS Fargate task)
+        run: make -C infra migrate
+      - name: Roll the ECS service and wait until stable
+        run: make -C infra deploy-api
+
+  web:
+    name: Web — build the SPA, upload to S3, invalidate CloudFront
+    runs-on: ubuntu-latest
+    needs: api
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/web/package-lock.json
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.x'
+          terraform_wrapper: false
+      - name: terraform init (outputs only)
+        run: make -C infra init
+      - name: Build against the deployed Cognito/API, sync to S3, invalidate CloudFront
+        run: make -C infra deploy-web
+
+  smoke:
+    name: Smoke — ALB /health, SPA + /api via CloudFront, CSP
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.x'
+          terraform_wrapper: false
+      - run: make -C infra init
+      - run: make -C infra smoke

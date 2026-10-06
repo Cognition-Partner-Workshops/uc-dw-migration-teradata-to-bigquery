@@ -1,12 +1,14 @@
-import { Controller, Post } from '@nestjs/common';
+import { Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
-  ApiCreatedResponse,
-  ApiNotImplementedResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RequirePermission } from '../../auth/decorators';
 import { SampleDataImportResultDto } from './dto/sample-data.dto';
+import { SampleDataImportGuard } from './sample-data.guard';
 import { SampleDataService } from './sample-data.service';
 
 @ApiTags('sample-data')
@@ -15,6 +17,8 @@ export class SampleDataController {
   constructor(private readonly sampleData: SampleDataService) {}
 
   @Post('import')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(SampleDataImportGuard)
   @RequirePermission(
     'sampleData.invoke',
     'properties.delete',
@@ -25,12 +29,17 @@ export class SampleDataController {
     'contacts.create',
   )
   @ApiOperation({
-    summary: 'Reset and reload the sample data set',
+    summary: 'Reset and reload the sample data set (admin only)',
     description:
-      'Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC).',
+      'Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC): deletes every ' +
+      'property, broker and contact, then inserts the `sample_data_*` static resources, all in one transaction. ' +
+      'Requires the `dreamhouse-admin` group and is refused unless the deployment allows it (SAMPLE_DATA_IMPORT_ENABLED).',
   })
-  @ApiCreatedResponse({ type: SampleDataImportResultDto })
-  @ApiNotImplementedResponse({ description: 'Not ported yet (UNT3-18)' })
+  @ApiOkResponse({ type: SampleDataImportResultDto })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid bearer token' })
+  @ApiForbiddenResponse({
+    description: 'Import disabled on this deployment, or caller is not a dreamhouse-admin',
+  })
   importSampleData(): Promise<SampleDataImportResultDto> {
     return this.sampleData.importSampleData();
   }

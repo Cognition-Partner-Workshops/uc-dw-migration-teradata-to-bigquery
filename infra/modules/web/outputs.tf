@@ -17,3 +17,7 @@ output "cloudfront_distribution_id" {
 output "content_security_policy" {
   value = local.csp
 }
+
+output "cloudfront_distribution_arn" {
+  value = aws_cloudfront_distribution.web.arn
+}

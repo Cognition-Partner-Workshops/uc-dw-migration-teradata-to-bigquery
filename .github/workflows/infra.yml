@@ -33,6 +33,46 @@ jobs:
           ! grep -rnE 'AKIA[0-9A-Z]{16}|aws_secret_access_key|password\s*=\s*"[^"]+"' --include='*.tf' --include='*.tfvars' --include='*.sh' . \
             || { echo 'possible secret committed under infra/'; exit 1; }
 
+  plan:
+    name: terraform plan (envs/demo, read-only GitHub OIDC role)
+    # The role trusts this repository's pull_request and salesforce-to-aws-demo tokens only, so
+    # forks (whose tokens carry their own repo claim) skip the plan instead of failing on AssumeRole.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::599083837640:role/sf2aws-demo-github-plan
+          aws-region: us-east-1
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.x'
+          terraform_wrapper: false
+      - name: terraform init (remote state, read-only)
+        run: make init
+      - name: terraform plan
+        run: |
+          set -o pipefail
+          terraform -chdir=envs/demo plan -input=false -lock=false -no-color -detailed-exitcode 2>&1 | tee /tmp/plan.txt \
+            && code=0 || code=$?
+          # 0 = no changes, 2 = changes (reported, not an error: `make apply` stays a human step), 1 = error
+          [[ $code -ne 1 ]]
+          {
+            echo "### terraform plan (envs/demo)"
+            if [[ $code -eq 0 ]]; then echo 'No changes. The deployed demo matches this branch.'; else echo '**Changes pending** — apply with `make -C infra apply` after merge.'; fi
+            echo
+            echo '```'
+            tail -n 150 /tmp/plan.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
   scripts:
     name: shellcheck infra/scripts
     runs-on: ubuntu-latest

@@ -27,6 +27,24 @@ export const configSchema = z.object({
   GEOCODING_CACHE_MAX_ENTRIES: z.coerce.number().int().positive().default(1000),
   AWS_REGION: z.string().default('us-east-1'),
   AWS_SECRETS_MANAGER_SECRET_ID: z.string().optional(),
+  // Salesforce Files (ContentVersion.VersionData) live in the private S3 bucket of infra/modules/files.
+  // Unset -> objects are kept on local disk under FILES_LOCAL_DIR (docker-compose / tests).
+  FILES_BUCKET: z.string().min(1).optional(),
+  FILES_LOCAL_DIR: z.string().min(1).default('.data/files'),
+  // Largest body FileUtilities.createFile accepts inline (decoded bytes); larger files go through the
+  // pre-signed upload (POST /files/presigned-upload). Apex capped base64 request bodies at ~6 MB.
+  FILES_MAX_INLINE_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(6 * 1024 * 1024),
+  FILES_PRESIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+  // SampleDataController.importSampleData wipes the data set: outside NODE_ENV=production it is on by
+  // default; against the demo RDS it must be enabled explicitly ('true' / '1').
+  SAMPLE_DATA_IMPORT_ENABLED: z
+    .enum(['true', 'false', '1', '0'])
+    .transform((value) => value === 'true' || value === '1')
+    .optional(),
   // Authentication (src/auth): how bearer tokens are verified. Defaults per NODE_ENV —
   // production: cognito, test: test (HS256 fixtures), development: stub (web stub client).
   AUTH_MODE: z.enum(['cognito', 'test', 'stub']).optional(),

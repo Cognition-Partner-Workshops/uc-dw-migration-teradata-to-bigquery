@@ -1,0 +1,29 @@
+.tooltipPicture {
+  position: relative;
+  width: 200px;
+  height: 120px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.lowerThird {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: var(--mantine-color-white);
+}
+
+.lowerThird h1 {
+  margin: 0;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+
+.lowerThird p {
+  margin: 0;
+  font-size: var(--mantine-font-size-xs);
+}

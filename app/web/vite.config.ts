@@ -13,7 +13,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+    // amazon-cognito-identity-js reads Node's `global` (via buffer) at import time.
+    define: { __APP_VERSION__: JSON.stringify(pkg.version), global: 'globalThis' },
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },

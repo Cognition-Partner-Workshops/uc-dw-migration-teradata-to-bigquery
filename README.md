@@ -46,6 +46,14 @@ docs/migration/    Migration docs; docs/migration/mapping.yaml is the 1:1 mappin
 `infra/` holds the Terraform for the AWS demo environment (`make infra-up` / `make infra-plan` /
 `make infra-destroy`; details in [`infra/README.md`](infra/README.md)).
 
+CI/CD: every PR runs lint + unit tests for the API and the web app, the Prisma migrations against
+a Postgres service container, the mapping/schema/inventory checks and `terraform fmt/validate/plan`
+([`infra.yml`](.github/workflows/infra.yml)). Every push to `salesforce-to-aws-demo` that touches
+the apps runs [`deploy.yml`](.github/workflows/deploy.yml): API image → ECR, `prisma migrate deploy`
+as a one-off ECS task, ECS service roll-out, SPA → S3 + CloudFront invalidation, smoke checks.
+GitHub reaches AWS through the OIDC roles Terraform creates in `infra/modules/cicd`; no AWS keys
+are stored in GitHub.
+
 ## Local development (docker-compose)
 
 The root [`docker-compose.yml`](docker-compose.yml) + [`Makefile`](Makefile) run the whole

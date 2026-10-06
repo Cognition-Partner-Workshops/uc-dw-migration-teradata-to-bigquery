@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
-import { RouterProvider } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { AppProviders } from '@/app/providers';
 import { createTestRouter } from '@/app/routes';
 import { createStubAuthClient } from '@/auth/stub-auth-client';
@@ -35,4 +36,26 @@ export function renderApp({
     </AppProviders>,
   );
   return { ...utils, router };
+}
+
+/**
+ * Renders a component inside the app providers and a memory router at `initialPath` (so
+ * `useSearchParams` / `useNavigate` work); `router.state.location` exposes the published URL.
+ */
+export function renderWithProviders(
+  ui: ReactNode,
+  {
+    initialPath = '/',
+    queryClient = createTestQueryClient(),
+  }: { initialPath?: string; queryClient?: QueryClient } = {},
+) {
+  const router = createMemoryRouter([{ path: '*', element: ui }], {
+    initialEntries: [initialPath],
+  });
+  const utils = render(
+    <AppProviders queryClient={queryClient} authClient={createStubAuthClient()}>
+      <RouterProvider router={router} />
+    </AppProviders>,
+  );
+  return { ...utils, router, queryClient };
 }

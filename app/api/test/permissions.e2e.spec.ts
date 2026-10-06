@@ -103,9 +103,11 @@ interface RouteUnderTest {
   verb: Verb;
   path: string;
   body?: Record<string, unknown>;
-  /** Status when the caller is permitted (501 = ported later, but authorised). */
-  allowedStatus: number;
+  /** Status when the caller is permitted; AUTHORISED = past the guards (the handler itself is covered elsewhere). */
+  allowedStatus: number | typeof AUTHORISED;
 }
+
+const AUTHORISED = 'authorised';
 
 const ROUTES: RouteUnderTest[] = [
   {
@@ -197,14 +199,14 @@ const ROUTES: RouteUnderTest[] = [
     verb: 'post',
     path: '/files',
     body: { base64Data: 'aGk=', filename: 'a.png', recordId: PROPERTY_ID },
-    allowedStatus: 501,
+    allowedStatus: AUTHORISED,
   },
   {
     object: 'SampleDataController',
     operation: 'invoke',
     verb: 'post',
     path: '/sample-data/import',
-    allowedStatus: 501,
+    allowedStatus: AUTHORISED,
   },
   {
     object: 'GeocodingService',
@@ -348,7 +350,8 @@ describe('permission matrix (dreamhouse permission set → Cognito groups + guar
         }`, async () => {
           const res = await call(user, route);
           if (allowed) {
-            expect(res.status).toBe(route.allowedStatus);
+            if (route.allowedStatus === AUTHORISED) expect([401, 403]).not.toContain(res.status);
+            else expect(res.status).toBe(route.allowedStatus);
           } else {
             expect(res.status).toBe(403);
             expect(res.body).toMatchObject({
