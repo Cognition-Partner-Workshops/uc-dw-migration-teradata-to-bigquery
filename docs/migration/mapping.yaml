@@ -703,18 +703,18 @@ rows:
   source: errorPanel (internal)
   target: {kind: component, name: ErrorPanel}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: props errors, friendlyMessage, type (inlineMessage|noDataIllustration); uses reduceErrors from app/web/src/lib/errors.ts
+  notes: 'app/web/src/components/ErrorPanel/ErrorPanel.tsx: props errors, friendlyMessage (default "Error retrieving data"), type (inlineMessage|noDataIllustration); "Show details" toggles the reduceErrors messages; data-testid error-panel (data-type), error-panel-message, error-panel-details'
 - id: lwc:ldsUtils
   source: ldsUtils (internal)
   target: {kind: util, name: 'app/web/src/lib/errors.ts::reduceErrors'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: reduceErrors(error | error[]) normalises API/fetch errors to string[] exactly like the LWC helper (TanStack Query error shape instead of LDS/Apex error shape)
+  notes: 'app/web/src/lib/errors.ts reduceErrors(error | error[]) -> string[]: same branches as the LWC helper (body[] / pageErrors / fieldErrors / body.message / message / statusText), so Error instances from TanStack Query and Nest error bodies reduce alike'
 - id: lwc:listContactsFromDevice
   source: Lists Contacts from Device (lightning__AppPage)
   target: null
@@ -735,10 +735,10 @@ rows:
   source: paginator (internal)
   target: {kind: component, name: Paginator}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: props pageNumber, pageSize, totalItemCount; emits previous/next
+  notes: 'app/web/src/components/Paginator/Paginator.tsx: "<count> items • page <n> of <total>", Previous hidden on page 1, Next hidden on the last page or at MAX_ITEM_OFFSET 2000; data-testid paginator, paginator-info, paginator-previous, paginator-next'
 - id: lwc:propertyCarousel
   source: Property Carousel (lightning__RecordPage)
   target: {kind: component, name: PropertyCarousel}
@@ -751,18 +751,18 @@ rows:
   source: Property Filter (lightning__AppPage)
   target: {kind: component, name: PropertyFilter}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: publishes FiltersChange -> propertyFilters store (URL search params searchKey, maxPrice, minBedrooms, minBathrooms)
+  notes: 'app/web/src/components/PropertyFilter/PropertyFilter.tsx: Search Key, Max Price (0-1200000 step 50000), Bedrooms, Bathrooms (0-6) + Reset, same labels/order; 350ms debounce then publish = usePropertyFilters().setFilters writes URL params searchKey, maxPrice, minBedrooms, minBathrooms (defaults omitted) so filters are linkable; data-testid property-filter*'
 - id: lwc:propertyListMap
   source: Property List Map (lightning__AppPage)
   target: {kind: component, name: PropertyListMap}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Leaflet (npm leaflet / react-leaflet) over GET /properties; subscribes propertyFilters, publishes selectedProperty
+  notes: 'app/web/src/components/PropertyListMap/PropertyListMap.tsx: Leaflet (react-leaflet MapView) centred 42.356045,-71.08565 zoom 13, first page of GET /properties for the URL filters, marker tooltip = name + beds/baths over the thumbnail, marker click -> selectProperty; query error -> Mantine notification "Error loading properties"; data-testid property-list-map, property-list-map-view (data-marker-count)'
 - id: lwc:propertyLocation
   source: Property Location (lightning__RecordPage)
   target: {kind: component, name: PropertyLocation}
@@ -775,34 +775,34 @@ rows:
   source: Property Map (lightning__AppPage, lightning__RecordPage)
   target: {kind: component, name: PropertyMap}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: lightning-map -> Leaflet marker; LDS getRecord -> GET /properties/{id}; subscribes selectedProperty
+  notes: 'app/web/src/components/PropertyMap/PropertyMap.tsx: subscribes the selected URL param; card title "Address, City", Leaflet MapView zoom 14 with one marker (popup Name / Address); empty "Select a property to see its location"; record from the selectedProperty store until GET /properties/{id} lands; data-testid property-map, property-map-address, property-map-view'
 - id: lwc:propertySummary
   source: Property Summary (lightning__AppPage, lightning__RecordPage)
   target: {kind: component, name: PropertySummary}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: LDS getRecord(Name, Picture, Beds, Baths, Price, Broker) -> GET /properties/{id}; subscribes selectedProperty; link to record page
+  notes: 'app/web/src/components/PropertySummary/PropertySummary.tsx: subscribes the selected URL param; name + picture + 2-column Beds/Baths/Price/Broker form, "Navigate to Record" -> /properties/:id; empty "Select a property to see details", error "Error retrieving data". Record = PropertySummaryDto from the selectedProperty store (Thumbnail__c as picture, Broker shown empty) until GET /properties/{id} lands (UNT3-19/UNT3-22); data-testid property-summary*'
 - id: lwc:propertyTile
   source: propertyTile (internal)
   target: {kind: component, name: PropertyTile}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: '@salesforce/client/formFactor -> Mantine useMediaQuery; emits selected'
+  notes: 'app/web/src/components/PropertyTile/PropertyTile.tsx: thumbnail tile "City • Name", "Beds: n - Baths: n", USD price; @salesforce/client/formFactor Small -> useMediaQuery(max-width 48em) navigates to /properties/:id, otherwise onSelected(id); data-testid property-tile (data-property-id), property-tile-title/-beds-baths/-price'
 - id: lwc:propertyTileList
   source: Property Tile List (lightning__AppPage)
   target: {kind: component, name: PropertyTileList}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: GET /properties with propertyFilters + Paginator; publishes selectedProperty
+  notes: 'app/web/src/components/PropertyTileList/PropertyTileList.tsx: GET /properties with the URL filters, pageSize 9, page reset to 1 on FiltersChange; PropertyTile grid + Paginator; error -> ErrorPanel "Error retrieving data"; tile selected -> selectProperty (URL param selected) and the records are remembered in the selectedProperty store; data-testid property-tile-list, property-tiles'
 - id: lwc:sampleDataImporter
   source: Sample Property Importer (lightning__AppPage)
   target: {kind: component, name: SampleDataImporter}
@@ -839,17 +839,18 @@ rows:
   source: salesforce/force-app/main/default/lwc/errorPanel/__tests__/errorPanel.test.js
   target: {kind: spec, name: app/web/src/components/ErrorPanel/ErrorPanel.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: default / custom friendly message, no details without errors, details after Show details, inline and illustration variants'
 - id: lwcTest:ldsUtils/ldsUtils.test.js
   source: salesforce/force-app/main/default/lwc/ldsUtils/__tests__/ldsUtils.test.js
   target: {kind: spec, name: app/web/src/lib/errors.test.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
+  notes: Vitest port of the 5 reduceErrors cases + Error instance / empty item case (app/web/src/lib/errors.test.ts)
 - id: lwcTest:navigateToRecord/navigateToRecord.test.js
   source: salesforce/force-app/main/default/lwc/navigateToRecord/__tests__/navigateToRecord.test.js
   target: {kind: spec, name: app/web/src/components/NavigateToRecord/NavigateToRecord.test.tsx}
@@ -862,10 +863,10 @@ rows:
   source: salesforce/force-app/main/default/lwc/paginator/__tests__/paginator.test.js
   target: {kind: spec, name: app/web/src/components/Paginator/Paginator.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: next/previous events, zero items, some items, max page offset'
 - id: lwcTest:propertyCarousel/propertyCarousel.test.js
   source: salesforce/force-app/main/default/lwc/propertyCarousel/__tests__/propertyCarousel.test.js
   target: {kind: spec, name: app/web/src/components/PropertyCarousel/PropertyCarousel.test.tsx}
@@ -878,18 +879,18 @@ rows:
   source: salesforce/force-app/main/default/lwc/propertyFilter/__tests__/propertyFilter.test.js
   target: {kind: spec, name: app/web/src/components/PropertyFilter/PropertyFilter.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: same 6 cases (search key, 3 sliders, reset publishes, reset restores defaults) asserting the published URL params after the 350ms debounce (fake timers)'
 - id: lwcTest:propertyListMap/propertyListMap.test.js
   source: salesforce/force-app/main/default/lwc/propertyListMap/__tests__/propertyListMap.test.js
   target: {kind: spec, name: app/web/src/components/PropertyListMap/PropertyListMap.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port with MapView mocked (like the Jest suite mocks Leaflet): filter subscription = URL params sent to GET /properties, map rendered, toast on query error, markers updated from properties, marker click publishes `selected`'
 - id: lwcTest:propertyLocation/propertyLocation.test.js
   source: salesforce/force-app/main/default/lwc/propertyLocation/__tests__/propertyLocation.test.js
   target: {kind: spec, name: app/web/src/components/PropertyLocation/PropertyLocation.test.tsx}
@@ -902,42 +903,42 @@ rows:
   source: salesforce/force-app/main/default/lwc/propertyMap/__tests__/propertyMap.test.js
   target: {kind: spec, name: app/web/src/components/PropertyMap/PropertyMap.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port with MapView mocked: error panel when nothing selected, map + marker + address title when a property is selected'
 - id: lwcTest:propertySummary/propertySummary.test.js
   source: salesforce/force-app/main/default/lwc/propertySummary/__tests__/propertySummary.test.js
   target: {kind: spec, name: app/web/src/components/PropertySummary/PropertySummary.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: error panel when nothing selected, error panel when the record cannot be resolved, record form when selected, Navigate to Record'
 - id: lwcTest:propertyTile/propertyTile.small.test.js
   source: salesforce/force-app/main/default/lwc/propertyTile/__tests__/propertyTile.small.test.js
   target: {kind: spec, name: app/web/src/components/PropertyTile/PropertyTile.small.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: matchMedia stub matching the small form factor -> click navigates to /properties/:id'
 - id: lwcTest:propertyTile/propertyTile.test.js
   source: salesforce/force-app/main/default/lwc/propertyTile/__tests__/propertyTile.test.js
   target: {kind: spec, name: app/web/src/components/PropertyTile/PropertyTile.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: displays property, background image, selected event on click (non-small form factor); jest-axe case not ported (no axe in the web toolchain)'
 - id: lwcTest:propertyTileList/propertyTileList.test.js
   source: salesforce/force-app/main/default/lwc/propertyTileList/__tests__/propertyTileList.test.js
   target: {kind: spec, name: app/web/src/components/PropertyTileList/PropertyTileList.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: 'Vitest + Testing Library port: same cases (renders tiles / error panel, filter subscription = URL params sent to GET /properties, tile selection publishes `selected`) with fetch mocked; fixture app/web/src/test/fixtures/pagedProperties.json = data/getPagedPropertyList.json in API shape'
 - id: lwcTest:sampleDataImporter/sampleDataImporter.test.js
   source: salesforce/force-app/main/default/lwc/sampleDataImporter/__tests__/sampleDataImporter.test.js
   target: {kind: spec, name: app/web/src/components/SampleDataImporter/SampleDataImporter.test.tsx}
@@ -950,10 +951,10 @@ rows:
   source: 'component: Three columns layout (Just one on mobile)'
   target: {kind: component, name: ThreeColumnLayout}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'app/web/src/components/layout/ThreeColumnLayout.tsx: Mantine Grid 2/7/3 columns, stacked on mobile; used by PropertyExplorerPage and PropertyFinderPage'
+  notes: 'app/web/src/components/layout/ThreeColumnLayout.tsx: Mantine Grid 2/7/3 columns from md up, one stacked column below; data-testid layout-left/-center/-right; used by PropertyExplorerPage and PropertyFinderPage'
 - id: flow:Create_property
   source: Create Property (Flow, 17 elements)
   target: {kind: route, name: /properties/new}
@@ -974,18 +975,18 @@ rows:
   source: Property Explorer (AppPage)
   target: {kind: route, name: /property-explorer}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'PropertyExplorerPage in ThreeColumnLayout: PropertyFilter + create-property link (flowruntime:interview) | PropertyTileList | PropertySummary + PropertyMap'
+  notes: 'app/web/src/pages/PropertyExplorerPage.tsx in ThreeColumnLayout: PropertyFilter + "Create Property" link to /properties/new (flowruntime:interview Create_property, UNT3-23) | PropertyTileList | PropertySummary + PropertyMap'
 - id: flexipage:Property_Finder
   source: Property Finder (AppPage)
   target: {kind: route, name: /property-finder}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'PropertyFinderPage in ThreeColumnLayout: BarcodeScanner + PropertyFilter | PropertyListMap | PropertySummary + DaysOnMarket'
+  notes: 'app/web/src/pages/PropertyFinderPage.tsx in ThreeColumnLayout: BarcodeScanner placeholder (UNT3-23) + PropertyFilter | PropertyListMap | PropertySummary + DaysOnMarket placeholder (UNT3-22)'
 - id: flexipage:Property_Record_Page
   source: Property Record Page (RecordPage for Property__c)
   target: {kind: route, name: '/properties/:id'}
@@ -1471,18 +1472,18 @@ rows:
   source: 'Filters Change Message Channel: searchKey, maxPrice, minBedrooms, minBathrooms'
   target: {kind: store, name: app/web/src/state/propertyFilters.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: searchKey, maxPrice, minBedrooms, minBathrooms as URL search params (useSearchParams) so filters are linkable; publish = setFilters, subscribe = useFilters
+  notes: 'app/web/src/state/propertyFilters.ts: searchKey, maxPrice, minBedrooms, minBathrooms as URL search params (useSearchParams, defaults omitted) so filters are linkable; publish = usePropertyFilters().setFilters / resetFilters, subscribe = usePropertyFilters().filters'
 - id: messageChannel:PropertySelected
   source: 'Property Selected Message Channel: propertyId'
   target: {kind: store, name: app/web/src/state/selectedProperty.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: propertyId in URL search param `selected` + small store; publish = selectProperty, subscribe = useSelectedProperty
+  notes: 'app/web/src/state/selectedProperty.ts: propertyId in URL search param `selected` + small useSyncExternalStore store of the PropertySummaryDto records the list/map loaded (rememberProperties); publish = useSelectedProperty().selectProperty, subscribe = useSelectedProperty().property'
 - id: remoteSiteSetting:nominatim_openstreetmap
   source: https://nominatim.openstreetmap.org
   target: {kind: env, name: GEOCODING_BASE_URL}
