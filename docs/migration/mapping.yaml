@@ -13,6 +13,12 @@ source:
     offline: sf project convert source  # 19 metadata types in package.xml
     lwc_tests: npm run test:unit         # 17 suites / 83 tests
     live: sf project deploy validate --source-dir force-app --test-level RunLocalTests
+  inventory:                             # UNT3-3: machine-readable inventory of every file under force-app
+    script: tools/inventory/inventory.py
+    json: docs/migration/inventory.json
+    summary: docs/migration/inventory.md
+    check: python3 tools/inventory/inventory.py --check   # CI job `inventory` in salesforce-source.yml
+    files_covered: 187                   # asserted == files under force-app; 0 unclassified
 
 target:
   api: app/api (TypeScript, NestJS + Prisma, PostgreSQL) on ECS Fargate + ALB

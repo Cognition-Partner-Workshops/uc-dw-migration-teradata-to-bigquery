@@ -43,3 +43,16 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run test:unit
+
+  inventory:
+    name: Salesforce artifact inventory (tools/inventory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests
+        run: python3 -m unittest tools/inventory/test_inventory.py
+      - name: Inventory covers force-app and committed outputs are current
+        run: python3 tools/inventory/inventory.py --check
