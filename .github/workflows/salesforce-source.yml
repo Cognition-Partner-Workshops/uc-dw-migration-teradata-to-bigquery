@@ -70,3 +70,17 @@ jobs:
         run: python3 -m unittest tools/mapping/test_mapping.py
       - name: Every inventory id is mapped exactly once, targets follow conventions, mapping.md is current
         run: python3 tools/mapping/mapping.py --check
+
+  schema-mapping:
+    name: Prisma schema ↔ field mapping (tools/schema)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "pyyaml>=6,<7"
+      - name: Unit tests
+        run: python3 -m unittest tools/schema/test_schema_mapping.py
+      - name: Every mapped column exists in schema.prisma and schema-mapping.md is current
+        run: python3 tools/schema/schema_mapping.py --check

@@ -41,7 +41,7 @@ rows:
   source: Broker (7 fields, sharing ReadWrite)
   target: {kind: table, name: brokers}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   notes: Prisma model Broker (@@map "brokers"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), audit columns; API module app/api/src/modules/brokers
@@ -49,7 +49,7 @@ rows:
   source: Property (25 fields, sharing ReadWrite)
   target: {kind: table, name: properties}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   notes: Prisma model Property (@@map "properties"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), owner_id/created_by/created_at/updated_at audit columns; API module app/api/src/modules/properties
@@ -57,14 +57,14 @@ rows:
   source: 'Broker Id (Number: 18,0)'
   target: {kind: column, name: brokers.broker_id, type: 'numeric(18,0)'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Broker__c.Email__c
   source: Email (Email)
   target: {kind: column, name: brokers.email, type: varchar(80)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   notes: format validated by class-validator @IsEmail
@@ -72,14 +72,14 @@ rows:
   source: Mobile Phone (Phone)
   target: {kind: column, name: brokers.mobile_phone, type: varchar(40)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Broker__c.Phone__c
   source: Phone (Phone)
   target: {kind: column, name: brokers.phone, type: varchar(40)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Broker__c.Picture_IMG__c
@@ -94,49 +94,49 @@ rows:
   source: Picture (Url)
   target: {kind: column, name: brokers.picture, type: varchar(255)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Broker__c.Title__c
   source: 'Title (Text: 30)'
   target: {kind: column, name: brokers.title, type: varchar(30)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Address__c
   source: 'Address (Text: 100)'
   target: {kind: column, name: properties.address, type: varchar(100)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Assessed_Value__c
   source: 'Assessed Value (Currency: 18,0)'
   target: {kind: column, name: properties.assessed_value, type: 'numeric(18,2)'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Baths__c
   source: 'Baths (Number: 2,0)'
   target: {kind: column, name: properties.baths, type: integer}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Beds__c
   source: 'Beds (Number: 2,0)'
   target: {kind: column, name: properties.beds, type: integer}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Broker__c
   source: 'Broker (Lookup: -> Broker__c)'
   target: {kind: column, name: properties.broker_id, type: uuid references brokers(id) on delete set null}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   notes: FK brokers(id), ON DELETE SET NULL (deleteConstraint SetNull); relationship Properties -> Prisma relation broker/properties; API exposes brokerId
@@ -144,35 +144,35 @@ rows:
   source: 'City (Text: 50)'
   target: {kind: column, name: properties.city, type: varchar(50)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Date_Agreement__c
   source: Date Agreement (Date)
   target: {kind: column, name: properties.date_agreement, type: date}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Date_Closed__c
   source: Date Closed (Date)
   target: {kind: column, name: properties.date_closed, type: date}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Date_Contracted__c
   source: Date Contracted (Date)
   target: {kind: column, name: properties.date_contracted, type: date}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Date_Listed__c
   source: Date Listed (Date)
   target: {kind: column, name: properties.date_listed, type: date}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   notes: default TODAY() - 10 applied in PropertiesService.create (not a DB default)
@@ -180,29 +180,30 @@ rows:
   source: Date Pre Market (Date)
   target: {kind: column, name: properties.date_pre_market, type: date}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Days_On_Market__c
   source: 'Days On Market (Number: formula)'
-  target: {kind: computed, name: PropertyDto.daysOnMarket, type: integer}
+  target: {kind: column, name: properties_v.days_on_market, type: integer}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
-  notes: 'TODAY() - Date_Listed__c is not immutable, so not a generated column: computed in PropertiesService from properties.date_listed (UTC date) and exposed on the DTO; also a SQL view column properties_v.days_on_market for the data reconciliation.'
+  convention_exception: Formula field -> column of the view properties_v (same name as the table column would have), not a stored column of properties.
+  notes: 'TODAY() - Date_Listed__c is not immutable, so not a generated column: view properties_v (prisma/migrations) exposes days_on_market = CURRENT_DATE - date_listed (0 when null, formulaTreatBlanksAs BlankAsZero); PropertiesService (UNT3-16) computes the same value as PropertyDto.daysOnMarket.'
 - id: field:Property__c.Description__c
   source: 'Description (LongTextArea: 500)'
   target: {kind: column, name: properties.description, type: text}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Location__c
   source: Location (Location)
   target: {kind: column, name: properties.location_latitude, type: 'numeric(10,7)'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   convention_exception: 'Compound Geolocation field -> two columns: properties.location_latitude and properties.location_longitude (Salesforce exposes them as Location__Latitude__s / Location__Longitude__s).'
@@ -218,21 +219,21 @@ rows:
   source: Picture (Url)
   target: {kind: column, name: properties.picture, type: varchar(255)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Price_Sold__c
   source: 'Price Sold (Currency: 8,0)'
   target: {kind: column, name: properties.price_sold, type: 'numeric(18,2)'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Price__c
   source: 'Asking Price (Currency: 8,0)'
   target: {kind: column, name: properties.price, type: 'numeric(18,2)'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Record_Link__c
@@ -247,14 +248,14 @@ rows:
   source: 'State (Text: 20)'
   target: {kind: column, name: properties.state, type: varchar(20)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Status__c
   source: 'Status (Picklist: Contracted/Pre Market/Available/Under Agreement/Closed)'
   target: {kind: column, name: properties.status, type: property_status (enum)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   notes: restricted picklist -> Postgres enum property_status (Contracted, Pre Market, Available, Under Agreement, Closed); API validates with class-validator @IsEnum
@@ -262,7 +263,7 @@ rows:
   source: 'Tags (Text: 255)'
   target: {kind: column, name: properties.tags, type: varchar(255)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Thumbnail_IMG__c
@@ -277,14 +278,14 @@ rows:
   source: Thumbnail (Url)
   target: {kind: column, name: properties.thumbnail, type: varchar(255)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: field:Property__c.Zip__c
   source: 'Zip (Text: 10)'
   target: {kind: column, name: properties.zip, type: varchar(10)}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
 - id: listView:Broker__c.All
@@ -331,7 +332,7 @@ rows:
   source: used by Dreamhouse (tab standard-Contact), SampleDataController (DML), SampleDataController (SOQL), TestSampleDataController (SOQL)
   target: {kind: table, name: contacts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-11
   parity_tests: []
   notes: 'Sample data only (sample_data_contacts, standard-Contact tab). Prisma model Contact: id, sf_id, first_name, last_name, email, phone, mobile_phone, title, mailing_* columns; API module app/api/src/modules/contacts'

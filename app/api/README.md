@@ -44,6 +44,11 @@ Useful scripts:
 | `npm run prisma:migrate` | `prisma migrate dev` — create/apply a migration locally |
 | `npm run prisma:deploy` | `prisma migrate deploy` — apply committed migrations (CI/CD, ECS one-off task) |
 
+CI applies the committed migrations to an empty `postgres:16` service and fails on drift between
+`schema.prisma` and the migrations (`prisma migrate diff --from-config-datasource --to-schema ... --exit-code`).
+The field-by-field Salesforce → column mapping is generated into
+[`docs/migration/schema-mapping.md`](../../docs/migration/schema-mapping.md) by `tools/schema/schema_mapping.py`.
+
 A local Postgres for development: `docker run -d --name dreamhouse-pg -e POSTGRES_USER=dreamhouse -e POSTGRES_PASSWORD=dreamhouse -e POSTGRES_DB=dreamhouse -p 5432:5432 postgres:16-alpine`
 (the docker-compose stack is ticket UNT3-8). The [`Dockerfile`](Dockerfile) builds the Fargate image.
 
@@ -91,8 +96,8 @@ src/
     sample-data/             SampleDataController (+ TestSampleDataController), sample_data_* static resources
   generated/prisma/          generated Prisma client (git-ignored; `prisma generate`)
 prisma/
-  schema.prisma              models are added by UNT3-11 (object model translation)
-  migrations/                Prisma Migrate history (snake_case SQL)
+  schema.prisma              Broker / Property / Contact models + PropertyStatus enum (snake_case via @@map/@map)
+  migrations/                Prisma Migrate history: generated DDL + hand-written CHECKs, properties_v view, updated_at trigger
 openapi/openapi.json         exported spec (kept in sync by CI)
 test/                        HTTP tests (supertest) and config tests
 ```
