@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Anchor,
   Card,
   Center,
   Group,
@@ -10,10 +11,10 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { useIsFetching } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { IconArrowsMaximize } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
-import { queryKeys } from '@/api/queries';
+import { Link, useNavigate } from 'react-router-dom';
+import { brokerQuery, propertyQuery } from '@/api/queries';
 import { ErrorPanel } from '@/components/ErrorPanel/ErrorPanel';
 import { formatCurrency } from '@/lib/format';
 import { useSelectedProperty } from '@/state/selectedProperty';
@@ -32,7 +33,9 @@ function Field({
       <Text size="xs" c="dimmed">
         {label}
       </Text>
-      <Text size="sm">{value}</Text>
+      <Text size="sm" component="div">
+        {value}
+      </Text>
     </Stack>
   );
 }
@@ -42,19 +45,41 @@ function Field({
  * the selected property (subscribes `PropertySelected` via the `selected` URL param), with the
  * "Navigate to Record" action; empty and error states keep the LWC messages.
  *
- * Until GET /properties/{id} lands (UNT3-19/22) the record is the `PropertySummaryDto` the list
- * or map loaded: the picture is `Thumbnail__c` and `Broker__c` is not part of that DTO.
+ * LDS `getRecord` becomes GET /properties/{id}; the `Broker__c` lookup the record form rendered
+ * is resolved with GET /brokers/{id}. While the record loads, the `PropertySummaryDto` the list
+ * or map already holds for that id (selectedProperty store) stands in, so a tile or marker click
+ * paints immediately as on Salesforce (LDS cache).
  */
 export function PropertySummary() {
   const navigate = useNavigate();
-  const { propertyId, property } = useSelectedProperty();
-  const isLoadingProperties = useIsFetching({ queryKey: queryKeys.properties().slice(0, 1) }) > 0;
+  const { propertyId, property: rememberedProperty } = useSelectedProperty();
+  const recordQuery = useQuery(propertyQuery(propertyId ?? ''));
+  const record = recordQuery.data;
+  const brokerId = record?.brokerId ?? '';
+  const broker = useQuery(brokerQuery(brokerId));
 
+  const property = record ?? rememberedProperty;
   const hasNoPropertyId = !propertyId;
-  const error =
-    propertyId && !property && !isLoadingProperties
-      ? { message: `Property ${propertyId} is not part of the loaded results` }
-      : undefined;
+  const error = recordQuery.error ?? undefined;
+
+  const brokerValue = !record ? (
+    ''
+  ) : !record.brokerId ? (
+    '—'
+  ) : broker.data ? (
+    <Anchor
+      component={Link}
+      to={`/brokers/${broker.data.id}`}
+      size="sm"
+      data-testid="property-summary-broker-link"
+    >
+      {broker.data.name}
+    </Anchor>
+  ) : broker.isError ? (
+    '—'
+  ) : (
+    '…'
+  );
 
   return (
     <Card
@@ -63,7 +88,7 @@ export function PropertySummary() {
       data-testid="property-summary"
       data-property-id={propertyId ?? ''}
     >
-      {property && (
+      {property && !error && (
         <>
           <Card.Section withBorder inheritPadding py="xs">
             <Group justify="space-between" wrap="nowrap">
@@ -82,7 +107,7 @@ export function PropertySummary() {
           </Card.Section>
           <Stack gap="sm" mt="md">
             <Image
-              src={property.thumbnail ?? undefined}
+              src={record?.picture ?? property.thumbnail ?? undefined}
               alt="Property picture"
               radius="sm"
               fit="cover"
@@ -97,7 +122,7 @@ export function PropertySummary() {
                 value={formatCurrency(property.price)}
                 testId="property-summary-price"
               />
-              <Field label="Broker" value="—" testId="property-summary-broker" />
+              <Field label="Broker" value={brokerValue} testId="property-summary-broker" />
             </SimpleGrid>
           </Stack>
         </>

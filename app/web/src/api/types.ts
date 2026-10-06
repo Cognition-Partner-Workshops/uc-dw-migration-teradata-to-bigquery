@@ -4,6 +4,7 @@ export type Schemas = components['schemas'];
 
 export type HealthDto = Schemas['HealthDto'];
 export type PropertySummaryDto = Schemas['PropertySummaryDto'];
+export type PropertyDto = Schemas['PropertyDto'];
 export type PagedPropertiesDto = Schemas['PagedPropertiesDto'];
 export type PropertyPictureDto = Schemas['PropertyPictureDto'];
 export type BrokerDto = Schemas['BrokerDto'];

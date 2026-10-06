@@ -786,7 +786,7 @@ rows:
   status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'app/web/src/components/PropertySummary/PropertySummary.tsx: subscribes the selected URL param; name + picture + 2-column Beds/Baths/Price/Broker form, "Navigate to Record" -> /properties/:id; empty "Select a property to see details", error "Error retrieving data". Record = PropertySummaryDto from the selectedProperty store (Thumbnail__c as picture, Broker shown empty) until GET /properties/{id} lands (UNT3-19/UNT3-22); data-testid property-summary*'
+  notes: 'app/web/src/components/PropertySummary/PropertySummary.tsx: subscribes the selected URL param; name + picture + 2-column Beds/Baths/Price/Broker form, "Navigate to Record" -> /properties/:id; empty "Select a property to see details", error "Error retrieving data". getRecord -> GET /properties/{id} (propertyQuery; Picture__c), Broker__c lookup -> GET /brokers/{id} (brokerQuery, links /brokers/:id); the PropertySummaryDto already in the selectedProperty store paints while the record loads; data-testid property-summary*'
 - id: lwc:propertyTile
   source: propertyTile (internal)
   target: {kind: component, name: PropertyTile}
