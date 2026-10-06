@@ -1,17 +1,43 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
-import { ApiNotImplementedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { ApiErrorDto } from '../../common/errors/api-error.dto';
 import { BrokersService } from './brokers.service';
-import { BrokerDto } from './dto/broker.dto';
+import { BrokerDto, CreateBrokerDto, UpdateBrokerDto } from './dto/broker.dto';
 
+/**
+ * Explicit CRUD for `Broker__c` — what Lightning Data Service and the Broker record page
+ * did implicitly (policy.brokers.crud in docs/migration/mapping.yaml).
+ */
 @ApiTags('brokers')
 @Controller('brokers')
 export class BrokersController {
   constructor(private readonly brokers: BrokersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List brokers', description: 'Replaces the Broker__c list view / tab.' })
+  @ApiOperation({
+    summary: 'List brokers',
+    description: 'Broker__c tab (list view), ordered by name.',
+  })
   @ApiOkResponse({ type: BrokerDto, isArray: true })
-  @ApiNotImplementedResponse({ description: 'Not ported yet (UNT3-19)' })
   findAll(): Promise<BrokerDto[]> {
     return this.brokers.findAll();
   }
@@ -19,11 +45,43 @@ export class BrokersController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get a broker',
-    description: 'Replaces `lightning/uiRecordApi getRecord` on Broker__c (brokerCard LWC).',
+    description: 'LDS `getRecord` as used by the brokerCard LWC / Broker_Record_Page.',
   })
   @ApiOkResponse({ type: BrokerDto })
-  @ApiNotImplementedResponse({ description: 'Not ported yet (UNT3-19)' })
+  @ApiNotFoundResponse({ description: 'No broker with this id' })
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<BrokerDto> {
     return this.brokers.findOne(id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Create a broker', description: 'LDS `createRecord(Broker__c)`.' })
+  @ApiCreatedResponse({ type: BrokerDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto, description: 'Field errors (output.fieldErrors)' })
+  create(@Body() body: CreateBrokerDto): Promise<BrokerDto> {
+    return this.brokers.create(body);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a broker', description: 'LDS `updateRecord(Broker__c)`.' })
+  @ApiOkResponse({ type: BrokerDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto, description: 'Field errors (output.fieldErrors)' })
+  @ApiNotFoundResponse({ description: 'No broker with this id' })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateBrokerDto,
+  ): Promise<BrokerDto> {
+    return this.brokers.update(id, body);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete a broker',
+    description: 'LDS `deleteRecord(Broker__c)`; properties keep existing with brokerId cleared.',
+  })
+  @ApiNoContentResponse({ description: 'Deleted' })
+  @ApiNotFoundResponse({ description: 'No broker with this id' })
+  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.brokers.remove(id);
   }
 }

@@ -5,12 +5,13 @@ Parity harness of the Salesforce → React + NestJS/Postgres migration. Today it
 same behaviour against the target API (plan step s4.1, ticket UNT3-15). The Playwright E2E
 scenarios that run live against both apps land here with UNT3-24.
 
-| Apex test class (`salesforce/force-app/main/default/classes`) | Spec                                                                                                 | Target surface                                     | Turns green with |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------- |
-| `TestPropertyController`                                      | [`characterisation/property-controller.spec.ts`](characterisation/property-controller.spec.ts)       | `GET /properties`, `GET /properties/{id}/pictures` | UNT3-16          |
-| `GeocodingServiceTest`                                        | [`characterisation/geocoding-service.spec.ts`](characterisation/geocoding-service.spec.ts)           | `POST /geocoding/addresses`                        | UNT3-17          |
-| `FileUtilitiesTest`                                           | [`characterisation/file-utilities.spec.ts`](characterisation/file-utilities.spec.ts)                 | `POST /files`                                      | UNT3-18          |
-| `TestSampleDataController`                                    | [`characterisation/sample-data-controller.spec.ts`](characterisation/sample-data-controller.spec.ts) | `POST /sample-data/import`                         | UNT3-18          |
+| Apex test class (`salesforce/force-app/main/default/classes`)                                                                  | Spec                                                                                                 | Target surface                                                              | Turns green with |
+| ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------- |
+| `TestPropertyController`                                                                                                       | [`characterisation/property-controller.spec.ts`](characterisation/property-controller.spec.ts)       | `GET /properties`, `GET /properties/{id}/pictures`                          | UNT3-16          |
+| `GeocodingServiceTest`                                                                                                         | [`characterisation/geocoding-service.spec.ts`](characterisation/geocoding-service.spec.ts)           | `POST /geocoding/addresses`                                                 | UNT3-17          |
+| `FileUtilitiesTest`                                                                                                            | [`characterisation/file-utilities.spec.ts`](characterisation/file-utilities.spec.ts)                 | `POST /files`                                                               | UNT3-18          |
+| `TestSampleDataController`                                                                                                     | [`characterisation/sample-data-controller.spec.ts`](characterisation/sample-data-controller.spec.ts) | `POST /sample-data/import`                                                  | UNT3-18          |
+| `Create_property` flow (no Apex test; baseline fixture [`fixtures/create-property-flow.ts`](fixtures/create-property-flow.ts)) | [`characterisation/create-property-flow.spec.ts`](characterisation/create-property-flow.spec.ts)     | `POST /properties` (+ `GET/PATCH/DELETE /properties/{id}`, `/brokers` CRUD) | UNT3-19          |
 
 Each `spec('<apexTestMethod>', …)` carries the Apex method and line of every fixture, call and
 assertion as a comment (`// line 70: Assert.areEqual(5, result.records.size())`), so a failing
@@ -38,8 +39,9 @@ until then, so:
 - `npm run test:all` (`PARITY_RUN_ALL=1`, `make characterise`, the informational CI step) runs
   everything and shows the current red baseline.
 
-A port ticket (UNT3-16/17/18) adds itself to `PORTED_TICKETS`; from then on its suite is a
-required check. Live today: `TestPropertyController` (UNT3-16).
+A port ticket (UNT3-16/17/18/19) adds itself to `PORTED_TICKETS`; from then on its suite is a
+required check. Live today: `TestPropertyController` (UNT3-16), `GeocodingServiceTest` (UNT3-17),
+`Create_property` flow baseline (UNT3-19).
 
 ## Running locally
 
