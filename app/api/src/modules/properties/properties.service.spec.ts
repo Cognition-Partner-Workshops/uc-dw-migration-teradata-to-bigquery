@@ -44,6 +44,13 @@ describe('PropertiesService.searchWhere (PropertyController.cls lines 37-47 / 62
       PropertiesService.searchWhere(query({ maxPrice: 500000, minBedrooms: 2, minBathrooms: 1 })),
     ).toMatchObject({ price: { lte: 500000 }, beds: { gte: 2 }, baths: { gte: 1 } });
   });
+
+  it('narrows to one broker only when brokerId is given (Properties__r related list)', () => {
+    expect(PropertiesService.searchWhere(query())).not.toHaveProperty('brokerId');
+    expect(
+      PropertiesService.searchWhere(query({ brokerId: '22222222-2222-4222-8222-222222222222' })),
+    ).toMatchObject({ brokerId: '22222222-2222-4222-8222-222222222222' });
+  });
 });
 
 describe('PropertiesService.getPagedPropertyList', () => {

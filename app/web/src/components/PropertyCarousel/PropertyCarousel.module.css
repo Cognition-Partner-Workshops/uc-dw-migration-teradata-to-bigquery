@@ -1,0 +1,25 @@
+.previous,
+.next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.previous {
+  left: 8px;
+}
+
+.next {
+  right: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--mantine-color-gray-4);
+}
+
+.dotActive {
+  background-color: var(--mantine-color-dreamhouse-6, var(--mantine-primary-color-filled));
+}
