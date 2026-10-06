@@ -177,6 +177,75 @@
         ]
       }
     },
+    "/geocoding/addresses": {
+      "post": {
+        "description": "Port of `@InvocableMethod GeocodingService.geocodeAddresses` (called from the Create_property flow). Returns one Coordinates entry per input address, in order; `{lat: null, lon: null}` for a blank address, an unknown address or an upstream failure (the Apex callout swallowed non-200 answers).",
+        "operationId": "geocoding_geocodeAddresses",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeocodeAddressesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoordinatesDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Geocode one or more addresses",
+        "tags": [
+          "geocoding"
+        ]
+      }
+    },
+    "/geocode": {
+      "post": {
+        "description": "Single-address form of `geocodeAddresses` for the UI (Create_property wizard address screen). Nominatim (OpenStreetMap) usage policy applies: requests are spaced 1/s and results are cached server-side.",
+        "operationId": "geocoding_geocode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeocodingAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoordinatesDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Geocode a single address",
+        "tags": [
+          "geocoding"
+        ]
+      }
+    },
     "/brokers": {
       "get": {
         "description": "Replaces the Broker__c list view / tab.",
@@ -302,45 +371,6 @@
         "summary": "Upload a file and link it to a record",
         "tags": [
           "files"
-        ]
-      }
-    },
-    "/geocoding/addresses": {
-      "post": {
-        "description": "Port of `@InvocableMethod GeocodingService.geocodeAddresses` (called from the Create_property flow). Returns one Coordinates entry per input address, in order.",
-        "operationId": "geocoding_geocodeAddresses",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GeocodeAddressesDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CoordinatesDto"
-                  }
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Not ported yet (UNT3-17)"
-          }
-        },
-        "summary": "Geocode one or more addresses",
-        "tags": [
-          "geocoding"
         ]
       }
     },
@@ -589,6 +619,53 @@
           "url"
         ]
       },
+      "GeocodingAddressDto": {
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "postalcode": {
+            "type": "string"
+          }
+        }
+      },
+      "GeocodeAddressesDto": {
+        "type": "object",
+        "properties": {
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeocodingAddressDto"
+            }
+          }
+        },
+        "required": [
+          "addresses"
+        ]
+      },
+      "CoordinatesDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "object",
+            "nullable": true
+          },
+          "lon": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
       "BrokerDto": {
         "type": "object",
         "properties": {
@@ -700,53 +777,6 @@
           "id",
           "url"
         ]
-      },
-      "GeocodingAddressDto": {
-        "type": "object",
-        "properties": {
-          "street": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "state": {
-            "type": "string"
-          },
-          "country": {
-            "type": "string"
-          },
-          "postalcode": {
-            "type": "string"
-          }
-        }
-      },
-      "GeocodeAddressesDto": {
-        "type": "object",
-        "properties": {
-          "addresses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GeocodingAddressDto"
-            }
-          }
-        },
-        "required": [
-          "addresses"
-        ]
-      },
-      "CoordinatesDto": {
-        "type": "object",
-        "properties": {
-          "lat": {
-            "type": "object",
-            "nullable": true
-          },
-          "lon": {
-            "type": "object",
-            "nullable": true
-          }
-        }
       },
       "SampleDataImportResultDto": {
         "type": "object",

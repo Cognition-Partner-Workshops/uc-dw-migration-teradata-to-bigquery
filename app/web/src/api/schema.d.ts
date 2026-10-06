@@ -78,6 +78,26 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    "/geocode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Geocode a single address
+         * @description Single-address form of `geocodeAddresses` for the UI (Create_property wizard address screen). Nominatim (OpenStreetMap) usage policy applies: requests are spaced 1/s and results are cached server-side.
+         */
+        post: operations["geocoding_geocode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/geocoding/addresses": {
         parameters: {
             query?: never;
@@ -89,7 +109,7 @@ export type paths = {
         put?: never;
         /**
          * Geocode one or more addresses
-         * @description Port of `@InvocableMethod GeocodingService.geocodeAddresses` (called from the Create_property flow). Returns one Coordinates entry per input address, in order.
+         * @description Port of `@InvocableMethod GeocodingService.geocodeAddresses` (called from the Create_property flow). Returns one Coordinates entry per input address, in order; `{lat: null, lon: null}` for a blank address, an unknown address or an upstream failure (the Apex callout swallowed non-200 answers).
          */
         post: operations["geocoding_geocodeAddresses"];
         delete?: never;
@@ -468,6 +488,29 @@ export interface operations {
             };
         };
     };
+    geocoding_geocode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeocodingAddressDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoordinatesDto"];
+                };
+            };
+        };
+    };
     geocoding_geocodeAddresses: {
         parameters: {
             query?: never;
@@ -488,13 +531,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CoordinatesDto"][];
                 };
-            };
-            /** @description Not ported yet (UNT3-17) */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

@@ -18,7 +18,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 ## Summary
 
 - Rows: **200** (inventory ids: 200)
-- Status: mapped **129**, ported **65**, tested **0**, passing **0**, dropped **6**
+- Status: mapped **125**, ported **69**, tested **0**, passing **0**, dropped **6**
 - Disposition: port **174**, substitute **20**, dropped **6**
 - Rows with parity tests: **0**
 
@@ -29,9 +29,9 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | List views | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 | Compact layouts | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 | Standard objects referenced | 10 | 5 | 4 | 0 | 0 | 1 | 5 |
-| Apex classes | 9 | 4 | 5 | 0 | 0 | 0 | 0 |
+| Apex classes | 9 | 3 | 6 | 0 | 0 | 0 | 0 |
 | Apex inner classes | 4 | 0 | 4 | 0 | 0 | 0 | 2 |
-| Apex methods | 23 | 9 | 14 | 0 | 0 | 0 | 2 |
+| Apex methods | 23 | 8 | 15 | 0 | 0 | 0 | 2 |
 | Lightning Web Components | 17 | 16 | 0 | 0 | 0 | 1 | 1 |
 | LWC jest tests | 17 | 17 | 0 | 0 | 0 | 0 | 0 |
 | Aura bundles | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
@@ -45,9 +45,9 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | Static resources | 4 | 3 | 1 | 0 | 0 | 0 | 1 |
 | Content assets | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
 | Lightning message channels | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| Remote site settings | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| Remote site settings | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
 | CSP trusted sites | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| External callouts | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| External callouts | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
 | In-app guidance prompts | 3 | 0 | 0 | 0 | 0 | 3 | 0 |
 | Jest mock modules | 8 | 7 | 0 | 0 | 0 | 1 | 5 |
 
@@ -130,8 +130,8 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `apexClass:FileUtilities` | class, with sharing, 1 methods | service `FilesService` | port | mapped | UNT3-18 | — | app/api/src/modules/files/files.service.ts |
 | `apexClass:FileUtilitiesTest` | test class, with sharing, 4 methods | spec `tests/parity/characterisation/file-utilities.spec.ts` | port | ported | UNT3-15 | — | Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now; unit variant app/api/src/modules/files/files.service.spec.ts |
-| `apexClass:GeocodingService` | class, with sharing, 1 methods | service `GeocodingService` | port | mapped | UNT3-17 | — | app/api/src/modules/geocoding/geocoding.service.ts |
-| `apexClass:GeocodingServiceTest` | test class, with sharing, 3 methods | spec `tests/parity/characterisation/geocoding-service.spec.ts` | port | ported | UNT3-15 | — | Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-17 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now |
+| `apexClass:GeocodingService` | class, with sharing, 1 methods | service `GeocodingService` | port | ported | UNT3-17 | — | app/api/src/modules/geocoding/geocoding.service.ts (geocodeAddresses + single-address geocodeAddress for the properties module; in-process result cache GEOCODING_CACHE_TTL_SECONDS/GEOCODING_CACHE_MAX_ENTRIES) over nominatim.client.ts (typed fetch, User-Agent, timeout, retry, 1 req/s); unit specs geocoding.service.spec.ts + nominatim.client.spec.ts; live smoke geocoding.live.spec.ts behind GEOCODING_LIVE_SMOKE=1 |
+| `apexClass:GeocodingServiceTest` | test class, with sharing, 3 methods | spec `tests/parity/characterisation/geocoding-service.spec.ts` | port | ported | UNT3-15 | — | Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); active since UNT3-17 listed itself in tests/parity/characterisation/harness/ported.ts (Nominatim mocked with MSW) |
 | `apexClass:PagedResult` | class, with sharing, 0 methods | dto `PagedResultDto` | port | ported | UNT3-6 | — | app/api/src/common/dto/paged-result.dto.ts (pageSize, pageNumber, totalItemCount, records) |
 | `apexClass:PropertyController` | class, with sharing, 2 methods | service `PropertiesService` | port | mapped | UNT3-16 | — | app/api/src/modules/properties/properties.service.ts; HTTP surface in properties.controller.ts |
 | `apexClass:SampleDataController` | class, with sharing, 5 methods | service `SampleDataService` | port | mapped | UNT3-18 | — | app/api/src/modules/sample-data/sample-data.service.ts |
@@ -156,7 +156,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectRecordId` | @isTest void createFileFailsWhenIncorrectRecordId() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectRecordId` | port | ported | UNT3-15 | — |  |
 | `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectBase64Data` | @isTest void createFileFailsWhenIncorrectBase64Data() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectBase64Data` | port | ported | UNT3-15 | — |  |
 | `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectFilename` | @isTest void createFileFailsWhenIncorrectFilename() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectFilename` | port | ported | UNT3-15 | — |  |
-| `apexMethod:GeocodingService.geocodeAddresses` | @InvocableMethod List<Coordinates> geocodeAddresses(List<GeocodingAddress> addresses) | endpoint `POST /geocoding/addresses` | port | mapped | UNT3-17 | — | GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim GET per address with the non-blank fields as query params; blank address -> {lat:null, lon:null} without a callout; upstream non-200 -> {lat:null, lon:null} with HTTP 200 (Apex swallows the error, pinned by geocoding-service.spec.ts::errorResponse) |
+| `apexMethod:GeocodingService.geocodeAddresses` | @InvocableMethod List<Coordinates> geocodeAddresses(List<GeocodingAddress> addresses) | endpoint `POST /geocoding/addresses` | port | ported | UNT3-17 | — | GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim GET per address with the non-blank fields as query params; blank address -> {lat:null, lon:null} without a callout; upstream non-200 / no match -> {lat:null, lon:null} with HTTP 200 (Apex swallows the error, pinned by geocoding-service.spec.ts::errorResponse). Single-address UI form POST /geocode (GeocodingAddressDto -> CoordinatesDto) |
 | `apexMethod:GeocodingServiceTest.successResponse` | @isTest void successResponse() | spec `tests/parity/characterisation/geocoding-service.spec.ts::successResponse` | port | ported | UNT3-15 | — |  |
 | `apexMethod:GeocodingServiceTest.blankAddress` | @isTest void blankAddress() | spec `tests/parity/characterisation/geocoding-service.spec.ts::blankAddress` | port | ported | UNT3-15 | — |  |
 | `apexMethod:GeocodingServiceTest.errorResponse` | @isTest void errorResponse() | spec `tests/parity/characterisation/geocoding-service.spec.ts::errorResponse` | port | ported | UNT3-15 | — |  |
@@ -345,7 +345,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `remoteSiteSetting:nominatim_openstreetmap` | https://nominatim.openstreetmap.org | env `GEOCODING_BASE_URL` | port | mapped | UNT3-17 | — | app/api/src/config/config.schema.ts (default https://nominatim.openstreetmap.org); egress allowed by the ECS task security group in infra/ |
+| `remoteSiteSetting:nominatim_openstreetmap` | https://nominatim.openstreetmap.org | env `GEOCODING_BASE_URL` | port | ported | UNT3-17 | — | app/api/src/config/config.schema.ts (default https://nominatim.openstreetmap.org/search?format=json) read by nominatim.client.ts; Apex `http-referer` -> optional GEOCODING_REFERER; egress allowed by the ECS task security group in infra/ |
 
 ## CSP trusted sites
 
@@ -358,7 +358,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `callout:GeocodingService.geocodeAddresses` | http https://nominatim.openstreetmap.org/search?format=json | httpClient `GeocodingService.geocodeAddresses` | port | mapped | UNT3-17 | — | Node fetch GET {GEOCODING_BASE_URL}/search?format=json&street=&city=&state=&country=&postalcode= with User-Agent header; 10s timeout; mocked in specs |
+| `callout:GeocodingService.geocodeAddresses` | http https://nominatim.openstreetmap.org/search?format=json | httpClient `GeocodingService.geocodeAddress` | port | ported | UNT3-17 | — | GeocodingService.geocodeAddress -> NominatimClient.search (app/api/src/modules/geocoding/nominatim.client.ts) — Node fetch GET {GEOCODING_BASE_URL}&street=&city=&state=&country=&postalcode= with GEOCODING_USER_AGENT (Nominatim usage policy); GEOCODING_TIMEOUT_MS (10s) via AbortController; GEOCODING_MAX_RETRIES (2) with back-off on network errors/timeouts/429/5xx only; process-wide limiter GEOCODING_MIN_INTERVAL_MS (1 req/s); mocked with MSW in the characterisation spec and vi.fn() fetch in nominatim.client.spec.ts; live smoke geocoding.live.spec.ts behind GEOCODING_LIVE_SMOKE=1 |
 
 ## In-app guidance prompts
 
