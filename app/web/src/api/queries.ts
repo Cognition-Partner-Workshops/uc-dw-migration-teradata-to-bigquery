@@ -65,3 +65,39 @@ export const propertyPicturesQuery = (propertyId: string) =>
     staleTime: CACHEABLE_STALE_TIME,
     enabled: propertyId.length > 0,
   });
+
+/** LDS `getRecord` on Property__c (propertySummary / propertyMap's `@wire`): GET /properties/{id}. */
+export const propertyQuery = (propertyId: string) =>
+  queryOptions({
+    queryKey: queryKeys.property(propertyId),
+    queryFn: async ({ signal }) => {
+      const { data, response } = await api.GET('/properties/{id}', {
+        params: { path: { id: propertyId } },
+        signal,
+      });
+      if (!response.ok || !data) {
+        throw new Error(`Loading property ${propertyId} failed (${response.status})`);
+      }
+      return data;
+    },
+    staleTime: CACHEABLE_STALE_TIME,
+    enabled: propertyId.length > 0,
+  });
+
+/** LDS `getRecord` on Broker__c (the `Broker__c` lookup of a record form): GET /brokers/{id}. */
+export const brokerQuery = (brokerId: string) =>
+  queryOptions({
+    queryKey: queryKeys.broker(brokerId),
+    queryFn: async ({ signal }) => {
+      const { data, response } = await api.GET('/brokers/{id}', {
+        params: { path: { id: brokerId } },
+        signal,
+      });
+      if (!response.ok || !data) {
+        throw new Error(`Loading broker ${brokerId} failed (${response.status})`);
+      }
+      return data;
+    },
+    staleTime: CACHEABLE_STALE_TIME,
+    enabled: brokerId.length > 0,
+  });

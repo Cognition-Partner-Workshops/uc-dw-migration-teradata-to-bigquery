@@ -1,0 +1,46 @@
+.link {
+  display: block;
+  min-width: 220px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--mantine-radius-sm);
+  overflow: hidden;
+}
+
+.link:hover {
+  box-shadow: 4px 5px 5px #9d9fa0;
+}
+
+.tile {
+  position: relative;
+  height: 220px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: var(--mantine-color-gray-2);
+}
+
+.lowerThird {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: var(--mantine-color-white);
+}
+
+.lowerThird p {
+  margin: 0;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.truncate {
+  margin: 0;
+  font-size: var(--mantine-font-size-md);
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
