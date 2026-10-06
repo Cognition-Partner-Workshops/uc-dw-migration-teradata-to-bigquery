@@ -45,9 +45,9 @@ describe('AppShell', () => {
   it('Home tiles follow the same group filter as the navigation', async () => {
     renderApp({ initialPath: '/', authClient: await signedInStubClient() });
     await screen.findByRole('navigation', { name: 'Dreamhouse tabs' });
-    expect(screen.getByRole('link', { name: /Property Explorer/ })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Settings/ })).not.toBeInTheDocument();
+    // nav link + Home tile for a dreamhouse tab, neither for Settings
+    expect(screen.getAllByRole('link', { name: /Property Explorer/ })).toHaveLength(2);
+    expect(screen.queryAllByRole('link', { name: /Settings/ })).toHaveLength(0);
   });
 
   it('renders every tab, Settings included, for the dreamhouse-admin group', async () => {
