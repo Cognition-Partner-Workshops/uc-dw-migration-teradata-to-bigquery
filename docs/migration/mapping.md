@@ -18,7 +18,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 ## Summary
 
 - Rows: **200** (inventory ids: 200)
-- Status: mapped **122**, ported **72**, tested **0**, passing **0**, dropped **6**
+- Status: mapped **120**, ported **74**, tested **0**, passing **0**, dropped **6**
 - Disposition: port **174**, substitute **20**, dropped **6**
 - Rows with parity tests: **0**
 
@@ -46,7 +46,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | Content assets | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
 | Lightning message channels | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 | Remote site settings | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
-| CSP trusted sites | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
+| CSP trusted sites | 2 | 0 | 2 | 0 | 0 | 0 | 0 |
 | External callouts | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
 | In-app guidance prompts | 3 | 0 | 0 | 0 | 0 | 3 | 0 |
 | Jest mock modules | 8 | 7 | 0 | 0 | 0 | 1 | 5 |
@@ -351,8 +351,8 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `cspTrustedSite:openStreetMap` | https://tile.openstreetmap.org (ImgSrc) | infra `infra/modules/web/cloudfront.tf::response_headers_policy.img-src` | port | mapped | UNT3-9 | — | CSP img-src https://tile.openstreetmap.org (and connect-src for tile fetches) on the CloudFront response headers policy |
-| `cspTrustedSite:s3_us_west_2_amazonaws_com` | https://s3-us-west-2.amazonaws.com (ImgSrc) | infra `infra/modules/web/cloudfront.tf::response_headers_policy.img-src` | port | mapped | UNT3-9 | — | CSP img-src https://s3-us-west-2.amazonaws.com (sample picture URLs) plus the demo files bucket |
+| `cspTrustedSite:openStreetMap` | https://tile.openstreetmap.org (ImgSrc) | infra `infra/modules/web/cloudfront.tf::response_headers_policy.img-src` | port | ported | UNT3-9 | — | aws_cloudfront_response_headers_policy.web (local.csp) img-src https://tile.openstreetmap.org https://*.tile.openstreetmap.org (Leaflet tile subdomains); value from var.csp_image_sources in infra/envs/demo/variables.tf |
+| `cspTrustedSite:s3_us_west_2_amazonaws_com` | https://s3-us-west-2.amazonaws.com (ImgSrc) | infra `infra/modules/web/cloudfront.tf::response_headers_policy.img-src` | port | ported | UNT3-9 | — | aws_cloudfront_response_headers_policy.web (local.csp) img-src https://s3-us-west-2.amazonaws.com (sample picture URLs) plus the demo files bucket https://sf2aws-demo-files-599083837640.s3.us-east-1.amazonaws.com (module.files) |
 
 ## External callouts
 

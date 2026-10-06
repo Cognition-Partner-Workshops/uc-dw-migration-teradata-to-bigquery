@@ -6,3 +6,11 @@ coverage/
 .env
 .DS_Store
 __pycache__/
+
+# Terraform (infra/): providers, local state, plans; .terraform.lock.hcl is committed
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+*.auto.tfvars
