@@ -5,6 +5,7 @@
 #   make seed      load the migrated data set from data/migrated/ (app/api/scripts/seed.ts)
 #   make test      unit tests of the API and the web app, inside the dev containers
 #   make e2e       smoke-check the running stack, then run tests/parity when it exists
+#   make infra-<target>  AWS demo environment (infra/Makefile): infra-up, infra-plan, infra-destroy, ...
 #
 # Containers run as your uid/gid so files written into the bind-mounted source trees stay yours;
 # always go through make (or export DEV_UID/DEV_GID yourself before calling docker compose directly).
@@ -22,7 +23,7 @@ COMPOSE ?= docker compose
 RUN_API := $(COMPOSE) run --rm --no-deps api
 RUN_WEB := $(COMPOSE) run --rm --no-deps web
 
-.PHONY: help up down restart ps logs build migrate migrate-status migrate-dev seed test lint e2e smoke psql openapi reset clean
+.PHONY: help up down restart ps logs build migrate migrate-status migrate-dev seed test lint e2e smoke psql openapi reset clean infra-%
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -93,3 +94,6 @@ reset: ## Stop everything and delete the database and node_modules volumes
 
 clean: reset ## reset + remove the dev images
 	$(COMPOSE) --profile e2e down --rmi local
+
+infra-%: ## AWS demo environment: make infra-up | infra-plan | infra-apply | infra-destroy | infra-help (see infra/Makefile)
+	$(MAKE) -C infra $*
