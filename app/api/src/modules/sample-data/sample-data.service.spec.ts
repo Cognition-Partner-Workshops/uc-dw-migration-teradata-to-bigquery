@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/prisma/client';
@@ -19,61 +19,66 @@ function staticResource(name: string): Record<string, unknown>[] {
   return JSON.parse(readFileSync(join(STATIC_RESOURCES, `${name}.json`), 'utf8'));
 }
 
-describe('sample data fixtures mirror the Salesforce static resources', () => {
-  it('sample_data_brokers.json', () => {
-    const source = staticResource('sample_data_brokers');
-    expect(SAMPLE_BROKERS).toHaveLength(source.length);
-    source.forEach((broker, index) => {
-      expect(SAMPLE_BROKERS[index]).toEqual({
-        brokerId: broker.Broker_Id__c,
-        name: broker.Name,
-        title: broker.Title__c,
-        phone: broker.Phone__c,
-        mobilePhone: broker.Mobile_Phone__c,
-        email: broker.Email__c,
-        picture: broker.Picture__c,
+// The docker-compose api container only mounts app/api, so the comparison runs where the
+// salesforce/ tree is checked out (local dev, the api CI job).
+describe.skipIf(!existsSync(STATIC_RESOURCES))(
+  'sample data fixtures mirror the Salesforce static resources',
+  () => {
+    it('sample_data_brokers.json', () => {
+      const source = staticResource('sample_data_brokers');
+      expect(SAMPLE_BROKERS).toHaveLength(source.length);
+      source.forEach((broker, index) => {
+        expect(SAMPLE_BROKERS[index]).toEqual({
+          brokerId: broker.Broker_Id__c,
+          name: broker.Name,
+          title: broker.Title__c,
+          phone: broker.Phone__c,
+          mobilePhone: broker.Mobile_Phone__c,
+          email: broker.Email__c,
+          picture: broker.Picture__c,
+        });
       });
     });
-  });
 
-  it('sample_data_properties.json', () => {
-    const source = staticResource('sample_data_properties');
-    expect(SAMPLE_PROPERTIES).toHaveLength(source.length);
-    source.forEach((property, index) => {
-      expect(SAMPLE_PROPERTIES[index]).toEqual({
-        name: property.Name,
-        address: property.Address__c,
-        city: property.City__c,
-        state: property.State__c,
-        zip: property.Zip__c,
-        price: property.Price__c,
-        beds: property.Beds__c,
-        baths: property.Baths__c,
-        locationLongitude: property.Location__Longitude__s,
-        locationLatitude: property.Location__Latitude__s,
-        picture: property.Picture__c,
-        thumbnail: property.Thumbnail__c,
-        tags: property.Tags__c,
-        description: property.Description__c,
-        brokerId: (property.Broker__r as { Broker_Id__c: number }).Broker_Id__c,
-        status: property.Status__c,
+    it('sample_data_properties.json', () => {
+      const source = staticResource('sample_data_properties');
+      expect(SAMPLE_PROPERTIES).toHaveLength(source.length);
+      source.forEach((property, index) => {
+        expect(SAMPLE_PROPERTIES[index]).toEqual({
+          name: property.Name,
+          address: property.Address__c,
+          city: property.City__c,
+          state: property.State__c,
+          zip: property.Zip__c,
+          price: property.Price__c,
+          beds: property.Beds__c,
+          baths: property.Baths__c,
+          locationLongitude: property.Location__Longitude__s,
+          locationLatitude: property.Location__Latitude__s,
+          picture: property.Picture__c,
+          thumbnail: property.Thumbnail__c,
+          tags: property.Tags__c,
+          description: property.Description__c,
+          brokerId: (property.Broker__r as { Broker_Id__c: number }).Broker_Id__c,
+          status: property.Status__c,
+        });
       });
     });
-  });
 
-  it('sample_data_contacts.json', () => {
-    const source = staticResource('sample_data_contacts');
-    expect(SAMPLE_CONTACTS).toHaveLength(source.length);
-    source.forEach((contact, index) => {
-      expect(SAMPLE_CONTACTS[index]).toEqual({
-        firstName: contact.FirstName,
-        lastName: contact.LastName,
-        phone: contact.Phone,
-        email: contact.Email,
+    it('sample_data_contacts.json', () => {
+      const source = staticResource('sample_data_contacts');
+      expect(SAMPLE_CONTACTS).toHaveLength(source.length);
+      source.forEach((contact, index) => {
+        expect(SAMPLE_CONTACTS[index]).toEqual({
+          firstName: contact.FirstName,
+          lastName: contact.LastName,
+          phone: contact.Phone,
+          email: contact.Email,
+        });
       });
     });
-  });
-});
+  },
+);
 
 describe('SampleDataService.importSampleData', () => {
   const tx = {
