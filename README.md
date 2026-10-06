@@ -65,11 +65,13 @@ pings Postgres, `/docs`, `/openapi.json`), web at <http://localhost:5173> (its `
 the API). The source trees are bind-mounted into the containers: saving under `app/api/src`
 restarts Nest, saving under `app/web/src` hot-reloads the browser. `node_modules` live in named
 volumes seeded from the images and are reinstalled automatically when a `package-lock.json`
-changes. Containers run as your uid/gid, so generated files stay yours.
+changes. Containers run as your uid/gid, so generated files stay yours — always drive the stack
+through `make` (or `export DEV_UID=$(id -u) DEV_GID=$(id -g)` before calling `docker compose`
+yourself), otherwise the containers fall back to uid 1000 and cannot write `src/generated/`.
 
 Other targets (`make help` lists them): `make smoke` (what `make e2e` runs first —
 [`tools/dev/smoke.sh`](tools/dev/smoke.sh)), `make lint`, `make logs`, `make psql`,
-`make migrate-dev NAME=<name>` (new migration from `schema.prisma`), `make openapi` (re-export
+`make migrate-status`, `make migrate-dev NAME=<name>` (new migration from `schema.prisma`), `make openapi` (re-export
 the spec and regenerate the web client), `make down`, `make reset` (also drops the database and
 `node_modules` volumes), `make clean` (also removes the images). Ports move with `API_PORT`,
 `WEB_PORT` and `DB_PORT` — e.g. `echo DB_PORT=5433 > .env` when a local Postgres already owns

@@ -46,7 +46,7 @@ jobs:
         run: make up && make migrate
       - name: Committed migrations are applied
         run: |
-          docker compose run --rm --no-deps -T api npx prisma migrate status | tee status.txt
+          make migrate-status | tee status.txt
           grep -q 'Database schema is up to date' status.txt
       - name: API healthy, web served, web -> API proxy
         run: make smoke

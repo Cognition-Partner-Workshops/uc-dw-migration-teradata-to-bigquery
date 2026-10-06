@@ -6,7 +6,8 @@
 #   make test      unit tests of the API and the web app, inside the dev containers
 #   make e2e       smoke-check the running stack, then run tests/parity when it exists
 #
-# Containers run as your uid/gid so files written into the bind-mounted source trees stay yours.
+# Containers run as your uid/gid so files written into the bind-mounted source trees stay yours;
+# always go through make (or export DEV_UID/DEV_GID yourself before calling docker compose directly).
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
@@ -21,7 +22,7 @@ COMPOSE ?= docker compose
 RUN_API := $(COMPOSE) run --rm --no-deps api
 RUN_WEB := $(COMPOSE) run --rm --no-deps web
 
-.PHONY: help up down restart ps logs build migrate migrate-dev seed test lint e2e smoke psql openapi reset clean
+.PHONY: help up down restart ps logs build migrate migrate-status migrate-dev seed test lint e2e smoke psql openapi reset clean
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -49,6 +50,10 @@ build: ## (Re)build the dev images without starting them
 migrate: ## Apply committed Prisma migrations to the local database (starts db if needed)
 	$(COMPOSE) up -d --wait db
 	$(COMPOSE) run --rm --no-deps api npx prisma migrate deploy
+
+migrate-status: ## Show which Prisma migrations are applied to the local database
+	$(COMPOSE) up -d --wait db
+	$(COMPOSE) run --rm --no-deps -T api npx prisma migrate status
 
 migrate-dev: ## Create a new migration from schema.prisma changes (prisma migrate dev --name NAME=...)
 	$(COMPOSE) up -d --wait db
