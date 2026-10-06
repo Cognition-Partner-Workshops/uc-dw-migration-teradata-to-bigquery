@@ -421,10 +421,10 @@ rows:
   source: class, with sharing, 1 methods
   target: {kind: service, name: GeocodingService}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-17
   parity_tests: []
-  notes: app/api/src/modules/geocoding/geocoding.service.ts
+  notes: app/api/src/modules/geocoding/geocoding.service.ts (geocodeAddresses + single-address geocodeAddress for the properties module; in-process result cache GEOCODING_CACHE_TTL_SECONDS/GEOCODING_CACHE_MAX_ENTRIES) over nominatim.client.ts (typed fetch, User-Agent, timeout, retry, 1 req/s); unit specs geocoding.service.spec.ts + nominatim.client.spec.ts; live smoke geocoding.live.spec.ts behind GEOCODING_LIVE_SMOKE=1
 - id: apexClass:GeocodingServiceTest
   source: test class, with sharing, 3 methods
   target: {kind: spec, name: tests/parity/characterisation/geocoding-service.spec.ts}
@@ -432,7 +432,7 @@ rows:
   status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-17 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); active since UNT3-17 listed itself in tests/parity/characterisation/harness/ported.ts (Nominatim mocked with MSW)
 - id: apexClass:PagedResult
   source: class, with sharing, 0 methods
   target: {kind: dto, name: PagedResultDto}
@@ -545,10 +545,10 @@ rows:
   source: '@InvocableMethod List<Coordinates> geocodeAddresses(List<GeocodingAddress> addresses)'
   target: {kind: endpoint, name: POST /geocoding/addresses}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-17
   parity_tests: []
-  notes: GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim GET per address with the non-blank fields as query params; blank address -> {lat:null, lon:null} without a callout; upstream non-200 -> {lat:null, lon:null} with HTTP 200 (Apex swallows the error, pinned by geocoding-service.spec.ts::errorResponse)
+  notes: GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim GET per address with the non-blank fields as query params; blank address -> {lat:null, lon:null} without a callout; upstream non-200 / no match -> {lat:null, lon:null} with HTTP 200 (Apex swallows the error, pinned by geocoding-service.spec.ts::errorResponse). Single-address UI form POST /geocode (GeocodingAddressDto -> CoordinatesDto)
 - id: apexMethod:GeocodingServiceTest.successResponse
   source: '@isTest void successResponse()'
   target: {kind: spec, name: 'tests/parity/characterisation/geocoding-service.spec.ts::successResponse'}
@@ -1487,10 +1487,10 @@ rows:
   source: https://nominatim.openstreetmap.org
   target: {kind: env, name: GEOCODING_BASE_URL}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-17
   parity_tests: []
-  notes: app/api/src/config/config.schema.ts (default https://nominatim.openstreetmap.org); egress allowed by the ECS task security group in infra/
+  notes: app/api/src/config/config.schema.ts (default https://nominatim.openstreetmap.org/search?format=json) read by nominatim.client.ts; Apex `http-referer` -> optional GEOCODING_REFERER; egress allowed by the ECS task security group in infra/
 - id: cspTrustedSite:openStreetMap
   source: https://tile.openstreetmap.org (ImgSrc)
   target: {kind: infra, name: 'infra/modules/web/cloudfront.tf::response_headers_policy.img-src'}
@@ -1509,12 +1509,12 @@ rows:
   notes: CSP img-src https://s3-us-west-2.amazonaws.com (sample picture URLs) plus the demo files bucket
 - id: callout:GeocodingService.geocodeAddresses
   source: http https://nominatim.openstreetmap.org/search?format=json
-  target: {kind: httpClient, name: GeocodingService.geocodeAddresses}
+  target: {kind: httpClient, name: GeocodingService.geocodeAddress}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-17
   parity_tests: []
-  notes: Node fetch GET {GEOCODING_BASE_URL}/search?format=json&street=&city=&state=&country=&postalcode= with User-Agent header; 10s timeout; mocked in specs
+  notes: GeocodingService.geocodeAddress -> NominatimClient.search (app/api/src/modules/geocoding/nominatim.client.ts) — Node fetch GET {GEOCODING_BASE_URL}&street=&city=&state=&country=&postalcode= with GEOCODING_USER_AGENT (Nominatim usage policy); GEOCODING_TIMEOUT_MS (10s) via AbortController; GEOCODING_MAX_RETRIES (2) with back-off on network errors/timeouts/429/5xx only; process-wide limiter GEOCODING_MIN_INTERVAL_MS (1 req/s); mocked with MSW in the characterisation spec and vi.fn() fetch in nominatim.client.spec.ts; live smoke geocoding.live.spec.ts behind GEOCODING_LIVE_SMOKE=1
 - id: prompt:Property
   source: Property (4 steps)
   target: null

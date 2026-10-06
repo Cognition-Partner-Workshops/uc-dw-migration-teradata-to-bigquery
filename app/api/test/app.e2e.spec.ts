@@ -60,6 +60,7 @@ describe('Dreamhouse API (http)', () => {
         '/brokers/{id}',
         '/contacts',
         '/files',
+        '/geocode',
         '/geocoding/addresses',
         '/health',
         '/health/ready',
