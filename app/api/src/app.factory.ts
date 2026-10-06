@@ -1,8 +1,10 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { INestApplication } from '@nestjs/common';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
+import { PrismaExceptionFilter } from './common/errors/prisma-exception.filter';
+import { createValidationPipe } from './common/errors/validation-exception.factory';
 import { AppConfigService } from './config/app-config.service';
 
 /** Creates the fully configured Nest application (shared by main.ts, the OpenAPI export and tests). */
@@ -12,6 +14,10 @@ export async function createApp(): Promise<INestApplication> {
   return app;
 }
 
+/**
+ * Everything main.ts applies to the Nest app, also used by the test harnesses so the HTTP
+ * contract (validation pipe, field-error bodies, Prisma error translation) is identical.
+ */
 export function configureApp(app: INestApplication): void {
   app.useLogger(app.get(Logger));
   // POST /files carries the file body as base64 JSON (FileUtilities.createFile): size the JSON
@@ -20,8 +26,7 @@ export function configureApp(app: INestApplication): void {
   (app as NestExpressApplication).useBodyParser('json', {
     limit: Math.ceil((maxInlineBytes * 4) / 3) + 64 * 1024,
   });
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }),
-  );
+  app.useGlobalPipes(createValidationPipe());
+  app.useGlobalFilters(new PrismaExceptionFilter(app.get(HttpAdapterHost)));
   app.enableShutdownHooks();
 }

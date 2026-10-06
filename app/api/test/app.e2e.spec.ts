@@ -59,6 +59,7 @@ describe('Dreamhouse API (http)', () => {
         '/brokers',
         '/brokers/{id}',
         '/contacts',
+        '/contacts/{id}',
         '/files',
         '/files/presigned-upload',
         '/files/{id}',
@@ -67,12 +68,23 @@ describe('Dreamhouse API (http)', () => {
         '/health',
         '/health/ready',
         '/properties',
+        '/properties/{id}',
         '/properties/{id}/pictures',
         '/sample-data/import',
       ].sort(),
     );
     expect(res.body.tags.map((t: { name: string }) => t.name)).toEqual(API_TAGS.map((t) => t.name));
     expect(res.body.components.schemas).toHaveProperty('PagedPropertiesDto');
+    expect(res.body.components.schemas).toHaveProperty('ApiErrorDto');
+    // Every CRUD operation of the mapping matrix (policy.properties.crud / policy.brokers.crud).
+    for (const path of ['/properties', '/brokers']) {
+      expect(Object.keys(res.body.paths[path]).sort()).toEqual(['get', 'post']);
+      expect(Object.keys(res.body.paths[`${path}/{id}`]).sort()).toEqual([
+        'delete',
+        'get',
+        'patch',
+      ]);
+    }
   });
 
   it('GET /docs serves Swagger UI', async () => {

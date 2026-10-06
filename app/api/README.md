@@ -118,17 +118,19 @@ so every Apex class has an obvious home:
 src/
   main.ts                    bootstrap (listen, OpenAPI)
   app.module.ts              wires platform + domain modules
-  app.factory.ts             createApp()/configureApp(): validation pipe, pino logger, shutdown hooks
+  app.factory.ts             createApp()/configureApp(): validation pipe, PrismaExceptionFilter, pino logger, shutdown hooks
   config/                    zod schema, env + Secrets Manager loader, AppConfigService
   logging/                   nestjs-pino LoggerModule
   prisma/                    PrismaService (PrismaClient + pg adapter), global PrismaModule
   health/                    GET /health, GET /health/ready
   openapi/                   DocumentBuilder config, tag list, /openapi.json + /docs setup
   common/                    PagedResultDto (Apex PagedResult), pagination query, NotPortedException
+  common/errors/             ApiErrorDto field-error contract, validation pipe factory, Prisma -> field-error filter
+  common/validation/         IsCalendarDate (Salesforce Date <-> YYYY-MM-DD)
   modules/
-    properties/              Property__c  — PropertyController (+ TestPropertyController)
-    brokers/                 Broker__c    — brokerCard / Broker record page (LDS, no Apex)
-    contacts/                Contact      — standard object, sample data only
+    properties/              Property__c  — PropertyController (+ TestPropertyController), record CRUD, Create_property flow
+    brokers/                 Broker__c    — record CRUD behind brokerCard / Broker record page (LDS, no Apex)
+    contacts/                Contact      — standard object, sample data only (read-only)
     files/                   ContentVersion / ContentDocumentLink — FileUtilities (+ FileUtilitiesTest)
     geocoding/               GeocodingService (+ GeocodingServiceTest), Nominatim callout
     sample-data/             SampleDataController (+ TestSampleDataController), sample_data_* static resources
@@ -154,12 +156,43 @@ decorators) + `<name>.service.ts` (the ported Apex logic, talking to `PrismaServ
 - Salesforce 18-char Ids become UUID primary keys; the original Salesforce Id is kept in a
   `sf_id` column during migration so parity tests can join the two systems (UNT3-11).
 
+## Field errors
+
+Every record route answers rule failures with one body, [`ApiErrorDto`](src/common/errors/api-error.dto.ts),
+shaped like the Lightning UI API DML error that `lightning-record-form` and `ldsUtils.reduceErrors`
+consumed, so the React forms can render errors inline the same way:
+
+```json
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": "Validation failed: beds, name",
+  "output": {
+    "errors": [],
+    "fieldErrors": {
+      "beds": [{ "field": "beds", "errorCode": "FIELD_INTEGRITY_EXCEPTION", "message": "beds must not be greater than 99" }],
+      "name": [{ "field": "name", "errorCode": "REQUIRED_FIELD_MISSING", "message": "name should not be empty" }]
+    }
+  }
+}
+```
+
+`errorCode` is the Salesforce `StatusCode` name of the same failure (`REQUIRED_FIELD_MISSING`,
+`STRING_TOO_LONG`, `INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST`, `INVALID_EMAIL_ADDRESS`,
+`INVALID_CROSS_REFERENCE_KEY`, `DUPLICATE_VALUE`, `INVALID_TYPE_ON_FIELD_IN_RECORD`,
+`FIELD_INTEGRITY_EXCEPTION`, `INVALID_FIELD`). Two sources feed it: the global `ValidationPipe`
+([`validation-exception.factory.ts`](src/common/errors/validation-exception.factory.ts)) for the DTO rules, and
+[`PrismaExceptionFilter`](src/common/errors/prisma-exception.filter.ts) for rules that live only in Postgres
+(CHECK → the column's field, FK → the lookup field, unique → `DUPLICATE_VALUE`, missing row → `404`).
+Record-level failures (`output.errors`) carry no field, e.g. `GEOCODING_FAULT` (502) when the
+Create_property geocoding call fails outright. Contract tests: `test/record-crud.e2e.spec.ts`.
+
 ## Apex → this service: concept map
 
 | Salesforce / Apex concept | Equivalent here |
 | --- | --- |
 | `@AuraEnabled` static method (e.g. `PropertyController.getPagedPropertyList`) | A controller route (`@Get()/@Post()` in `*.controller.ts`) that delegates to the module service. Parameters become a validated DTO (`class-validator`), the return value a documented response DTO. `cacheable=true` → `GET` (cache headers later); non-cacheable → `POST`/`PATCH`/`DELETE`. |
-| `@InvocableMethod` (`GeocodingService.geocodeAddresses`) | A plain service method, exposed as `POST /geocoding/addresses` (list in / list out, same contract as Apex) and `POST /geocode` (single address, for the UI); the Flow that invoked it becomes React UI calling that route (UNT3-19). `GeocodingModule` exports the service so `PropertiesModule` can geocode on create/update. |
+| `@InvocableMethod` (`GeocodingService.geocodeAddresses`) | A plain service method, exposed as `POST /geocoding/addresses` (list in / list out, same contract as Apex) and `POST /geocode` (single address, for the UI). The Flow that invoked it (`Create_property`) is `POST /properties` with `geocode: true`: `GeocodingModule` exports the service so `PropertiesService` runs the `geocode_address` step inside the create/update. |
 | **SOQL** (`[SELECT ... FROM Property__c WHERE ... LIMIT :n OFFSET :o]`) | Prisma queries: `prisma.property.findMany({ where, orderBy, take, skip })` / `prisma.property.count({ where })`. `LIKE :pattern` → `{ contains, mode: 'insensitive' }`; relationship queries → `include`/`select`. Anything SOQL cannot express the Prisma way → `prisma.$queryRaw` with tagged-template parameters. |
 | **DML** (`insert`, `update`, `upsert`, `delete`, `Database.insert(records, false)`) | `prisma.<model>.create / update / upsert / delete` and the `createMany / updateMany / deleteMany` bulk forms. Partial-success DML (`allOrNone=false`) becomes an explicit loop collecting per-record results. |
 | Implicit transaction per Apex request (rollback on uncaught exception) | `prisma.$transaction(async (tx) => { ... })` (interactive transaction) around multi-statement writes; Nest's exception filter turns thrown errors into HTTP error responses after the rollback. |
@@ -169,6 +202,8 @@ decorators) + `<name>.service.ts` (the ported Apex logic, talking to `PrismaServ
 | `with sharing` / `WITH USER_MODE` / permission set `dreamhouse` / FLS | Request authentication + authorization in a Nest guard, and Prisma `where` clauses / `select` lists scoped by the caller's role (UNT3-20). Nothing is enforced by the database layer implicitly — it must be coded. |
 | `PagedResult` Apex class | [`PagedResultDto`](src/common/dto/paged-result.dto.ts) (`pageSize`, `pageNumber`, `totalItemCount`, `records`). |
 | `AuraHandledException` | Nest `HttpException` subclasses (`BadRequestException`, `NotFoundException`, …); the global exception filter formats them. [`NotPortedException`](src/common/not-ported.exception.ts) (501) marks endpoints not yet ported. |
+| Lightning Data Service record pages / `lightning-record-form` (implicit create/read/update/delete + validation) | Explicit CRUD routes per object: `GET /properties/{id}`, `POST /properties`, `PATCH /properties/{id}`, `DELETE /properties/{id}` (same for `/brokers`; Contacts are read-only sample data). The schema-step rules (field sizes, `Beds__c`/`Baths__c` 0..99, restricted `Status__c` picklist, `Location__c` lat/lon pairing, lookups to existing records) are enforced server-side by the DTOs (`class-validator`) with the database CHECK/FK constraints as safety net. See [Field errors](#field-errors). |
+| Screen flow (`Create_property`) | One `POST /properties` with the screens' inputs; `geocode: true` runs the `geocode_address` action (Nominatim) before the insert, the `create_property` assignments (`Status__c = Available`, `Date_Listed__c = $Flow.CurrentDate`) are applied when the body omits them. Fault connectors → `400` field errors / `502 GEOCODING_FAULT`, nothing inserted. Baseline: `tests/parity/fixtures/create-property-flow.ts`. Picture upload stays `POST /files` (UNT3-18), the screens are the React wizard (UNT3-23). |
 | `Http` / `HttpRequest` callouts + Remote Site Settings / Named Credentials | A typed client class around Node `fetch` (`geocoding/nominatim.client.ts`): base URL, User-Agent, timeout, bounded retries and a 1 req/s limiter all from configuration (`GEOCODING_*`); results cached in the service (Nominatim usage policy). Egress is controlled by the VPC security groups in `infra/`. A non-200 answer still becomes `{lat: null, lon: null}` like the Apex code. |
 | Custom Metadata / Custom Settings / Custom Labels | Typed config in `src/config` (env + Secrets Manager); UI strings live in `app/web`. |
 | `ContentVersion` / `ContentDocumentLink` (Files) | S3 object + a `files` table row linking it to a record (`files` module): `FilesService.createFile` writes both in one transaction behind a `FileStorage` port (`S3FileStorage` in AWS, `LocalFileStorage` on disk); large files go straight to S3 with a pre-signed PUT and are finalised with their `uploadKey`. |

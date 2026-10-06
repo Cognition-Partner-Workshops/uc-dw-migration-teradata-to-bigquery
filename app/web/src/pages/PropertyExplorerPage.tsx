@@ -1,9 +1,13 @@
-import { Grid, Paper, Text } from '@mantine/core';
-import { MapView } from '@/components/MapView/MapView';
-import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
+import { Button, Card } from '@mantine/core';
+import { Link } from 'react-router-dom';
+import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
+import { PropertyFilter } from '@/components/PropertyFilter/PropertyFilter';
+import { PropertyMap } from '@/components/PropertyMap/PropertyMap';
+import { PropertySummary } from '@/components/PropertySummary/PropertySummary';
+import { PropertyTileList } from '@/components/PropertyTileList/PropertyTileList';
 
-/** flexipages/Property_Explorer: filter + Create_property flow | tile list | summary + map. */
+/** flexipages/Property_Explorer: propertyFilter + Create_property flow | propertyTileList | propertySummary + propertyMap. */
 export function PropertyExplorerPage() {
   return (
     <>
@@ -11,32 +15,26 @@ export function PropertyExplorerPage() {
         title="Property Explorer"
         subtitle="Browse listings as tiles, filter them and see the selected one on a map."
       />
-      <MigrationPlaceholder
-        ticket="UNT3-21"
-        sources={[
-          { name: 'propertyFilter', kind: 'LWC' },
-          { name: 'propertyTileList', kind: 'LWC' },
-          { name: 'propertyTile', kind: 'LWC' },
-          { name: 'paginator', kind: 'LWC' },
-          { name: 'propertySummary', kind: 'LWC' },
-          { name: 'propertyMap', kind: 'LWC' },
-          { name: 'Create_property', kind: 'screen flow' },
-          { name: 'FiltersChange / PropertySelected', kind: 'Lightning Message Channels' },
-        ]}
-      >
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 8 }}>
-            <Paper withBorder p="md" h="100%">
-              <Text c="dimmed" size="sm">
-                Property tiles will render here (GET /properties).
-              </Text>
-            </Paper>
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <MapView height={280} />
-          </Grid.Col>
-        </Grid>
-      </MigrationPlaceholder>
+      <ThreeColumnLayout
+        left={
+          <>
+            <PropertyFilter />
+            {/* flowruntime:interview Create_property -> CreatePropertyWizard at /properties/new (UNT3-23) */}
+            <Card withBorder padding="md" data-testid="create-property-flow">
+              <Button component={Link} to="/properties/new" variant="light" fullWidth>
+                Create Property
+              </Button>
+            </Card>
+          </>
+        }
+        center={<PropertyTileList />}
+        right={
+          <>
+            <PropertySummary />
+            <PropertyMap />
+          </>
+        }
+      />
     </>
   );
 }

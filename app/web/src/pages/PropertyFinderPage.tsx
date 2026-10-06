@@ -1,24 +1,36 @@
-import { MapView } from '@/components/MapView/MapView';
+import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout';
 import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
+import { PropertyFilter } from '@/components/PropertyFilter/PropertyFilter';
+import { PropertyListMap } from '@/components/PropertyListMap/PropertyListMap';
+import { PropertySummary } from '@/components/PropertySummary/PropertySummary';
 
-/** flexipages/Property_Finder: filter + barcode scanner | list map | summary + days on market. */
+/** flexipages/Property_Finder: barcodeScanner + propertyFilter | propertyListMap | propertySummary + daysOnMarket. */
 export function PropertyFinderPage() {
   return (
     <>
       <PageHeader title="Property Finder" subtitle="Find listings on a map." />
-      <MigrationPlaceholder
-        ticket="UNT3-21"
-        sources={[
-          { name: 'propertyFilter', kind: 'LWC' },
-          { name: 'propertyListMap', kind: 'LWC' },
-          { name: 'propertySummary', kind: 'LWC' },
-          { name: 'daysOnMarket', kind: 'LWC' },
-          { name: 'barcodeScanner', kind: 'LWC (mobile only)' },
-        ]}
-      >
-        <MapView height={420} />
-      </MigrationPlaceholder>
+      <ThreeColumnLayout
+        left={
+          <>
+            <MigrationPlaceholder
+              ticket="UNT3-23"
+              sources={[{ name: 'barcodeScanner', kind: 'LWC (mobile only)' }]}
+            />
+            <PropertyFilter />
+          </>
+        }
+        center={<PropertyListMap height={560} />}
+        right={
+          <>
+            <PropertySummary />
+            <MigrationPlaceholder
+              ticket="UNT3-22"
+              sources={[{ name: 'daysOnMarket', kind: 'LWC' }]}
+            />
+          </>
+        }
+      />
     </>
   );
 }
