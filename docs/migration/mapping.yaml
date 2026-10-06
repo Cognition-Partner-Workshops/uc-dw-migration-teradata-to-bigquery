@@ -448,7 +448,7 @@ rows:
   status: ported
   ticket: UNT3-16
   parity_tests: []
-  notes: 'app/api/src/modules/properties/properties.service.ts (getPagedPropertyList, getPictures); HTTP surface in properties.controller.ts; cacheable=true -> Cache-Control private, max-age=30 (+ ETag/304) and TanStack Query staleTime 30s (app/web/src/api/queries.ts propertiesQuery / propertyPicturesQuery); with sharing -> permission guard (UNT3-20) once it lands; unit spec properties.service.spec.ts, HTTP spec test/properties.e2e.spec.ts'
+  notes: app/api/src/modules/properties/properties.service.ts (getPagedPropertyList, getPictures); HTTP surface in properties.controller.ts; cacheable=true -> Cache-Control private, max-age=30 (+ ETag/304) and TanStack Query staleTime 30s (app/web/src/api/queries.ts propertiesQuery / propertyPicturesQuery); with sharing -> permission guard (UNT3-20) once it lands; unit spec properties.service.spec.ts, HTTP spec test/properties.e2e.spec.ts
 - id: apexClass:SampleDataController
   source: class, with sharing, 5 methods
   target: {kind: service, name: SampleDataService}
@@ -593,7 +593,7 @@ rows:
   status: ported
   ticket: UNT3-16
   parity_tests: []
-  notes: 'query searchKey, maxPrice, minBedrooms, minBathrooms, pageSize, pageNumber -> PagedPropertiesDto (pageSize, pageNumber, totalItemCount = unpaged count, records with every SELECTed field, null when empty); LIKE %searchKey% on name/city/tags -> Prisma contains mode insensitive (ILIKE, pg_trgm GIN indexes properties_name_idx/_city_idx/_tags_idx); Price__c <= / Beds__c >= / Baths__c >= inclusive -> lte/gte over index properties_price_beds_baths_idx; ORDER BY Price__c LIMIT/OFFSET -> orderBy price asc (id tiebreak), take/skip; defaults 9999999/0/0/9/1 in PropertyQueryDto'
+  notes: query searchKey, maxPrice, minBedrooms, minBathrooms, pageSize, pageNumber -> PagedPropertiesDto (pageSize, pageNumber, totalItemCount = unpaged count, records with every SELECTed field, null when empty); LIKE %searchKey% on name/city/tags -> Prisma contains mode insensitive (ILIKE, pg_trgm GIN indexes properties_name_idx/_city_idx/_tags_idx); Price__c <= / Beds__c >= / Baths__c >= inclusive -> lte/gte over index properties_price_beds_baths_idx; ORDER BY Price__c LIMIT/OFFSET -> orderBy price asc (id tiebreak), take/skip; defaults 9999999/0/0/9/1 in PropertyQueryDto
 - id: apexMethod:PropertyController.getPictures
   source: '@AuraEnabled List<ContentVersion> getPictures(Id propertyId)'
   target: {kind: endpoint, name: 'GET /properties/{id}/pictures'}
