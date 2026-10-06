@@ -1063,7 +1063,7 @@ rows:
   status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: 'nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); visible to / openable by group dreamhouse-admin only (UNT3-20, RequireGroup in routes.tsx); page body (UNT3-23) pending'
+  notes: nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); visible to / openable by group dreamhouse-admin only (UNT3-20, RequireGroup in routes.tsx); page body (UNT3-23) pending
 - id: application:Dreamhouse
   source: 'Dreamhouse: tabs standard-home, Property_Explorer, Property_Finder, standard-Contact, Property__c, Broker__c, standard-File, Settings'
   target: {kind: component, name: AppShell}
@@ -1095,7 +1095,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'policy.ts CLASS_ACCESS PagedResult -> group dreamhouse; the PagedResult DTO is only reachable through GET /properties (properties.read)'
+  notes: policy.ts CLASS_ACCESS PagedResult -> group dreamhouse; the PagedResult DTO is only reachable through GET /properties (properties.read)
 - id: permission:dreamhouse.apexClass.PropertyController
   source: Apex class access enabled=True
   target: {kind: policy, name: policy.properties.invoke}
@@ -1103,7 +1103,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'policy.ts CLASS_ACCESS PropertyController -> group dreamhouse; @RequirePermission(properties.read) on GET /properties and GET /properties/{id}/pictures (+ files.read for ContentDocument) in properties.controller.ts; with sharing -> sharing.ts recordAccessWhere in PropertiesService'
+  notes: policy.ts CLASS_ACCESS PropertyController -> group dreamhouse; @RequirePermission(properties.read) on GET /properties and GET /properties/{id}/pictures (+ files.read for ContentDocument) in properties.controller.ts; with sharing -> sharing.ts recordAccessWhere in PropertiesService
 - id: permission:dreamhouse.apexClass.SampleDataController
   source: Apex class access enabled=True
   target: {kind: policy, name: policy.sampleData.invoke}
@@ -1119,7 +1119,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud, permission-set-no-group-403, permission-set-no-token-401, permission-set-sharing-read-write-all]
-  notes: 'policy keys brokers.create/read/edit/delete (policy.ts OBJECT_PERMISSIONS, FULL_ACCESS for dreamhouse) on POST /brokers, GET /brokers + /brokers/{id}, PATCH /brokers/{id}, DELETE /brokers/{id}; viewAllRecords/modifyAllRecords + sharingModel ReadWrite -> sharing.ts recordAccessWhere returns no ownership filter; create stamps ownerId/createdBy'
+  notes: policy keys brokers.create/read/edit/delete (policy.ts OBJECT_PERMISSIONS, FULL_ACCESS for dreamhouse) on POST /brokers, GET /brokers + /brokers/{id}, PATCH /brokers/{id}, DELETE /brokers/{id}; viewAllRecords/modifyAllRecords + sharingModel ReadWrite -> sharing.ts recordAccessWhere returns no ownership filter; create stamps ownerId/createdBy
 - id: permission:dreamhouse.object.Property__c
   source: object CRUD create,read,edit,delete + viewAllRecords,modifyAllRecords
   target: {kind: policy, name: policy.properties.crud}
@@ -1127,7 +1127,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud, permission-set-no-group-403, permission-set-no-token-401, permission-set-sharing-read-write-all]
-  notes: 'policy keys properties.create/read/edit/delete (policy.ts OBJECT_PERMISSIONS, FULL_ACCESS for dreamhouse) on POST /properties, GET /properties + /properties/{id} (+ /pictures), PATCH /properties/{id}, DELETE /properties/{id}; viewAllRecords/modifyAllRecords + sharingModel ReadWrite -> no ownership filter (sharing.ts); create stamps ownerId/createdBy'
+  notes: policy keys properties.create/read/edit/delete (policy.ts OBJECT_PERMISSIONS, FULL_ACCESS for dreamhouse) on POST /properties, GET /properties + /properties/{id} (+ /pictures), PATCH /properties/{id}, DELETE /properties/{id}; viewAllRecords/modifyAllRecords + sharingModel ReadWrite -> no ownership filter (sharing.ts); create stamps ownerId/createdBy
 - id: permission:dreamhouse.field.Broker__c.Broker_Id__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.broker_id}
@@ -1135,7 +1135,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Broker__c.Email__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.email}
@@ -1143,7 +1143,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Broker__c.Mobile_Phone__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.mobile_phone}
@@ -1151,7 +1151,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Broker__c.Phone__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.phone}
@@ -1159,7 +1159,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Broker__c.Picture_IMG__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.brokers.fields.picture_img}
@@ -1175,7 +1175,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Broker__c.Title__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.title}
@@ -1183,7 +1183,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Address__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.address}
@@ -1191,7 +1191,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Assessed_Value__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.assessed_value}
@@ -1199,7 +1199,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Baths__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.baths}
@@ -1207,7 +1207,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Beds__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.beds}
@@ -1215,7 +1215,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Broker__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.broker}
@@ -1223,7 +1223,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.City__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.city}
@@ -1231,7 +1231,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Date_Agreement__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_agreement}
@@ -1239,7 +1239,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Date_Closed__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_closed}
@@ -1247,7 +1247,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Date_Contracted__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_contracted}
@@ -1255,7 +1255,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Date_Listed__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_listed}
@@ -1263,7 +1263,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Date_Pre_Market__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_pre_market}
@@ -1271,7 +1271,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Days_On_Market__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.days_on_market}
@@ -1287,7 +1287,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Location__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.location}
@@ -1295,7 +1295,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Name
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.name}
@@ -1303,7 +1303,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Picture_IMG__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.picture_img}
@@ -1319,7 +1319,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Price_Sold__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.price_sold}
@@ -1327,7 +1327,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Price__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.price}
@@ -1335,7 +1335,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Record_Link__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.record_link}
@@ -1351,7 +1351,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Status__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.status}
@@ -1359,7 +1359,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Tags__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.tags}
@@ -1367,7 +1367,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Thumbnail_IMG__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.thumbnail_img}
@@ -1383,7 +1383,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.field.Property__c.Zip__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.zip}
@@ -1391,7 +1391,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: [permission-set-standard-user-crud]
-  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
+  notes: field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts
 - id: permission:dreamhouse.tab.Broker__c
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Broker__c'}
@@ -1399,7 +1399,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
+  notes: navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts
 - id: permission:dreamhouse.tab.Property_Explorer
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Property_Explorer'}
@@ -1407,7 +1407,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
+  notes: navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts
 - id: permission:dreamhouse.tab.Property_Finder
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Property_Finder'}
@@ -1415,7 +1415,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
+  notes: navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts
 - id: permission:dreamhouse.tab.Property__c
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Property__c'}
@@ -1423,7 +1423,7 @@ rows:
   status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
+  notes: navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts
 - id: permission:dreamhouse.tab.Settings
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Settings'}
