@@ -132,6 +132,9 @@ model Property {
   brokerId String? @map("broker_id") @db.Uuid
   broker   Broker? @relation(fields: [brokerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
+  /// Salesforce Files linked to the record (ContentDocumentLink.LinkedEntityId)
+  files File[]
+
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   createdBy String?  @map("created_by") @db.VarChar(128)
@@ -140,7 +143,39 @@ model Property {
   @@index([brokerId])
   @@index([status])
   @@index([dateListed])
+  /// PropertyController.getPagedPropertyList: LIKE %searchKey% on Name/City__c/Tags__c (pg_trgm, ILIKE)
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([city(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([tags(ops: raw("gin_trgm_ops"))], type: Gin)
+  /// PropertyController.getPagedPropertyList: Price__c <= / Beds__c >= / Baths__c >= filters, ORDER BY Price__c
+  @@index([price, beds, baths])
   @@map("properties")
+}
+
+/// Salesforce Files: ContentDocument + latest ContentVersion + ContentDocumentLink collapsed into one row.
+/// The file body is an S3 object (s3Key); only the latest version is kept.
+model File {
+  id   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Salesforce 18-character record Id (ContentDocument.Id)
+  sfId String? @unique @map("sf_id") @db.Char(18)
+
+  /// ContentVersion.Title
+  title    String @db.VarChar(255)
+  /// ContentDocument.FileType (upper-case extension: PNG, JPG, GIF, PDF, ...)
+  fileType String @map("file_type") @db.VarChar(10)
+  /// ContentVersion.VersionData -> S3 object key (files/<id>/<filename>)
+  s3Key    String @map("s3_key") @db.VarChar(512)
+
+  /// ContentDocumentLink.LinkedEntityId (polymorphic in Salesforce; properties.id today)
+  recordId String   @map("record_id") @db.Uuid
+  property Property @relation(fields: [recordId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  /// ContentVersion.CreatedDate (PropertyController.getPictures ORDER BY CreatedDate)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy String?  @map("created_by") @db.VarChar(128)
+
+  @@index([recordId, fileType, createdAt])
+  @@map("files")
 }
 
 /// Standard Contact — only the fields the app touches (sample-data importer, Contacts tab).

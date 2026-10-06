@@ -38,7 +38,7 @@ app/web/           Target web app — React 18 + Vite + TypeScript (Mantine, Rea
 infra/             Terraform for AWS (account 599083837640, us-east-1)
 tools/             Extraction / load / helper scripts; tools/inventory/ generates docs/migration/inventory.{json,md},
                    tools/mapping/ owns mapping.yaml, tools/schema/ generates schema-mapping.md from the Prisma schema
-tests/parity/      Parity tests run live against both the Salesforce org and the target app
+tests/parity/      Apex tests ported as characterisation specs (characterisation/) + parity/E2E suite
 docs/migration/    Migration docs; docs/migration/mapping.yaml is the 1:1 mapping matrix
 .github/workflows/ CI for this branch
 ```
@@ -57,8 +57,9 @@ workers and the E2E suite use until the AWS environment exists.
 make up          # build the dev images, start db + api + web, wait until all are healthy
 make migrate     # prisma migrate deploy: apply app/api/prisma/migrations to the local database
 make seed        # load data/migrated/ (the migrated data set; empty until UNT3-12/13 fill it)
-make test        # API and web unit tests, inside the dev containers
-make e2e         # smoke-check the running stack, then run tests/parity once it exists (UNT3-24)
+make test        # API and web unit tests + Apex characterisation specs (pending suites report as todo)
+make characterise # run every characterisation spec for real: the red baseline the Apex ports turn green
+make e2e         # smoke-check the running stack, then run the Playwright suite once it exists (UNT3-24)
 ```
 
 After `make up && make migrate`: API at <http://localhost:3000/health> (`/health/ready` also

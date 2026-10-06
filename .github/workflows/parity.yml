@@ -1,0 +1,59 @@
+name: parity
+
+on:
+  pull_request:
+    branches: [salesforce-to-aws-demo]
+    paths: ['tests/parity/**', 'app/api/**', '.github/workflows/parity.yml']
+  push:
+    branches: [salesforce-to-aws-demo]
+    paths: ['tests/parity/**', 'app/api/**', '.github/workflows/parity.yml']
+
+jobs:
+  characterisation:
+    name: lint, typecheck, pending run (green), full run (red baseline)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dreamhouse
+          POSTGRES_PASSWORD: dreamhouse
+          POSTGRES_DB: dreamhouse
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dreamhouse"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://dreamhouse:dreamhouse@localhost:5432/dreamhouse?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            app/api/package-lock.json
+            tests/parity/package-lock.json
+      - name: "Install the API (tests/parity links it as a file: dependency)"
+        run: npm ci
+        working-directory: app/api
+      - run: npm ci
+        working-directory: tests/parity
+      - run: npm run lint
+        working-directory: tests/parity
+      - run: npm run format:check
+        working-directory: tests/parity
+      - run: npm run typecheck
+        working-directory: tests/parity
+      - name: Apply the committed migrations (ported suites run against the real schema)
+        run: npm run prisma:deploy
+        working-directory: app/api
+      - name: Characterisation specs, ported suites live, pending suites as todo (must be green)
+        run: npm test
+        working-directory: tests/parity
+      - name: Full characterisation run against the scaffold (red baseline, informational until the ports land)
+        run: npm run test:all
+        working-directory: tests/parity
+        continue-on-error: true
