@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { appTabs } from '@/app/navigation';
+import { appTabs, visibleTabs } from '@/app/navigation';
 import { renderApp, signedInStubClient } from '@/test/render';
 
 const healthResponse = {
@@ -25,21 +25,57 @@ describe('AppShell', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders one navigation link per configured tab', async () => {
+  it('renders one navigation link per tab visible to the dreamhouse group (no Settings)', async () => {
     renderApp({ initialPath: '/', authClient: await signedInStubClient() });
 
     const nav = await screen.findByRole('navigation', { name: 'Dreamhouse tabs' });
     const links = within(nav).getAllByRole('link');
-    expect(links.map((l) => l.textContent)).toEqual(appTabs.map((t) => t.label));
-    expect(links.map((l) => l.getAttribute('href'))).toEqual(appTabs.map((t) => t.path));
+    const tabs = visibleTabs(['dreamhouse']);
+    expect(tabs.length).toBe(appTabs.length - 1);
+    expect(links.map((l) => l.textContent)).toEqual(tabs.map((t) => t.label));
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(tabs.map((t) => t.path));
     expect(links.map((l) => l.getAttribute('data-salesforce-tab'))).toEqual(
-      appTabs.map((t) => t.salesforceTab),
+      tabs.map((t) => t.salesforceTab),
     );
+    expect(screen.queryByTestId('tab-settings')).not.toBeInTheDocument();
+  });
+
+  it('renders every tab, Settings included, for the dreamhouse-admin group', async () => {
+    renderApp({ initialPath: '/', authClient: await signedInStubClient('admin@example.com') });
+
+    const nav = await screen.findByRole('navigation', { name: 'Dreamhouse tabs' });
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((l) => l.textContent),
+    ).toEqual(appTabs.map((t) => t.label));
+  });
+
+  it('a dreamhouse user opening /settings directly gets the access-denied page, not the tab', async () => {
+    renderApp({ initialPath: '/settings', authClient: await signedInStubClient() });
+
+    expect(await screen.findByTestId('access-denied')).toHaveTextContent(/dreamhouse-admin/);
+    expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
+  });
+
+  it('a signed-in user without the dreamhouse group sees "Insufficient privileges" instead of the app', async () => {
+    const user = userEvent.setup();
+    renderApp({
+      initialPath: '/properties',
+      authClient: await signedInStubClient('guest@example.com'),
+    });
+
+    expect(await screen.findByTestId('access-denied')).toHaveTextContent(
+      /not in the Dreamhouse user group/,
+    );
+    expect(screen.queryByRole('navigation', { name: 'Dreamhouse tabs' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+    expect(await screen.findByRole('form', { name: 'Sign in' })).toBeInTheDocument();
   });
 
   it('navigates between tabs and marks the active one', async () => {
     const user = userEvent.setup();
-    renderApp({ initialPath: '/', authClient: await signedInStubClient() });
+    renderApp({ initialPath: '/', authClient: await signedInStubClient('admin@example.com') });
 
     await screen.findByRole('heading', { name: /welcome to dreamhouse/i });
     await user.click(screen.getByTestId('tab-settings'));

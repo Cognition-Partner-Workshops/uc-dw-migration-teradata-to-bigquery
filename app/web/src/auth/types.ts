@@ -2,6 +2,8 @@ export interface AuthUser {
   username: string;
   email?: string;
   displayName: string;
+  /** Cognito groups (`cognito:groups`) — the user's Salesforce permission sets, see groups.ts. */
+  groups: string[];
 }
 
 export interface SignInInput {

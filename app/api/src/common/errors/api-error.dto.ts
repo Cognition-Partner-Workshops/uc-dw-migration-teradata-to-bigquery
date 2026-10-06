@@ -17,6 +17,10 @@ export const ERROR_CODES = {
   invalidField: 'INVALID_FIELD',
   duplicateValue: 'DUPLICATE_VALUE',
   geocodingFault: 'GEOCODING_FAULT',
+  // auth (src/auth): no session / no object or class permission / field not editable for the caller
+  invalidSession: 'INVALID_SESSION_ID',
+  insufficientAccess: 'INSUFFICIENT_ACCESS_OR_READONLY',
+  invalidFieldForInsertUpdate: 'INVALID_FIELD_FOR_INSERT_UPDATE',
 } as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

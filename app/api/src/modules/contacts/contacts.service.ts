@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { assertRecordAccess, recordAccessWhere } from '../../auth/sharing';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ContactDto } from './dto/contact.dto';
@@ -15,7 +16,9 @@ export class ContactsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<ContactDto[]> {
+    // Contact is Controlled by Parent with no Account: owner's rows only, unless View All (sharing.ts).
     const rows = await this.prisma.contact.findMany({
+      where: recordAccessWhere('Contact', 'read'),
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }, { id: 'asc' }],
     });
     return rows.map(toContact);
@@ -24,6 +27,7 @@ export class ContactsService {
   async findOne(id: string): Promise<ContactDto> {
     const row = await this.prisma.contact.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Contact not found');
+    assertRecordAccess('Contact', 'read', row);
     return toContact(row);
   }
 }

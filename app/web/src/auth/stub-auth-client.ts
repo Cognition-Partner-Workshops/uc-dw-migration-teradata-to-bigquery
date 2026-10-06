@@ -1,3 +1,4 @@
+import { stubGroups } from './groups';
 import { AuthError, type AuthClient, type AuthUser, type SignInInput } from './types';
 
 export const STUB_SESSION_KEY = 'dreamhouse.auth.stub';
@@ -13,19 +14,22 @@ function toUser(username: string): AuthUser {
       .filter(Boolean)
       .map((part) => part[0].toUpperCase() + part.slice(1))
       .join(' '),
+    groups: stubGroups(trimmed),
   };
 }
 
 /**
  * Local stand-in for Cognito: any non-empty username/password signs in and the session is kept
  * in localStorage so reloads stay signed in. Never used when VITE_AUTH_MODE=cognito.
+ * Groups follow the username (`admin*`, `guest*`, see groups.ts) so both roles can be tried.
  */
 export function createStubAuthClient(storage: Storage = window.localStorage): AuthClient {
   const read = (): AuthUser | null => {
     const raw = storage.getItem(STUB_SESSION_KEY);
     if (!raw) return null;
     try {
-      return JSON.parse(raw) as AuthUser;
+      const user = JSON.parse(raw) as Partial<AuthUser> & Pick<AuthUser, 'username'>;
+      return { ...user, groups: user.groups ?? stubGroups(user.username) } as AuthUser;
     } catch {
       storage.removeItem(STUB_SESSION_KEY);
       return null;

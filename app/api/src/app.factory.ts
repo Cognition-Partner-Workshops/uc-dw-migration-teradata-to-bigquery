@@ -3,6 +3,7 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
+import { requestContextMiddleware } from './auth/request-context';
 import { PrismaExceptionFilter } from './common/errors/prisma-exception.filter';
 import { createValidationPipe } from './common/errors/validation-exception.factory';
 import { AppConfigService } from './config/app-config.service';
@@ -16,7 +17,8 @@ export async function createApp(): Promise<INestApplication> {
 
 /**
  * Everything main.ts applies to the Nest app, also used by the test harnesses so the HTTP
- * contract (validation pipe, field-error bodies, Prisma error translation) is identical.
+ * contract (request context for sharing, validation pipe, field-error bodies, Prisma error
+ * translation) is identical. Guards and the field-security interceptor come from AuthModule.
  */
 export function configureApp(app: INestApplication): void {
   app.useLogger(app.get(Logger));
@@ -26,6 +28,7 @@ export function configureApp(app: INestApplication): void {
   (app as NestExpressApplication).useBodyParser('json', {
     limit: Math.ceil((maxInlineBytes * 4) / 3) + 64 * 1024,
   });
+  app.use(requestContextMiddleware);
   app.useGlobalPipes(createValidationPipe());
   app.useGlobalFilters(new PrismaExceptionFilter(app.get(HttpAdapterHost)));
   app.enableShutdownHooks();

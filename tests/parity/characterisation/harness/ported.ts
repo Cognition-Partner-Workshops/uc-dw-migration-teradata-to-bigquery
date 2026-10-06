@@ -11,6 +11,7 @@ export const PORTED_TICKETS: ReadonlySet<string> = new Set<string>([
   'UNT3-17', // GeocodingServiceTest → POST /geocoding/addresses
   'UNT3-18', // FileUtilitiesTest, TestSampleDataController → POST /files, POST /sample-data/import
   'UNT3-19', // Create_property flow baseline → POST/GET/PATCH/DELETE /properties, /brokers
+  'UNT3-20', // dreamhouse permission set → Cognito groups, guards, FLS, sharing (permission matrix)
 ]);
 
 export const RUN_ALL = process.env.PARITY_RUN_ALL === '1';

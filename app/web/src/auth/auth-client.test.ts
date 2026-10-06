@@ -34,11 +34,26 @@ describe('stub auth client', () => {
       username: 'mary.lou-smith@example.com',
       email: 'mary.lou-smith@example.com',
       displayName: 'Mary Lou Smith',
+      groups: ['dreamhouse'],
     });
     expect(await createStubAuthClient().getCurrentUser()).toEqual(user);
     expect(await client.getAccessToken()).toMatch(/^stub-token-for-/);
 
     await client.signOut();
     expect(await client.getCurrentUser()).toBeNull();
+  });
+});
+
+describe('stub groups (permission sets by username convention)', () => {
+  it('admin* is dreamhouse + dreamhouse-admin, guest* has no group, anyone else is dreamhouse', async () => {
+    const client = createStubAuthClient();
+    expect((await client.signIn({ username: 'admin@example.com', password: 'x' })).groups).toEqual([
+      'dreamhouse',
+      'dreamhouse-admin',
+    ]);
+    expect((await client.signIn({ username: 'guest.user', password: 'x' })).groups).toEqual([]);
+    expect(
+      (await client.signIn({ username: 'standard@example.com', password: 'x' })).groups,
+    ).toEqual(['dreamhouse']);
   });
 });

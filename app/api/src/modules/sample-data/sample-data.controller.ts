@@ -1,12 +1,12 @@
 import { Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
-  ApiBearerAuth,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { RequirePermission } from '../../auth/decorators';
 import { SampleDataImportResultDto } from './dto/sample-data.dto';
 import { SampleDataImportGuard } from './sample-data.guard';
 import { SampleDataService } from './sample-data.service';
@@ -19,7 +19,15 @@ export class SampleDataController {
   @Post('import')
   @HttpCode(HttpStatus.OK)
   @UseGuards(SampleDataImportGuard)
-  @ApiBearerAuth()
+  @RequirePermission(
+    'sampleData.invoke',
+    'properties.delete',
+    'brokers.delete',
+    'contacts.delete',
+    'properties.create',
+    'brokers.create',
+    'contacts.create',
+  )
   @ApiOperation({
     summary: 'Reset and reload the sample data set (admin only)',
     description:

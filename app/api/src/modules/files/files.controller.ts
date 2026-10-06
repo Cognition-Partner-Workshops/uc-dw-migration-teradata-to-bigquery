@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Res } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -12,8 +12,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { readBearerClaims } from '../../common/auth/bearer-claims';
-import { AppConfigService } from '../../config/app-config.service';
+import { CurrentUser, RequirePermission, SfObjectAccess } from '../../auth/decorators';
+import type { Principal } from '../../auth/principal';
 import {
   CreateFileDto,
   FileCreatedDto,
@@ -23,15 +23,18 @@ import {
 import { contentDispositionInline } from './file-names';
 import { FileActor, FilesService } from './files.service';
 
+/**
+ * `FileUtilities` is not in the dreamhouse permission set (`files.invoke` = dreamhouse-admin only,
+ * as in the org); the upload itself is ContentVersion create (`files.create`).
+ */
 @ApiTags('files')
 @Controller('files')
+@SfObjectAccess('ContentDocument')
 export class FilesController {
-  constructor(
-    private readonly files: FilesService,
-    private readonly config: AppConfigService,
-  ) {}
+  constructor(private readonly files: FilesService) {}
 
   @Post()
+  @RequirePermission('files.invoke', 'files.create')
   @ApiOperation({
     summary: 'Upload a file and link it to a record',
     description:
@@ -48,14 +51,13 @@ export class FilesController {
     description: 'recordId does not exist (Apex: ContentDocumentLink insert failed)',
   })
   @ApiPayloadTooLargeResponse({ description: 'Decoded body exceeds FILES_MAX_INLINE_BYTES' })
-  createFile(
-    @Body() body: CreateFileDto,
-    @Headers('authorization') authorization?: string,
-  ): Promise<FileCreatedDto> {
-    return this.files.createFile(body, this.actorFrom(authorization));
+  createFile(@Body() body: CreateFileDto, @CurrentUser() user: Principal): Promise<FileCreatedDto> {
+    const actor: FileActor = { username: user.username, sub: user.sub };
+    return this.files.createFile(body, actor);
   }
 
   @Post('presigned-upload')
+  @RequirePermission('files.invoke', 'files.create')
   @ApiOperation({
     summary: 'Pre-signed S3 upload for large files',
     description:
@@ -72,6 +74,7 @@ export class FilesController {
   }
 
   @Get(':id')
+  @RequirePermission('files.read')
   @ApiOperation({
     summary: 'Download a file',
     description:
@@ -98,20 +101,5 @@ export class FilesController {
     if (object.contentLength !== undefined) res.setHeader('Content-Length', object.contentLength);
     object.body.on('error', (error) => res.destroy(error));
     object.body.pipe(res);
-  }
-
-  /** `created_by` from the bearer token when one is present; the auth guard (UNT3-20) will own this. */
-  private actorFrom(authorization?: string): FileActor | undefined {
-    if (!authorization) return undefined;
-    const secret =
-      this.config.get('AUTH_TEST_JWT_SECRET') ??
-      (this.config.isProduction ? undefined : 'dreamhouse-characterisation');
-    if (!secret) return undefined;
-    try {
-      const claims = readBearerClaims(authorization, secret);
-      return claims ? { username: claims.username, sub: claims.sub } : undefined;
-    } catch {
-      return undefined;
-    }
   }
 }

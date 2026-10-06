@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { asUser, standardUser } from './support/test-users';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import './setup-env';
 import { AppModule } from '../src/app.module';
@@ -93,7 +94,13 @@ describe('Dreamhouse API (http)', () => {
   });
 
   it('validates query parameters like the Apex method normalises its inputs', async () => {
-    await request(app.getHttpServer()).get('/properties?pageSize=0').expect(400);
-    await request(app.getHttpServer()).get('/properties?unknown=1').expect(400);
+    await request(app.getHttpServer())
+      .get('/properties?pageSize=0')
+      .set(asUser(standardUser))
+      .expect(400);
+    await request(app.getHttpServer())
+      .get('/properties?unknown=1')
+      .set(asUser(standardUser))
+      .expect(400);
   });
 });

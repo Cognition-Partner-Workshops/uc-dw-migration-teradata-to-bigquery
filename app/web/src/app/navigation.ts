@@ -9,11 +9,15 @@ import {
   IconUsers,
   type Icon,
 } from '@tabler/icons-react';
+import { ADMIN_GROUP, DREAMHOUSE_GROUP, hasGroup, type DreamhouseGroup } from '@/auth/groups';
 
 /**
  * Navigation tabs of the Dreamhouse Lightning app
  * (salesforce/force-app/main/default/applications/Dreamhouse.app-meta.xml, `<tabs>` in order).
  * The app shell renders its navigation from this list; routes.tsx mounts a page per tab.
+ * `requiredGroup` is the tab visibility of the `dreamhouse` permission set (`<tabSettings>`
+ * Visible, standard tabs Default On) with one documented exception: Settings (sample data
+ * import) is `dreamhouse-admin` only — docs/migration/mapping.yaml tab:Settings.
  */
 export interface AppTab {
   /** Stable id used in tests and as the React key. */
@@ -27,6 +31,8 @@ export interface AppTab {
   /** Lightning page / object page the tab opened in Salesforce. */
   salesforcePage: string;
   icon: Icon;
+  /** Cognito group that makes the tab visible (the permission set / profile that granted it). */
+  requiredGroup: DreamhouseGroup;
 }
 
 export const appTabs: readonly AppTab[] = [
@@ -37,6 +43,7 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'standard-home',
     salesforcePage: 'Home (standard)',
     icon: IconHome,
+    requiredGroup: DREAMHOUSE_GROUP,
   },
   {
     id: 'property-explorer',
@@ -45,6 +52,7 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'Property_Explorer',
     salesforcePage: 'flexipages/Property_Explorer',
     icon: IconTelescope,
+    requiredGroup: DREAMHOUSE_GROUP,
   },
   {
     id: 'property-finder',
@@ -53,6 +61,7 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'Property_Finder',
     salesforcePage: 'flexipages/Property_Finder',
     icon: IconMap,
+    requiredGroup: DREAMHOUSE_GROUP,
   },
   {
     id: 'contacts',
@@ -61,6 +70,7 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'standard-Contact',
     salesforcePage: 'Contact (standard object)',
     icon: IconAddressBook,
+    requiredGroup: DREAMHOUSE_GROUP,
   },
   {
     id: 'properties',
@@ -69,6 +79,7 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'Property__c',
     salesforcePage: 'Property__c list + flexipages/Property_Record_Page',
     icon: IconBuildingCommunity,
+    requiredGroup: DREAMHOUSE_GROUP,
   },
   {
     id: 'brokers',
@@ -77,6 +88,7 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'Broker__c',
     salesforcePage: 'Broker__c list + flexipages/Broker_Record_Page',
     icon: IconUsers,
+    requiredGroup: DREAMHOUSE_GROUP,
   },
   {
     id: 'files',
@@ -85,6 +97,7 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'standard-File',
     salesforcePage: 'Files (standard)',
     icon: IconFiles,
+    requiredGroup: DREAMHOUSE_GROUP,
   },
   {
     id: 'settings',
@@ -93,8 +106,19 @@ export const appTabs: readonly AppTab[] = [
     salesforceTab: 'Settings',
     salesforcePage: 'flexipages/Settings',
     icon: IconSettings,
+    requiredGroup: ADMIN_GROUP,
   },
 ];
+
+/** True when a user with `groups` may see / open the tab. */
+export function canOpenTab(tab: AppTab, groups: readonly string[] | undefined): boolean {
+  return hasGroup(groups, tab.requiredGroup);
+}
+
+/** The tabs a user with `groups` sees in the navigation, in app order. */
+export function visibleTabs(groups: readonly string[] | undefined): AppTab[] {
+  return appTabs.filter((tab) => canOpenTab(tab, groups));
+}
 
 export function findActiveTab(pathname: string): AppTab | undefined {
   return appTabs.find((tab) =>
