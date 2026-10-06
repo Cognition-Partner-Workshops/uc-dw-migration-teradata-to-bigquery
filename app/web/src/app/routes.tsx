@@ -1,6 +1,6 @@
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from 'react-router-dom';
 import { RequireAuth } from '@/auth/RequireAuth';
-import { AppShell } from '@/components/AppShell';
+import { AppShell } from '@/app/AppShell';
 import { BrokerRecordPage } from '@/pages/BrokerRecordPage';
 import { BrokersPage } from '@/pages/BrokersPage';
 import { ContactsPage } from '@/pages/ContactsPage';

@@ -16,9 +16,9 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconLogout } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/use-auth';
-import { appTabs, findActiveTab } from '@/app/tabs';
-import { ApiStatus } from './ApiStatus';
-import { DreamhouseLogo } from './DreamhouseLogo';
+import { appTabs, findActiveTab } from '@/app/navigation';
+import { ApiStatus } from '@/components/ApiStatus/ApiStatus';
+import { DreamhouseLogo } from '@/components/DreamhouseLogo/DreamhouseLogo';
 
 export function AppShell() {
   const [opened, { toggle, close }] = useDisclosure();

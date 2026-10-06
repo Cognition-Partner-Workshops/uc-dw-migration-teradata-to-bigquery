@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
-import { MigrationPlaceholder } from '@/components/MigrationPlaceholder';
-import { PageHeader } from '@/components/PageHeader';
+import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 /** flexipages/Property_Record_Page: highlights, details, propertyCarousel, propertyLocation, brokerCard. */
 export function PropertyRecordPage() {

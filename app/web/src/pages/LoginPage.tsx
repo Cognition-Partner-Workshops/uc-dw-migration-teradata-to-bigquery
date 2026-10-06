@@ -17,7 +17,7 @@ import type { FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/use-auth';
 import { AuthError } from '@/auth/types';
-import { DreamhouseLogo } from '@/components/DreamhouseLogo';
+import { DreamhouseLogo } from '@/components/DreamhouseLogo/DreamhouseLogo';
 
 interface LocationState {
   from?: { pathname: string };

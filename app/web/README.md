@@ -19,14 +19,15 @@ npm run api:generate # regenerate the typed API client from ../api/openapi/opena
 
 | Path | What |
 | --- | --- |
-| `src/app/tabs.ts` | **Navigation config.** One entry per `<tabs>` of `Dreamhouse.app-meta.xml`, in the same order; the shell renders from this list and a test asserts it matches the Salesforce metadata. |
+| `src/app/navigation.ts` | **Navigation config.** One entry per `<tabs>` of `Dreamhouse.app-meta.xml`, in the same order; the shell renders from this list and a test asserts it matches the Salesforce metadata. |
 | `src/app/routes.tsx` | React Router tree: `/login` + everything else behind `RequireAuth` inside the `AppShell`. |
 | `src/app/theme.ts`, `providers.tsx`, `query-client.ts` | Mantine theme (Dreamhouse green `#86BD4A` from the app metadata), provider stack, QueryClient defaults. |
 | `src/api/schema.d.ts` | **Generated** OpenAPI types (`npm run api:generate`); do not edit. |
 | `src/api/client.ts`, `queries.ts` | `openapi-fetch` client typed by the schema (adds the auth bearer), TanStack `queryOptions` / query keys. |
 | `src/auth/` | `AuthClient` interface with two implementations: `stub-auth-client.ts` (local, any username/password) and `cognito-auth-client.ts` (`amazon-cognito-identity-js`, USER_SRP_AUTH). `auth-client.ts` picks one from `VITE_AUTH_MODE`. |
-| `src/components/AppShell.tsx` | Header + navbar rendered from `appTabs`, user menu, live `GET /health` badge. |
-| `src/components/MapView.tsx` | Leaflet map wrapper (OpenStreetMap tiles, markers) for the propertyMap / propertyListMap / propertyLocation replacements. |
+| `src/app/AppShell.tsx` | Header + navbar rendered from `appTabs`, user menu, live `GET /health` badge. |
+| `src/components/MapView/MapView.tsx` | Leaflet map wrapper (OpenStreetMap tiles, markers) for the propertyMap / propertyListMap / propertyLocation replacements. |
+| `src/components/<Name>/<Name>.tsx` | Shared components (`ApiStatus`, `DreamhouseLogo`, `MapView`, `MigrationPlaceholder`, `PageHeader`), one folder per component as the mapping conventions require. |
 | `src/pages/` | One page per tab/record page. Pages whose LWCs are not ported yet render `MigrationPlaceholder` naming the Salesforce sources and the owning ticket. |
 | `scripts/generate-api-client.mjs` | The one API-client script (`--check` mode is used in CI). |
 
@@ -50,7 +51,7 @@ is checked against the real paths, parameters and DTOs. Point it at a running AP
 
 | Salesforce | Here |
 | --- | --- |
-| `Dreamhouse` Lightning app, `<tabs>` | `src/app/tabs.ts` → `AppShell` navbar |
+| `Dreamhouse` Lightning app, `<tabs>` | `src/app/navigation.ts` → `AppShell` navbar |
 | `Property_Explorer` / `Property_Finder` Lightning pages | `/property-explorer`, `/property-finder` (Leaflet `MapView`; LWC ports in UNT3-21) |
 | `Property__c` / `Broker__c` tabs and record pages, `Contact`, Files, `Settings` page | `/properties(/:id)`, `/brokers(/:id)`, `/contacts`, `/files`, `/settings` (UNT3-22) |
 | Salesforce login | `/login` (Cognito, stubbed locally) |

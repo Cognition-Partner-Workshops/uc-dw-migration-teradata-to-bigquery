@@ -1,7 +1,7 @@
 import { Grid, Paper, Text } from '@mantine/core';
-import { MapView } from '@/components/MapView';
-import { MigrationPlaceholder } from '@/components/MigrationPlaceholder';
-import { PageHeader } from '@/components/PageHeader';
+import { MapView } from '@/components/MapView/MapView';
+import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 /** flexipages/Property_Explorer: filter + Create_property flow | tile list | summary + map. */
 export function PropertyExplorerPage() {

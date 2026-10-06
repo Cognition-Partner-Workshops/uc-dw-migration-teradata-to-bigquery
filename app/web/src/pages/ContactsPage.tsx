@@ -1,5 +1,5 @@
-import { MigrationPlaceholder } from '@/components/MigrationPlaceholder';
-import { PageHeader } from '@/components/PageHeader';
+import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 export function ContactsPage() {
   return (

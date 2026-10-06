@@ -2,8 +2,8 @@ import { Box } from '@mantine/core';
 import type { LatLngExpression } from 'leaflet';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { DEFAULT_CENTER } from '@/components/map-defaults';
-import '@/components/leaflet-icons';
+import { DEFAULT_CENTER } from './map-defaults';
+import './leaflet-icons';
 
 export interface MapMarker {
   id: string;

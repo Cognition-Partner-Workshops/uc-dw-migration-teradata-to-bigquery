@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { appTabs, findActiveTab } from './tabs';
+import { appTabs, findActiveTab } from './navigation';
 
 const dreamhouseApp = resolve(
   __dirname,

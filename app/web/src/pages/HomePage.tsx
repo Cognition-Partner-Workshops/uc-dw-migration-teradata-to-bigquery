@@ -1,7 +1,7 @@
 import { Card, SimpleGrid, Text, ThemeIcon, Title, UnstyledButton } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import { appTabs } from '@/app/tabs';
-import { PageHeader } from '@/components/PageHeader';
+import { appTabs } from '@/app/navigation';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 export function HomePage() {
   const tiles = appTabs.filter((tab) => tab.id !== 'home');

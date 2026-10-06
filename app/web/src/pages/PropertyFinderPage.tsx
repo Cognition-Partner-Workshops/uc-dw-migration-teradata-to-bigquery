@@ -1,6 +1,6 @@
-import { MapView } from '@/components/MapView';
-import { MigrationPlaceholder } from '@/components/MigrationPlaceholder';
-import { PageHeader } from '@/components/PageHeader';
+import { MapView } from '@/components/MapView/MapView';
+import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
+import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 /** flexipages/Property_Finder: filter + barcode scanner | list map | summary + days on market. */
 export function PropertyFinderPage() {

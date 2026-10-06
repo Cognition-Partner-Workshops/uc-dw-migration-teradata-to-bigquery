@@ -67,7 +67,7 @@ and smoke-tests `/health` and `/openapi.json` on every PR touching `app/api`.
 [`app/web`](app/web/) is the React 18 + Vite + TypeScript app (Node 22) with Mantine,
 React Router, TanStack Query and Leaflet 1.9.4 (the same library the Salesforce app ships
 as a static resource). Its shell renders the navigation from
-[`src/app/tabs.ts`](app/web/src/app/tabs.ts), one entry per tab of the `Dreamhouse`
+[`src/app/navigation.ts`](app/web/src/app/navigation.ts), one entry per tab of the `Dreamhouse`
 Lightning app (a test asserts the list matches `Dreamhouse.app-meta.xml`), and the login
 page talks to Cognito (`VITE_AUTH_MODE=cognito`) or a local stub (default). The API client
 is generated from the API's OpenAPI document by one script; see the
@@ -87,8 +87,12 @@ builds and smoke-tests the built shell on every PR touching `app/web` or the Ope
 
 [`docs/migration/mapping.yaml`](docs/migration/mapping.yaml) is the single source of
 truth for the 1:1 mapping from every Salesforce artifact to its target
-(Postgres table/column, API endpoint, React component, infra resource). Every PR
-that touches an artifact must keep it current.
+(Postgres table/column, API endpoint, React component, infra resource), one row per
+inventory id with `target`, `disposition`, `status` and `parity_tests`; the rendered
+view is [`mapping.md`](docs/migration/mapping.md). Every PR that touches an artifact
+must keep it current: `python3 tools/mapping/mapping.py --check` runs in CI and fails
+unless every inventory id appears exactly once, target names follow the conventions
+and `mapping.md` is regenerated (`--render`). See [`tools/mapping`](tools/mapping/README.md).
 
 ## Artifact inventory
 
