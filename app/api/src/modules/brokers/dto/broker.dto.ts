@@ -81,37 +81,56 @@ export class CreateBrokerDto {
   @ApiPropertyOptional({
     description: 'Broker_Id__c (Number 18,0) as a digit string',
     pattern: BROKER_ID.source,
+    type: String,
+    nullable: true,
   })
   @IsOptional()
   @IsString()
   @Matches(BROKER_ID, { message: 'brokerId must be a whole number of at most 18 digits' })
   brokerId?: string | null;
 
-  @ApiPropertyOptional({ description: 'Title__c', maxLength: 30 })
+  @ApiPropertyOptional({ description: 'Title__c', maxLength: 30, type: String, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(BROKER_LIMITS.title)
   title?: string | null;
 
-  @ApiPropertyOptional({ description: 'Email__c', format: 'email', maxLength: 80 })
+  @ApiPropertyOptional({
+    description: 'Email__c',
+    format: 'email',
+    maxLength: 80,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsEmail()
   @MaxLength(BROKER_LIMITS.email)
   email?: string | null;
 
-  @ApiPropertyOptional({ description: 'Phone__c', maxLength: 40 })
+  @ApiPropertyOptional({ description: 'Phone__c', maxLength: 40, type: String, nullable: true })
   @IsOptional()
   @IsString()
   @MaxLength(BROKER_LIMITS.phone)
   phone?: string | null;
 
-  @ApiPropertyOptional({ description: 'Mobile_Phone__c', maxLength: 40 })
+  @ApiPropertyOptional({
+    description: 'Mobile_Phone__c',
+    maxLength: 40,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(BROKER_LIMITS.mobilePhone)
   mobilePhone?: string | null;
 
-  @ApiPropertyOptional({ description: 'Picture__c', format: 'uri', maxLength: 255 })
+  @ApiPropertyOptional({
+    description: 'Picture__c',
+    format: 'uri',
+    maxLength: 255,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsUrl()
   @MaxLength(BROKER_LIMITS.picture)

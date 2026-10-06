@@ -53,7 +53,11 @@ is checked against the real paths, parameters and DTOs. Point it at a running AP
 | --- | --- |
 | `Dreamhouse` Lightning app, `<tabs>` | `src/app/navigation.ts` → `AppShell` navbar |
 | `Property_Explorer` / `Property_Finder` Lightning pages | `/property-explorer`, `/property-finder` (Leaflet `MapView`; LWC ports in UNT3-21) |
-| `Property__c` / `Broker__c` tabs and record pages, `Contact`, Files, `Settings` page | `/properties(/:id)`, `/brokers(/:id)`, `/contacts`, `/files`, `/settings` (UNT3-22) |
+| `Property__c` / `Broker__c` tabs and record pages, `Contact`, Files | `/properties(/:id)`, `/brokers(/:id)`, `/contacts`, `/files` (UNT3-22) |
+| `Create_property` screen flow (`flowruntime:interview` on Property Explorer) | `/properties/new` → `CreatePropertyWizard` (same screens, defaults and fault texts; one `POST /properties` with `geocode: true`, then `POST /files` + `PATCH` picture/thumbnail) |
+| `Settings` page, `sampleDataImporter` | `/settings` → `SampleDataImporter` (`dreamhouse-admin` only, confirm dialog before `POST /sample-data/import`) |
+| `barcodeScanner` (`lightning/mobileCapabilities`) | `BarcodeScanner` on Property Finder: browser `BarcodeDetector` + camera, manual Property Id entry as fallback |
+| `listContactsFromDevice`, Einstein prompt templates | dropped (no web equivalent / out of demo scope), see `mapping.yaml` |
 | Salesforce login | `/login` (Cognito, stubbed locally) |
 | `leafletjs` static resource | `leaflet` npm package 1.9.4 |
 

@@ -1062,65 +1062,76 @@
             "maxLength": 80
           },
           "address": {
-            "type": "object",
+            "type": "string",
             "description": "Address__c (flow: property_address.street)",
-            "maxLength": 100
+            "maxLength": 100,
+            "nullable": true
           },
           "city": {
-            "type": "object",
+            "type": "string",
             "description": "City__c (flow: property_address.city)",
-            "maxLength": 50
+            "maxLength": 50,
+            "nullable": true
           },
           "state": {
-            "type": "object",
+            "type": "string",
             "description": "State__c (flow: property_address.province)",
-            "maxLength": 20
+            "maxLength": 20,
+            "nullable": true
           },
           "zip": {
-            "type": "object",
+            "type": "string",
             "description": "Zip__c (flow: property_address.postalCode)",
-            "maxLength": 10
+            "maxLength": 10,
+            "nullable": true
           },
           "country": {
             "type": "string",
             "description": "Only used for geocoding (flow: property_address.country → geocode_address.country); not stored"
           },
           "description": {
-            "type": "object",
-            "description": "Description__c (flow: property_description)"
+            "type": "string",
+            "description": "Description__c (flow: property_description)",
+            "nullable": true
           },
           "tags": {
-            "type": "object",
+            "type": "string",
             "description": "Tags__c (flow: property_tags)",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           },
           "price": {
-            "type": "object",
+            "type": "number",
             "description": "Price__c (flow: property_price, screen default 100000)",
             "minimum": -99999999.99,
-            "maximum": 99999999.99
+            "maximum": 99999999.99,
+            "nullable": true
           },
           "priceSold": {
-            "type": "object",
+            "type": "number",
             "description": "Price_Sold__c",
             "minimum": -99999999.99,
-            "maximum": 99999999.99
+            "maximum": 99999999.99,
+            "nullable": true
           },
           "assessedValue": {
-            "type": "object",
-            "description": "Assessed_Value__c"
+            "type": "number",
+            "description": "Assessed_Value__c",
+            "nullable": true
           },
           "beds": {
-            "type": "object",
+            "type": "number",
             "description": "Beds__c (flow: number_of_beds, screen default 4)",
             "minimum": 0,
-            "maximum": 99
+            "maximum": 99,
+            "nullable": true
           },
           "baths": {
-            "type": "object",
+            "type": "number",
             "description": "Baths__c (flow: number_of_baths, screen default 2)",
             "minimum": 0,
-            "maximum": 99
+            "maximum": 99,
+            "nullable": true
           },
           "status": {
             "type": "string",
@@ -1131,56 +1142,67 @@
               "Available",
               "Under Agreement",
               "Closed"
-            ]
+            ],
+            "nullable": true
           },
           "dateListed": {
-            "type": "object",
-            "description": "Date_Listed__c, YYYY-MM-DD (Salesforce Date / Postgres date); defaults to the current date ($Flow.CurrentDate)"
+            "type": "string",
+            "description": "Date_Listed__c, YYYY-MM-DD (Salesforce Date / Postgres date); defaults to the current date ($Flow.CurrentDate)",
+            "nullable": true
           },
           "datePreMarket": {
-            "type": "object",
-            "description": "Date_Pre_Market__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Pre_Market__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "dateContracted": {
-            "type": "object",
-            "description": "Date_Contracted__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Contracted__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "dateAgreement": {
-            "type": "object",
-            "description": "Date_Agreement__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Agreement__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "dateClosed": {
-            "type": "object",
-            "description": "Date_Closed__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Closed__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "latitude": {
-            "type": "object",
+            "type": "number",
             "description": "Location__Latitude__s; must be set together with longitude (ignored when geocode=true)",
             "minimum": -90,
-            "maximum": 90
+            "maximum": 90,
+            "nullable": true
           },
           "longitude": {
-            "type": "object",
+            "type": "number",
             "description": "Location__Longitude__s; must be set together with latitude (ignored when geocode=true)",
             "minimum": -180,
-            "maximum": 180
+            "maximum": 180,
+            "nullable": true
           },
           "picture": {
-            "type": "object",
+            "type": "string",
             "description": "Picture__c",
             "format": "uri",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           },
           "thumbnail": {
-            "type": "object",
+            "type": "string",
             "description": "Thumbnail__c",
             "format": "uri",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           },
           "brokerId": {
-            "type": "object",
+            "type": "string",
             "description": "Broker__c lookup (flow: property_broker.recordId)",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "geocode": {
             "type": "boolean",
@@ -1503,65 +1525,76 @@
         "type": "object",
         "properties": {
           "address": {
-            "type": "object",
+            "type": "string",
             "description": "Address__c (flow: property_address.street)",
-            "maxLength": 100
+            "maxLength": 100,
+            "nullable": true
           },
           "city": {
-            "type": "object",
+            "type": "string",
             "description": "City__c (flow: property_address.city)",
-            "maxLength": 50
+            "maxLength": 50,
+            "nullable": true
           },
           "state": {
-            "type": "object",
+            "type": "string",
             "description": "State__c (flow: property_address.province)",
-            "maxLength": 20
+            "maxLength": 20,
+            "nullable": true
           },
           "zip": {
-            "type": "object",
+            "type": "string",
             "description": "Zip__c (flow: property_address.postalCode)",
-            "maxLength": 10
+            "maxLength": 10,
+            "nullable": true
           },
           "country": {
             "type": "string",
             "description": "Only used for geocoding (flow: property_address.country → geocode_address.country); not stored"
           },
           "description": {
-            "type": "object",
-            "description": "Description__c (flow: property_description)"
+            "type": "string",
+            "description": "Description__c (flow: property_description)",
+            "nullable": true
           },
           "tags": {
-            "type": "object",
+            "type": "string",
             "description": "Tags__c (flow: property_tags)",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           },
           "price": {
-            "type": "object",
+            "type": "number",
             "description": "Price__c (flow: property_price, screen default 100000)",
             "minimum": -99999999.99,
-            "maximum": 99999999.99
+            "maximum": 99999999.99,
+            "nullable": true
           },
           "priceSold": {
-            "type": "object",
+            "type": "number",
             "description": "Price_Sold__c",
             "minimum": -99999999.99,
-            "maximum": 99999999.99
+            "maximum": 99999999.99,
+            "nullable": true
           },
           "assessedValue": {
-            "type": "object",
-            "description": "Assessed_Value__c"
+            "type": "number",
+            "description": "Assessed_Value__c",
+            "nullable": true
           },
           "beds": {
-            "type": "object",
+            "type": "number",
             "description": "Beds__c (flow: number_of_beds, screen default 4)",
             "minimum": 0,
-            "maximum": 99
+            "maximum": 99,
+            "nullable": true
           },
           "baths": {
-            "type": "object",
+            "type": "number",
             "description": "Baths__c (flow: number_of_baths, screen default 2)",
             "minimum": 0,
-            "maximum": 99
+            "maximum": 99,
+            "nullable": true
           },
           "status": {
             "type": "string",
@@ -1572,56 +1605,67 @@
               "Available",
               "Under Agreement",
               "Closed"
-            ]
+            ],
+            "nullable": true
           },
           "dateListed": {
-            "type": "object",
-            "description": "Date_Listed__c, YYYY-MM-DD (Salesforce Date / Postgres date); defaults to the current date ($Flow.CurrentDate)"
+            "type": "string",
+            "description": "Date_Listed__c, YYYY-MM-DD (Salesforce Date / Postgres date); defaults to the current date ($Flow.CurrentDate)",
+            "nullable": true
           },
           "datePreMarket": {
-            "type": "object",
-            "description": "Date_Pre_Market__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Pre_Market__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "dateContracted": {
-            "type": "object",
-            "description": "Date_Contracted__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Contracted__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "dateAgreement": {
-            "type": "object",
-            "description": "Date_Agreement__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Agreement__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "dateClosed": {
-            "type": "object",
-            "description": "Date_Closed__c, YYYY-MM-DD (Salesforce Date / Postgres date)"
+            "type": "string",
+            "description": "Date_Closed__c, YYYY-MM-DD (Salesforce Date / Postgres date)",
+            "nullable": true
           },
           "latitude": {
-            "type": "object",
+            "type": "number",
             "description": "Location__Latitude__s; must be set together with longitude (ignored when geocode=true)",
             "minimum": -90,
-            "maximum": 90
+            "maximum": 90,
+            "nullable": true
           },
           "longitude": {
-            "type": "object",
+            "type": "number",
             "description": "Location__Longitude__s; must be set together with latitude (ignored when geocode=true)",
             "minimum": -180,
-            "maximum": 180
+            "maximum": 180,
+            "nullable": true
           },
           "picture": {
-            "type": "object",
+            "type": "string",
             "description": "Picture__c",
             "format": "uri",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           },
           "thumbnail": {
-            "type": "object",
+            "type": "string",
             "description": "Thumbnail__c",
             "format": "uri",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           },
           "brokerId": {
-            "type": "object",
+            "type": "string",
             "description": "Broker__c lookup (flow: property_broker.recordId)",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "geocode": {
             "type": "boolean",
@@ -1790,36 +1834,42 @@
             "maxLength": 80
           },
           "brokerId": {
-            "type": "object",
+            "type": "string",
             "description": "Broker_Id__c (Number 18,0) as a digit string",
-            "pattern": "^-?\\d{1,18}$"
+            "pattern": "^-?\\d{1,18}$",
+            "nullable": true
           },
           "title": {
-            "type": "object",
+            "type": "string",
             "description": "Title__c",
-            "maxLength": 30
+            "maxLength": 30,
+            "nullable": true
           },
           "email": {
-            "type": "object",
+            "type": "string",
             "description": "Email__c",
             "format": "email",
-            "maxLength": 80
+            "maxLength": 80,
+            "nullable": true
           },
           "phone": {
-            "type": "object",
+            "type": "string",
             "description": "Phone__c",
-            "maxLength": 40
+            "maxLength": 40,
+            "nullable": true
           },
           "mobilePhone": {
-            "type": "object",
+            "type": "string",
             "description": "Mobile_Phone__c",
-            "maxLength": 40
+            "maxLength": 40,
+            "nullable": true
           },
           "picture": {
-            "type": "object",
+            "type": "string",
             "description": "Picture__c",
             "format": "uri",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           }
         },
         "required": [
@@ -1830,36 +1880,42 @@
         "type": "object",
         "properties": {
           "brokerId": {
-            "type": "object",
+            "type": "string",
             "description": "Broker_Id__c (Number 18,0) as a digit string",
-            "pattern": "^-?\\d{1,18}$"
+            "pattern": "^-?\\d{1,18}$",
+            "nullable": true
           },
           "title": {
-            "type": "object",
+            "type": "string",
             "description": "Title__c",
-            "maxLength": 30
+            "maxLength": 30,
+            "nullable": true
           },
           "email": {
-            "type": "object",
+            "type": "string",
             "description": "Email__c",
             "format": "email",
-            "maxLength": 80
+            "maxLength": 80,
+            "nullable": true
           },
           "phone": {
-            "type": "object",
+            "type": "string",
             "description": "Phone__c",
-            "maxLength": 40
+            "maxLength": 40,
+            "nullable": true
           },
           "mobilePhone": {
-            "type": "object",
+            "type": "string",
             "description": "Mobile_Phone__c",
-            "maxLength": 40
+            "maxLength": 40,
+            "nullable": true
           },
           "picture": {
-            "type": "object",
+            "type": "string",
             "description": "Picture__c",
             "format": "uri",
-            "maxLength": 255
+            "maxLength": 255,
+            "nullable": true
           },
           "name": {
             "type": "string",

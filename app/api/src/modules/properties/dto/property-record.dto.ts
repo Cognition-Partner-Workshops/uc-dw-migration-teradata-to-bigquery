@@ -48,6 +48,12 @@ export const PROPERTY_LIMITS = {
   rooms: 99, // Number(2,0)
 } as const;
 
+/**
+ * Picture__c / Thumbnail__c are Url fields; the Create_property flow's set_main_picture stores the
+ * URL that serves the uploaded file, which on a local deployment has no TLD (http://localhost:5173/api/files/{id}).
+ */
+const PICTURE_URL_OPTIONS = { require_tld: false } as const;
+
 const DATE = 'YYYY-MM-DD (Salesforce Date / Postgres date)';
 
 /**
@@ -157,25 +163,42 @@ export class CreatePropertyDto {
   @ApiPropertyOptional({
     description: 'Address__c (flow: property_address.street)',
     maxLength: 100,
+    type: String,
+    nullable: true,
   })
   @IsOptional()
   @IsString()
   @MaxLength(PROPERTY_LIMITS.address)
   address?: string | null;
 
-  @ApiPropertyOptional({ description: 'City__c (flow: property_address.city)', maxLength: 50 })
+  @ApiPropertyOptional({
+    description: 'City__c (flow: property_address.city)',
+    maxLength: 50,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(PROPERTY_LIMITS.city)
   city?: string | null;
 
-  @ApiPropertyOptional({ description: 'State__c (flow: property_address.province)', maxLength: 20 })
+  @ApiPropertyOptional({
+    description: 'State__c (flow: property_address.province)',
+    maxLength: 20,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(PROPERTY_LIMITS.state)
   state?: string | null;
 
-  @ApiPropertyOptional({ description: 'Zip__c (flow: property_address.postalCode)', maxLength: 10 })
+  @ApiPropertyOptional({
+    description: 'Zip__c (flow: property_address.postalCode)',
+    maxLength: 10,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(PROPERTY_LIMITS.zip)
@@ -189,12 +212,21 @@ export class CreatePropertyDto {
   @IsString()
   country?: string;
 
-  @ApiPropertyOptional({ description: 'Description__c (flow: property_description)' })
+  @ApiPropertyOptional({
+    description: 'Description__c (flow: property_description)',
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   description?: string | null;
 
-  @ApiPropertyOptional({ description: 'Tags__c (flow: property_tags)', maxLength: 255 })
+  @ApiPropertyOptional({
+    description: 'Tags__c (flow: property_tags)',
+    maxLength: 255,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
   @IsString()
   @MaxLength(PROPERTY_LIMITS.tags)
@@ -204,6 +236,8 @@ export class CreatePropertyDto {
     description: 'Price__c (flow: property_price, screen default 100000)',
     minimum: -PROPERTY_LIMITS.currency,
     maximum: PROPERTY_LIMITS.currency,
+    type: Number,
+    nullable: true,
   })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
@@ -215,6 +249,8 @@ export class CreatePropertyDto {
     description: 'Price_Sold__c',
     minimum: -PROPERTY_LIMITS.currency,
     maximum: PROPERTY_LIMITS.currency,
+    type: Number,
+    nullable: true,
   })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
@@ -222,7 +258,7 @@ export class CreatePropertyDto {
   @Max(PROPERTY_LIMITS.currency)
   priceSold?: number | null;
 
-  @ApiPropertyOptional({ description: 'Assessed_Value__c' })
+  @ApiPropertyOptional({ description: 'Assessed_Value__c', type: Number, nullable: true })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(-PROPERTY_LIMITS.assessedValue)
@@ -233,6 +269,8 @@ export class CreatePropertyDto {
     description: 'Beds__c (flow: number_of_beds, screen default 4)',
     minimum: 0,
     maximum: 99,
+    type: Number,
+    nullable: true,
   })
   @IsOptional()
   @IsInt()
@@ -244,6 +282,8 @@ export class CreatePropertyDto {
     description: 'Baths__c (flow: number_of_baths, screen default 2)',
     minimum: 0,
     maximum: 99,
+    type: Number,
+    nullable: true,
   })
   @IsOptional()
   @IsInt()
@@ -254,6 +294,7 @@ export class CreatePropertyDto {
   @ApiPropertyOptional({
     description: 'Status__c restricted picklist; defaults to the flow value `Available`',
     enum: PROPERTY_STATUSES,
+    nullable: true,
   })
   @IsOptional()
   @IsIn(PROPERTY_STATUSES)
@@ -261,27 +302,29 @@ export class CreatePropertyDto {
 
   @ApiPropertyOptional({
     description: `Date_Listed__c, ${DATE}; defaults to the current date ($Flow.CurrentDate)`,
+    type: String,
+    nullable: true,
   })
   @IsOptional()
   @IsCalendarDate()
   dateListed?: string | null;
 
-  @ApiPropertyOptional({ description: `Date_Pre_Market__c, ${DATE}` })
+  @ApiPropertyOptional({ description: `Date_Pre_Market__c, ${DATE}`, type: String, nullable: true })
   @IsOptional()
   @IsCalendarDate()
   datePreMarket?: string | null;
 
-  @ApiPropertyOptional({ description: `Date_Contracted__c, ${DATE}` })
+  @ApiPropertyOptional({ description: `Date_Contracted__c, ${DATE}`, type: String, nullable: true })
   @IsOptional()
   @IsCalendarDate()
   dateContracted?: string | null;
 
-  @ApiPropertyOptional({ description: `Date_Agreement__c, ${DATE}` })
+  @ApiPropertyOptional({ description: `Date_Agreement__c, ${DATE}`, type: String, nullable: true })
   @IsOptional()
   @IsCalendarDate()
   dateAgreement?: string | null;
 
-  @ApiPropertyOptional({ description: `Date_Closed__c, ${DATE}` })
+  @ApiPropertyOptional({ description: `Date_Closed__c, ${DATE}`, type: String, nullable: true })
   @IsOptional()
   @IsCalendarDate()
   dateClosed?: string | null;
@@ -291,6 +334,8 @@ export class CreatePropertyDto {
       'Location__Latitude__s; must be set together with longitude (ignored when geocode=true)',
     minimum: -90,
     maximum: 90,
+    type: Number,
+    nullable: true,
   })
   @IsOptional()
   @IsNumber()
@@ -303,6 +348,8 @@ export class CreatePropertyDto {
       'Location__Longitude__s; must be set together with latitude (ignored when geocode=true)',
     minimum: -180,
     maximum: 180,
+    type: Number,
+    nullable: true,
   })
   @IsOptional()
   @IsNumber()
@@ -310,21 +357,35 @@ export class CreatePropertyDto {
   @Max(180)
   longitude?: number | null;
 
-  @ApiPropertyOptional({ description: 'Picture__c', format: 'uri', maxLength: 255 })
+  @ApiPropertyOptional({
+    description: 'Picture__c',
+    format: 'uri',
+    maxLength: 255,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
-  @IsUrl()
+  @IsUrl(PICTURE_URL_OPTIONS)
   @MaxLength(PROPERTY_LIMITS.url)
   picture?: string | null;
 
-  @ApiPropertyOptional({ description: 'Thumbnail__c', format: 'uri', maxLength: 255 })
+  @ApiPropertyOptional({
+    description: 'Thumbnail__c',
+    format: 'uri',
+    maxLength: 255,
+    type: String,
+    nullable: true,
+  })
   @IsOptional()
-  @IsUrl()
+  @IsUrl(PICTURE_URL_OPTIONS)
   @MaxLength(PROPERTY_LIMITS.url)
   thumbnail?: string | null;
 
   @ApiPropertyOptional({
     description: 'Broker__c lookup (flow: property_broker.recordId)',
     format: 'uuid',
+    type: String,
+    nullable: true,
   })
   @IsOptional()
   @IsUUID()

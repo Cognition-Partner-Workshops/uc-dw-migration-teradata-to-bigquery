@@ -24,7 +24,7 @@ export function DaysOnMarket({ recordId }: { recordId?: string }) {
 
   return (
     <Paper withBorder p="xs" data-testid="days-on-market" data-property-id={propertyId}>
-      {property.data && days > 0 && (
+      {property.data && property.data.dateListed && (
         <Group wrap="nowrap" align="stretch" gap={0} data-testid="days-on-market-chart">
           <div
             className={`${classes.badge} ${classes[status]}`}
@@ -67,7 +67,7 @@ export function DaysOnMarket({ recordId }: { recordId?: string }) {
           </Box>
         </Group>
       )}
-      {property.data && days === 0 && (
+      {property.data && !property.data.dateListed && (
         <Text size="sm" c="dimmed" ta="center" py="sm" data-testid="days-on-market-not-listed">
           Not on the market yet (no Date Listed).
         </Text>

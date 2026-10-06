@@ -1,18 +1,12 @@
-import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
+import { SampleDataImporter } from '@/components/SampleDataImporter/SampleDataImporter';
 
-/** flexipages/Settings: sampleDataImporter. */
+/** flexipages/Settings: sampleDataImporter (route guarded for dreamhouse-admin in routes.tsx). */
 export function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" subtitle="Import the sample brokers, properties and contacts." />
-      <MigrationPlaceholder
-        ticket="UNT3-22"
-        sources={[
-          { name: 'sampleDataImporter', kind: 'LWC' },
-          { name: 'SampleDataController', kind: 'Apex (POST /sample-data/import)' },
-        ]}
-      />
+      <SampleDataImporter />
     </>
   );
 }

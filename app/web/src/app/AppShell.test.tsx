@@ -42,6 +42,14 @@ describe('AppShell', () => {
     expect(screen.queryByTestId('tab-settings')).not.toBeInTheDocument();
   });
 
+  it('Home tiles follow the same group filter as the navigation', async () => {
+    renderApp({ initialPath: '/', authClient: await signedInStubClient() });
+    await screen.findByRole('navigation', { name: 'Dreamhouse tabs' });
+    // nav link + Home tile for a dreamhouse tab, neither for Settings
+    expect(screen.getAllByRole('link', { name: /Property Explorer/ })).toHaveLength(2);
+    expect(screen.queryAllByRole('link', { name: /Settings/ })).toHaveLength(0);
+  });
+
   it('renders every tab, Settings included, for the dreamhouse-admin group', async () => {
     renderApp({ initialPath: '/', authClient: await signedInStubClient('admin@example.com') });
 
@@ -85,7 +93,7 @@ describe('AppShell', () => {
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.getByTestId('active-tab')).toHaveTextContent('Settings');
     expect(screen.getByTestId('tab-settings')).toHaveAttribute('data-active', 'true');
-    expect(screen.getByTestId('migration-placeholder')).toHaveTextContent('UNT3-22');
+    expect(screen.getByTestId('sample-data-importer')).toBeInTheDocument();
   });
 
   it('shows the API health from GET /health through the typed client', async () => {
