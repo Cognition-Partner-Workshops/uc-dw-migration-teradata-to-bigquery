@@ -7,6 +7,7 @@ export const queryKeys = {
   properties: (query: PropertyQuery = {}) => ['properties', query] as const,
   property: (id: string) => ['properties', id] as const,
   propertyPictures: (id: string) => ['properties', id, 'pictures'] as const,
+  file: (id: string) => ['files', id] as const,
   brokers: ['brokers'] as const,
   broker: (id: string) => ['brokers', id] as const,
   contacts: ['contacts'] as const,
@@ -64,6 +65,29 @@ export const propertyPicturesQuery = (propertyId: string) =>
     },
     staleTime: CACHEABLE_STALE_TIME,
     enabled: propertyId.length > 0,
+  });
+
+/**
+ * `GET /files/{id}` (`ContentVersion.VersionData`, the carousel's image source). The route needs
+ * the bearer token an `<img src>` cannot send, so the body is fetched here and shown via an
+ * object URL; a file never changes once created, hence the infinite staleTime.
+ */
+export const fileQuery = (fileId: string) =>
+  queryOptions({
+    queryKey: queryKeys.file(fileId),
+    queryFn: async ({ signal }) => {
+      const { data, response } = await api.GET('/files/{id}', {
+        params: { path: { id: fileId } },
+        parseAs: 'blob',
+        signal,
+      });
+      if (!response.ok || !data) {
+        throw new Error(`Loading file failed (${response.status})`);
+      }
+      return data as Blob;
+    },
+    staleTime: Infinity,
+    enabled: fileId.length > 0,
   });
 
 /** LDS `getRecord` on Property__c (propertySummary / propertyMap's `@wire`): GET /properties/{id}. */

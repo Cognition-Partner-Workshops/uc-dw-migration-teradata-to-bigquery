@@ -2,7 +2,6 @@ import { Button, Center, Grid, Loader, Paper, Stack, Tabs } from '@mantine/core'
 import { IconHome } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Anchor } from '@mantine/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDeleteProperty, useUpdateProperty } from '@/api/mutations';
 import { propertyPicturesQuery, propertyQuery } from '@/api/queries';
@@ -10,6 +9,7 @@ import type { UpdatePropertyDto } from '@/api/types';
 import { BrokerCard } from '@/components/BrokerCard/BrokerCard';
 import { DaysOnMarket } from '@/components/DaysOnMarket/DaysOnMarket';
 import { ErrorPanel } from '@/components/ErrorPanel/ErrorPanel';
+import { FileLink } from '@/components/FileImage/FileImage';
 import { PropertyCarousel } from '@/components/PropertyCarousel/PropertyCarousel';
 import { PropertyLocation } from '@/components/PropertyLocation/PropertyLocation';
 import { PropertyMap } from '@/components/PropertyMap/PropertyMap';
@@ -45,16 +45,9 @@ function PropertyFilesRelatedList({ propertyId }: { propertyId: string }) {
       ) : (
         <Stack gap={4}>
           {pictures.data?.map((file) => (
-            <Anchor
-              key={file.id}
-              href={file.url}
-              target="_blank"
-              rel="noreferrer"
-              size="sm"
-              data-testid="property-file"
-            >
+            <FileLink key={file.id} fileId={file.id} data-testid="property-file">
               {file.title}.{file.fileExtension}
-            </Anchor>
+            </FileLink>
           ))}
         </Stack>
       )}

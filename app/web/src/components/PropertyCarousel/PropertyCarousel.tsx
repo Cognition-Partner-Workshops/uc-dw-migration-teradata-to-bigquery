@@ -6,7 +6,6 @@ import {
   Center,
   FileInput,
   Group,
-  Image,
   Loader,
   Stack,
   Text,
@@ -20,6 +19,7 @@ import { useCreateFile } from '@/api/mutations';
 import { propertyPicturesQuery, propertyQuery } from '@/api/queries';
 import type { PropertyPictureDto } from '@/api/types';
 import { ErrorPanel } from '@/components/ErrorPanel/ErrorPanel';
+import { FileImage } from '@/components/FileImage/FileImage';
 import { reduceErrors } from '@/lib/errors';
 import { blobToBase64, CAROUSEL_IMAGE_OPTIONS, processImage } from '@/lib/media';
 import classes from './PropertyCarousel.module.css';
@@ -36,8 +36,8 @@ function Carousel({ pictures }: { pictures: readonly PropertyPictureDto[] }) {
   return (
     <Stack gap="xs" data-testid="property-carousel-items">
       <Box pos="relative">
-        <Image
-          src={current.url}
+        <FileImage
+          fileId={current.id}
           alt={current.title}
           h={240}
           fit="cover"

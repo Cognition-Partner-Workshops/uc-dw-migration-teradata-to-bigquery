@@ -25,6 +25,9 @@ export function resolveBaseUrl(baseUrl: string): string {
 export function createApiClient(baseUrl: string = API_BASE_URL) {
   const client = createClient<paths>({
     baseUrl: resolveBaseUrl(baseUrl),
+    // TanStack Query owns freshness (staleTime); the browser revalidates `Cache-Control: max-age`
+    // responses with their ETag so a refetch after a mutation never replays a stale body.
+    cache: 'no-cache',
     // resolved per call so test doubles / polyfills installed after module load are honoured
     fetch: (input) => globalThis.fetch(input),
   });
