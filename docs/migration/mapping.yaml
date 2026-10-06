@@ -344,7 +344,7 @@ rows:
   status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: 'Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at, created_by) + object in the S3 files bucket (infra/modules/files; LocalFileStorage under FILES_LOCAL_DIR without FILES_BUCKET); written by FilesService.createFile (POST /files), read by GET /properties/{id}/pictures and served by GET /files/{id} (302 to a pre-signed S3 URL, streamed on local storage); FileType = upper-case extension or UNKNOWN'
+  notes: Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at, created_by) + object in the S3 files bucket (infra/modules/files; LocalFileStorage under FILES_LOCAL_DIR without FILES_BUCKET); written by FilesService.createFile (POST /files), read by GET /properties/{id}/pictures and served by GET /files/{id} (302 to a pre-signed S3 URL, streamed on local storage); FileType = upper-case extension or UNKNOWN
 - id: standardObject:ContentDocumentLink
   source: used by Create_property (record element), FileUtilities (DML), PropertyController (SOQL), TestPropertyController (DML)
   target: {kind: column, name: files.record_id, type: uuid}
