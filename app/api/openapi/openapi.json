@@ -3,7 +3,7 @@
   "paths": {
     "/health": {
       "get": {
-        "operationId": "liveness",
+        "operationId": "health_liveness",
         "parameters": [],
         "responses": {
           "200": {
@@ -25,7 +25,7 @@
     },
     "/health/ready": {
       "get": {
-        "operationId": "readiness",
+        "operationId": "health_readiness",
         "parameters": [],
         "responses": {
           "200": {
@@ -58,7 +58,7 @@
     "/properties": {
       "get": {
         "description": "Port of `@AuraEnabled PropertyController.getPagedPropertyList` (used by propertyTileList).",
-        "operationId": "getPagedPropertyList",
+        "operationId": "properties_getPagedPropertyList",
         "parameters": [
           {
             "name": "pageSize",
@@ -142,7 +142,7 @@
     "/properties/{id}/pictures": {
       "get": {
         "description": "Port of `@AuraEnabled PropertyController.getPictures` (used by propertyCarousel).",
-        "operationId": "getPictures",
+        "operationId": "properties_getPictures",
         "parameters": [
           {
             "name": "id",
@@ -180,7 +180,7 @@
     "/brokers": {
       "get": {
         "description": "Replaces the Broker__c list view / tab.",
-        "operationId": "findAll",
+        "operationId": "brokers_findAll",
         "parameters": [],
         "responses": {
           "200": {
@@ -209,7 +209,7 @@
     "/brokers/{id}": {
       "get": {
         "description": "Replaces `lightning/uiRecordApi getRecord` on Broker__c (brokerCard LWC).",
-        "operationId": "findOne",
+        "operationId": "brokers_findOne",
         "parameters": [
           {
             "name": "id",
@@ -243,7 +243,7 @@
     },
     "/contacts": {
       "get": {
-        "operationId": "findAll",
+        "operationId": "contacts_findAll",
         "parameters": [],
         "responses": {
           "200": {
@@ -272,7 +272,7 @@
     "/files": {
       "post": {
         "description": "Port of `@AuraEnabled FileUtilities.createFile` (used by the Property record page picture upload).",
-        "operationId": "createFile",
+        "operationId": "files_createFile",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -308,7 +308,7 @@
     "/geocoding/addresses": {
       "post": {
         "description": "Port of `@InvocableMethod GeocodingService.geocodeAddresses` (called from the Create_property flow). Returns one Coordinates entry per input address, in order.",
-        "operationId": "geocodeAddresses",
+        "operationId": "geocoding_geocodeAddresses",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -347,7 +347,7 @@
     "/sample-data/import": {
       "post": {
         "description": "Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC).",
-        "operationId": "importSampleData",
+        "operationId": "sampleData_importSampleData",
         "parameters": [],
         "responses": {
           "201": {

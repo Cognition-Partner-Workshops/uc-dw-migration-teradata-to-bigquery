@@ -1017,50 +1017,50 @@ rows:
   source: Broker__c (customObject)
   target: {kind: route, name: /brokers}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: nav tab Brokers -> broker list page (listView Broker__c.All)
+  notes: nav tab Brokers (navigation.ts) -> /brokers; route mounted (UNT3-7); broker list page body (listView Broker__c.All) in UNT3-22
 - id: tab:Property_Explorer
   source: Property Explorer (flexipage)
   target: {kind: route, name: /property-explorer}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: nav tab Property Explorer
+  notes: nav tab Property Explorer (navigation.ts) -> /property-explorer; route mounted with MapView (UNT3-7); page body in UNT3-21
 - id: tab:Property_Finder
   source: Property Finder (flexipage)
   target: {kind: route, name: /property-finder}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: nav tab Property Finder
+  notes: nav tab Property Finder (navigation.ts) -> /property-finder; route mounted with MapView (UNT3-7); page body in UNT3-21
 - id: tab:Property__c
   source: Property__c (customObject)
   target: {kind: route, name: /properties}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: nav tab Properties -> property list page (listView Property__c.All)
+  notes: nav tab Properties (navigation.ts) -> /properties; route mounted (UNT3-7); property list page body (listView Property__c.All) in UNT3-22
 - id: tab:Settings
   source: Settings (flexipage)
   target: {kind: route, name: /settings}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: nav tab Settings (admin only)
+  notes: nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); admin-only visibility (UNT3-20) and page body (UNT3-23) pending
 - id: application:Dreamhouse
   source: 'Dreamhouse: tabs standard-home, Property_Explorer, Property_Finder, standard-Contact, Property__c, Broker__c, standard-File, Settings'
   target: {kind: component, name: AppShell}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-7
   parity_tests: []
-  notes: 'app/web/src/app/AppShell.tsx + navigation config app/web/src/app/navigation.ts (tab order: home, property-explorer, property-finder, contacts, properties, brokers, files, settings); brand colour #86BD4A and logo asset; record View overrides -> routes /properties/:id and /brokers/:id'
+  notes: 'app/web/src/app/AppShell.tsx renders the navbar from app/web/src/app/navigation.ts (appTabs: one entry per <tabs> of Dreamhouse.app-meta.xml in the same order — home, property-explorer, property-finder, contacts, properties, brokers, files, settings; navigation.test.ts asserts it against the XML); brand colour #86BD4A (app/web/src/app/theme.ts) and logo asset; record View overrides -> routes /properties/:id and /brokers/:id; login -> /login (Cognito, stub locally)'
 - id: permissionSet:dreamhouse
   source: dreamhouse
   target: {kind: role, name: dreamhouse}
@@ -1425,10 +1425,11 @@ rows:
   source: JS library that renders maps (168861 bytes)
   target: {kind: dependency, name: leaflet}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-7
   parity_tests: []
   reason: The zipped Leaflet 1.x static resource becomes the npm packages leaflet + react-leaflet (same library, same marker/tile assets).
+  notes: leaflet@1.9.4 + react-leaflet@4 wrapped by MapView (app/web/src/components/MapView/MapView.tsx); marker icons via Vite asset URLs (leaflet-icons.ts)
 - id: staticResource:sample_data_brokers
   source: Sample data used to initialize Broker__c records (2850 bytes)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures/brokers.json}
@@ -1457,10 +1458,10 @@ rows:
   source: dreamhouselogosquare
   target: {kind: asset, name: app/web/public/dreamhouse-logo-square.png}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-7
   parity_tests: []
-  notes: app shell logo
+  notes: copied byte-for-byte from contentassets/dreamhouselogosquare.asset (PNG 555x555); rendered by DreamhouseLogo in the app shell and login page, also the favicon
 - id: messageChannel:FiltersChange
   source: 'Filters Change Message Channel: searchKey, maxPrice, minBedrooms, minBathrooms'
   target: {kind: store, name: app/web/src/state/propertyFilters.ts}

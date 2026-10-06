@@ -18,6 +18,16 @@ export const API_TAGS = [
   { name: 'sample-data', description: 'SampleDataController — sampleDataImporter' },
 ] as const;
 
+/**
+ * `<resource>_<method>` (e.g. `properties_getPagedPropertyList`): keeps the Apex method name
+ * visible while staying unique across controllers, which OpenAPI requires and the web client
+ * generator (app/web `npm run api:generate`) enforces.
+ */
+export function operationIdFactory(controllerKey: string, methodKey: string): string {
+  const resource = controllerKey.replace(/Controller$/, '');
+  return `${resource.charAt(0).toLowerCase()}${resource.slice(1)}_${methodKey}`;
+}
+
 export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
   const builder = new DocumentBuilder()
     .setTitle('Dreamhouse API')
@@ -27,9 +37,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
   for (const tag of API_TAGS) {
     builder.addTag(tag.name, tag.description);
   }
-  return SwaggerModule.createDocument(app, builder.build(), {
-    operationIdFactory: (_c, method) => method,
-  });
+  return SwaggerModule.createDocument(app, builder.build(), { operationIdFactory });
 }
 
 export function setupOpenApi(app: INestApplication): OpenAPIObject {

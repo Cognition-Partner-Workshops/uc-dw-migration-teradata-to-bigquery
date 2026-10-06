@@ -18,7 +18,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 ## Summary
 
 - Rows: **200** (inventory ids: 200)
-- Status: mapped **191**, ported **3**, tested **0**, passing **0**, dropped **6**
+- Status: mapped **183**, ported **11**, tested **0**, passing **0**, dropped **6**
 - Disposition: port **174**, substitute **20**, dropped **6**
 - Rows with parity tests: **0**
 
@@ -38,12 +38,12 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | Flows | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
 | Lightning pages (FlexiPages) | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
 | Page layouts | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| Tabs | 5 | 5 | 0 | 0 | 0 | 0 | 0 |
-| Lightning apps | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| Tabs | 5 | 0 | 5 | 0 | 0 | 0 | 0 |
+| Lightning apps | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
 | Permission sets | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
 | Permission set entries | 44 | 44 | 0 | 0 | 0 | 0 | 0 |
-| Static resources | 4 | 4 | 0 | 0 | 0 | 0 | 1 |
-| Content assets | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
+| Static resources | 4 | 3 | 1 | 0 | 0 | 0 | 1 |
+| Content assets | 1 | 0 | 1 | 0 | 0 | 0 | 0 |
 | Lightning message channels | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 | Remote site settings | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
 | CSP trusted sites | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
@@ -252,17 +252,17 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `tab:Broker__c` | Broker__c (customObject) | route `/brokers` | port | mapped | UNT3-22 | — | nav tab Brokers -> broker list page (listView Broker__c.All) |
-| `tab:Property_Explorer` | Property Explorer (flexipage) | route `/property-explorer` | port | mapped | UNT3-21 | — | nav tab Property Explorer |
-| `tab:Property_Finder` | Property Finder (flexipage) | route `/property-finder` | port | mapped | UNT3-21 | — | nav tab Property Finder |
-| `tab:Property__c` | Property__c (customObject) | route `/properties` | port | mapped | UNT3-22 | — | nav tab Properties -> property list page (listView Property__c.All) |
-| `tab:Settings` | Settings (flexipage) | route `/settings` | port | mapped | UNT3-23 | — | nav tab Settings (admin only) |
+| `tab:Broker__c` | Broker__c (customObject) | route `/brokers` | port | ported | UNT3-22 | — | nav tab Brokers (navigation.ts) -> /brokers; route mounted (UNT3-7); broker list page body (listView Broker__c.All) in UNT3-22 |
+| `tab:Property_Explorer` | Property Explorer (flexipage) | route `/property-explorer` | port | ported | UNT3-21 | — | nav tab Property Explorer (navigation.ts) -> /property-explorer; route mounted with MapView (UNT3-7); page body in UNT3-21 |
+| `tab:Property_Finder` | Property Finder (flexipage) | route `/property-finder` | port | ported | UNT3-21 | — | nav tab Property Finder (navigation.ts) -> /property-finder; route mounted with MapView (UNT3-7); page body in UNT3-21 |
+| `tab:Property__c` | Property__c (customObject) | route `/properties` | port | ported | UNT3-22 | — | nav tab Properties (navigation.ts) -> /properties; route mounted (UNT3-7); property list page body (listView Property__c.All) in UNT3-22 |
+| `tab:Settings` | Settings (flexipage) | route `/settings` | port | ported | UNT3-23 | — | nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); admin-only visibility (UNT3-20) and page body (UNT3-23) pending |
 
 ## Lightning apps
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `application:Dreamhouse` | Dreamhouse: tabs standard-home, Property_Explorer, Property_Finder, standard-Contact, Property__c, Broker__c, standard-File, Settings | component `AppShell` | port | mapped | UNT3-7 | — | app/web/src/app/AppShell.tsx + navigation config app/web/src/app/navigation.ts (tab order: home, property-explorer, property-finder, contacts, properties, brokers, files, settings); brand colour #86BD4A and logo asset; record View overrides -> routes /properties/:id and /brokers/:id |
+| `application:Dreamhouse` | Dreamhouse: tabs standard-home, Property_Explorer, Property_Finder, standard-Contact, Property__c, Broker__c, standard-File, Settings | component `AppShell` | port | ported | UNT3-7 | — | app/web/src/app/AppShell.tsx renders the navbar from app/web/src/app/navigation.ts (appTabs: one entry per <tabs> of Dreamhouse.app-meta.xml in the same order — home, property-explorer, property-finder, contacts, properties, brokers, files, settings; navigation.test.ts asserts it against the XML); brand colour #86BD4A (app/web/src/app/theme.ts) and logo asset; record View overrides -> routes /properties/:id and /brokers/:id; login -> /login (Cognito, stub locally) |
 
 ## Permission sets
 
@@ -323,7 +323,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `staticResource:leafletjs` | JS library that renders maps (168861 bytes) | dependency `leaflet` | substitute | mapped | UNT3-7 | — | **substitute**: The zipped Leaflet 1.x static resource becomes the npm packages leaflet + react-leaflet (same library, same marker/tile assets). |
+| `staticResource:leafletjs` | JS library that renders maps (168861 bytes) | dependency `leaflet` | substitute | ported | UNT3-7 | — | **substitute**: The zipped Leaflet 1.x static resource becomes the npm packages leaflet + react-leaflet (same library, same marker/tile assets). — leaflet@1.9.4 + react-leaflet@4 wrapped by MapView (app/web/src/components/MapView/MapView.tsx); marker icons via Vite asset URLs (leaflet-icons.ts) |
 | `staticResource:sample_data_brokers` | Sample data used to initialize Broker__c records (2850 bytes) | fixture `app/api/src/modules/sample-data/fixtures/brokers.json` | port | mapped | UNT3-18 | — | same JSON content, keys renamed to camelCase DTO fields |
 | `staticResource:sample_data_contacts` | Sample data used to initialize Contact records (723 bytes) | fixture `app/api/src/modules/sample-data/fixtures/contacts.json` | port | mapped | UNT3-18 | — | same JSON content, keys renamed to camelCase DTO fields |
 | `staticResource:sample_data_properties` | Sample data used to initialize Property__c records (9088 bytes) | fixture `app/api/src/modules/sample-data/fixtures/properties.json` | port | mapped | UNT3-18 | — | same JSON content, keys renamed to camelCase DTO fields |
@@ -332,7 +332,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `contentAsset:dreamhouselogosquare` | dreamhouselogosquare | asset `app/web/public/dreamhouse-logo-square.png` | port | mapped | UNT3-7 | — | app shell logo |
+| `contentAsset:dreamhouselogosquare` | dreamhouselogosquare | asset `app/web/public/dreamhouse-logo-square.png` | port | ported | UNT3-7 | — | copied byte-for-byte from contentassets/dreamhouselogosquare.asset (PNG 555x555); rendered by DreamhouseLogo in the app shell and login page, also the favicon |
 
 ## Lightning message channels
 

@@ -34,7 +34,7 @@ What it contains (see the [mapping matrix](docs/migration/mapping.yaml) for the 
 ```
 salesforce/        Source SFDX project (trailheadapps/dreamhouse-lwc, pinned; read-only)
 app/api/           Target API — TypeScript, NestJS + Prisma on PostgreSQL (ECS Fargate + ALB)
-app/web/           Target web app — React
+app/web/           Target web app — React 18 + Vite + TypeScript (Mantine, React Router, TanStack Query, Leaflet)
 infra/             Terraform for AWS (account 599083837640, us-east-1)
 tools/             Extraction / load / helper scripts; tools/inventory/ generates docs/migration/inventory.{json,md}
 tests/parity/      Parity tests run live against both the Salesforce org and the target app
@@ -42,8 +42,7 @@ docs/migration/    Migration docs; docs/migration/mapping.yaml is the 1:1 mappin
 .github/workflows/ CI for this branch
 ```
 
-`app/web` and `infra/` are intentionally empty here; they are filled by the later
-migration tickets.
+`infra/` is intentionally empty here; it is filled by the later migration tickets.
 
 ## Target API (`app/api`)
 
@@ -62,6 +61,27 @@ npm run start:dev              # GET /health, GET /health/ready, GET /openapi.js
 [`api.yml`](.github/workflows/api.yml) lints, tests, builds, checks that
 [`app/api/openapi/openapi.json`](app/api/openapi/openapi.json) matches the controllers
 and smoke-tests `/health` and `/openapi.json` on every PR touching `app/api`.
+
+## Target web app (`app/web`)
+
+[`app/web`](app/web/) is the React 18 + Vite + TypeScript app (Node 22) with Mantine,
+React Router, TanStack Query and Leaflet 1.9.4 (the same library the Salesforce app ships
+as a static resource). Its shell renders the navigation from
+[`src/app/navigation.ts`](app/web/src/app/navigation.ts), one entry per tab of the `Dreamhouse`
+Lightning app (a test asserts the list matches `Dreamhouse.app-meta.xml`), and the login
+page talks to Cognito (`VITE_AUTH_MODE=cognito`) or a local stub (default). The API client
+is generated from the API's OpenAPI document by one script; see the
+[README](app/web/README.md).
+
+```bash
+cd app/web && npm ci && cp .env.example .env
+npm run api:generate           # typed client from ../api/openapi/openapi.json
+npm test && npm run lint && npm run build
+npm run dev                    # http://localhost:5173, proxies /api -> localhost:3000
+```
+
+[`web.yml`](.github/workflows/web.yml) checks the generated client is in sync, lints, tests,
+builds and smoke-tests the built shell on every PR touching `app/web` or the OpenAPI spec.
 
 ## Mapping matrix
 
