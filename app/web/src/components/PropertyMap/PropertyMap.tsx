@@ -1,4 +1,6 @@
 import { Card, Title } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
+import { propertyQuery } from '@/api/queries';
 import { MapView } from '@/components/MapView/MapView';
 import { ErrorPanel } from '@/components/ErrorPanel/ErrorPanel';
 import { useSelectedProperty } from '@/state/selectedProperty';
@@ -7,11 +9,21 @@ import { useSelectedProperty } from '@/state/selectedProperty';
 export const PROPERTY_MAP_ZOOM = 14;
 
 /**
- * Port of `c/propertyMap`: `lightning-map` with one marker on the selected property's location
- * (subscribes `PropertySelected`), card title `Address, City`.
+ * Port of `c/propertyMap`: `lightning-map` with one marker on the property's location, card
+ * title `Address, City`. On a record page `recordId` is the property (LDS `getRecord`); on an app
+ * page it subscribes `PropertySelected` (the `selected` URL param).
  */
-export function PropertyMap({ height = 280 }: { height?: number | string }) {
-  const { propertyId, property } = useSelectedProperty();
+export function PropertyMap({
+  recordId,
+  height = 280,
+}: {
+  recordId?: string;
+  height?: number | string;
+}) {
+  const selected = useSelectedProperty();
+  const record = useQuery(propertyQuery(recordId ?? ''));
+  const propertyId = recordId ?? selected.propertyId;
+  const property = recordId ? (record.data ?? null) : selected.property;
   const hasLocation = property && property.latitude !== null && property.longitude !== null;
 
   return (
@@ -50,7 +62,9 @@ export function PropertyMap({ height = 280 }: { height?: number | string }) {
           friendlyMessage="Error retrieving map"
           errors={{ message: `${property.name} has no location` }}
         />
-      ) : (
+      ) : record.isError ? (
+        <ErrorPanel friendlyMessage="Error retrieving map" errors={record.error} />
+      ) : recordId ? null : (
         <ErrorPanel friendlyMessage="Select a property to see its location" />
       )}
     </Card>

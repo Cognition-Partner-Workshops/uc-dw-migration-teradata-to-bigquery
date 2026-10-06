@@ -32,3 +32,7 @@ class ResizeObserverStub {
 window.ResizeObserver = window.ResizeObserver ?? ResizeObserverStub;
 window.HTMLElement.prototype.scrollIntoView =
   window.HTMLElement.prototype.scrollIntoView ?? vi.fn();
+
+let objectUrls = 0;
+URL.createObjectURL = URL.createObjectURL ?? (() => `blob:mock/${++objectUrls}`);
+URL.revokeObjectURL = URL.revokeObjectURL ?? (() => {});

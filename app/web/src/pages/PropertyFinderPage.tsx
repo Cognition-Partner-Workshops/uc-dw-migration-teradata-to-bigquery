@@ -1,6 +1,6 @@
 import { BarcodeScanner } from '@/components/BarcodeScanner/BarcodeScanner';
 import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout';
-import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
+import { DaysOnMarket } from '@/components/DaysOnMarket/DaysOnMarket';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { PropertyFilter } from '@/components/PropertyFilter/PropertyFilter';
 import { PropertyListMap } from '@/components/PropertyListMap/PropertyListMap';
@@ -22,10 +22,7 @@ export function PropertyFinderPage() {
         right={
           <>
             <PropertySummary />
-            <MigrationPlaceholder
-              ticket="UNT3-22"
-              sources={[{ name: 'daysOnMarket', kind: 'LWC' }]}
-            />
+            <DaysOnMarket />
           </>
         }
       />

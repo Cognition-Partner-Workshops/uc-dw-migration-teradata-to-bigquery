@@ -14,8 +14,10 @@ const healthResponse = {
 
 describe('AppShell', () => {
   beforeEach(() => {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-      return new Response(JSON.stringify(healthResponse), {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = input instanceof Request ? input.url : String(input);
+      const body = url.endsWith('/brokers') ? [] : healthResponse;
+      return new Response(JSON.stringify(body), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });

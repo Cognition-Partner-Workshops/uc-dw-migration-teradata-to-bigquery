@@ -81,6 +81,8 @@ services:
     volumes:
       - ./app/web:/workspace/app/web
       - web_node_modules:/workspace/app/web/node_modules
+      # `make openapi` regenerates the web client from the exported spec inside this container
+      - ./app/api/openapi:/workspace/app/api/openapi:ro
       - ./salesforce:/workspace/salesforce:ro
     depends_on:
       api:
