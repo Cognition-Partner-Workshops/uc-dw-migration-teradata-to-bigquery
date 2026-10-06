@@ -63,6 +63,22 @@ CONTACT_FIELDS: dict[str, tuple[str, str]] = {
     "mailing_country": ("MailingCountry", "Text(80)"),
 }
 
+# Salesforce Files: ContentDocument + latest ContentVersion + ContentDocumentLink collapsed into `files`
+# (mapping.yaml standardObject:ContentDocument / ContentVersion / ContentDocumentLink); standard objects,
+# so not in inventory.json either. Rendered under both object sections.
+FILES_FIELDS: dict[str, tuple[str, str, str]] = {
+    "title": ("ContentVersion.Title", "Text(255)", "filename minus its extension"),
+    "file_type": ("ContentDocument.FileType", "Text(20)", "upper-case extension (PNG, JPG, GIF, PDF, ...); PropertyController.getPictures filters IN ('PNG','JPG','GIF')"),
+    "s3_key": ("ContentVersion.VersionData", "Base64 (blob)", "the body is an S3 object; this is its key files/<id>/<filename>"),
+    "record_id": ("ContentDocumentLink.LinkedEntityId", "Lookup (polymorphic)", "FK → properties.id ON DELETE CASCADE (properties is the only linked entity today)"),
+}
+
+STANDARD_OBJECT_FIELDS: dict[str, dict[str, tuple[str, ...]]] = {
+    "Contact": CONTACT_FIELDS,
+    "ContentDocument": FILES_FIELDS,
+    "ContentVersion": FILES_FIELDS,
+}
+
 PRISMA_DEFAULT_SQL = {
     "String": "text",
     "Int": "integer",
@@ -505,10 +521,10 @@ def buildTableRows(
         label = f"{t.get('kind', row.get('disposition'))} `{t.get('name', '')}`".strip()
         unstored.append(Row(apiName, fieldTypeLabel(sf), "— (not stored)", label, "—", "—", notes or f"{row.get('disposition')} ({row.get('status')})"))
 
-    if objectApiName == "Contact":
-        for column, (sfName, sfType) in CONTACT_FIELDS.items():
-            if column in byColumn:
-                out.append(rowFor(sfName, sfType, byColumn[column], ""))
+    for column, spec in STANDARD_OBJECT_FIELDS.get(objectApiName, {}).items():
+        if column in byColumn:
+            sfName, sfType = spec[0], spec[1]
+            out.append(rowFor(sfName, sfType, byColumn[column], spec[2] if len(spec) > 2 else ""))
 
     for column in ("created_at", "updated_at", "created_by", "owner_id"):
         if column in byColumn:

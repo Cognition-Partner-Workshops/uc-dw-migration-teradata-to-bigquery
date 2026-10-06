@@ -1,5 +1,4 @@
-import type supertest from 'supertest';
-import { adminUser, asUser } from './users';
+import type { TransactionalPrisma } from '../characterisation/harness/transactional-prisma';
 
 /**
  * The JPEG from FileUtilitiesTest.cls line 9 (`validBase64Data`), verbatim.
@@ -25,43 +24,40 @@ export const MOCK_PICTURE_NAME = 'MockPictureName';
 
 export interface PictureFixtureInput {
   propertyId: string;
-  /** ContentVersion.Title; the API derives it from `filename` minus its extension. */
+  /** ContentVersion.Title (what `filename` minus its extension would give). */
   title?: string;
   /** PathOnClient extension → ContentDocument.FileType (PNG/JPG/GIF are pictures). */
   extension?: string;
-  base64Data?: string;
 }
 
 export interface PictureFixture {
   id: string;
-  url: string;
   filename: string;
 }
 
 /**
  * Apex `insert ContentVersion` + `insert ContentDocumentLink` (TestPropertyController
- * lines 94-110; VersionData = base64Decode('MockValue')). The target has no separate "version" and "link" rows the test could
- * insert directly: the files table + S3 object only exist behind POST /files, the
- * port of FileUtilities.createFile. So the fixture uploads through that endpoint as
- * the administrator, exactly what the Apex DML did in the test-running user's context.
+ * lines 94-110; VersionData = base64Decode('MockValue')). ContentDocument, its latest
+ * ContentVersion and the ContentDocumentLink collapse into one `files` row (UNT3-16
+ * migration), so the fixture inserts that row straight through Prisma inside the
+ * per-test transaction, the admin DML the Apex test performs. The S3 object is not
+ * needed by anything `getPictures` returns; `POST /files` (UNT3-18) is the port of
+ * FileUtilities.createFile and is exercised by file-utilities.spec.ts instead.
  */
 export async function createPicture(
-  api: () => ReturnType<typeof supertest>,
+  prisma: TransactionalPrisma,
   input: PictureFixtureInput,
 ): Promise<PictureFixture> {
-  const filename = `${input.title ?? MOCK_PICTURE_NAME}.${input.extension ?? 'png'}`;
-  const response = await api()
-    .post('/files')
-    .set(asUser(adminUser))
-    .send({
-      base64Data: input.base64Data ?? ONE_PIXEL_PNG_BASE64,
-      filename,
+  const title = input.title ?? MOCK_PICTURE_NAME;
+  const extension = input.extension ?? 'png';
+  const filename = `${title}.${extension}`;
+  const file = await prisma.db.file.create({
+    data: {
+      title,
+      fileType: extension.toUpperCase(),
+      s3Key: `files/fixture/${filename}`,
       recordId: input.propertyId,
-    });
-  if (response.status !== 201) {
-    throw new Error(
-      `picture fixture: POST /files answered ${response.status} ${JSON.stringify(response.body)}`,
-    );
-  }
-  return { ...(response.body as { id: string; url: string }), filename };
+    },
+  });
+  return { id: file.id, filename };
 }

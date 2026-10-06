@@ -30,8 +30,19 @@ GET /openapi.json    -> OpenAPI 3.0 document generated from the controllers
 GET /docs            -> Swagger UI
 ```
 
+Ported Apex endpoints (see [`docs/migration/mapping.yaml`](../../docs/migration/mapping.yaml)):
+
+```
+GET /properties               -> PagedResult of PropertyController.getPagedPropertyList
+                                 (?searchKey=&maxPrice=&minBedrooms=&minBathrooms=&pageSize=&pageNumber=)
+GET /properties/{id}/pictures -> PropertyController.getPictures (PNG/JPG/GIF rows of the files table, [] when none)
+```
+
+Both were `@AuraEnabled(cacheable=true)`, so they answer with `Cache-Control: private, max-age=30` and an
+ETag (304 on conditional refetch); the web keeps them in TanStack Query for the same 30 s.
+
 Everything else currently answers `501 Not Implemented` with the Apex source and the
-ticket that ports it, e.g. `GET /properties` → `{"apexSource":"PropertyController.getPagedPropertyList","ticket":"UNT3-16"}`.
+ticket that ports it, e.g. `POST /files` → `{"apexSource":"FileUtilities.createFile","ticket":"UNT3-18"}`.
 
 Useful scripts:
 
@@ -43,6 +54,11 @@ Useful scripts:
 | `npm run openapi:export` | Writes [`openapi/openapi.json`](openapi/openapi.json) without starting a server; CI fails if it drifts from the controllers |
 | `npm run prisma:migrate` | `prisma migrate dev` — create/apply a migration locally |
 | `npm run prisma:deploy` | `prisma migrate deploy` — apply committed migrations (CI/CD, ECS one-off task) |
+
+The `files` table (Salesforce Files collapsed into one row per document, body in S3) and the
+`pg_trgm` GIN indexes that serve the `%searchKey%` filter of `GET /properties` are in migration
+`20261006090000_property_controller_files` (`CREATE EXTENSION IF NOT EXISTS pg_trgm`, available in
+the stock `postgres:16` images and RDS).
 
 CI applies the committed migrations to an empty `postgres:16` service and fails on drift between
 `schema.prisma` and the migrations (`prisma migrate diff --from-config-datasource --to-schema ... --exit-code`).

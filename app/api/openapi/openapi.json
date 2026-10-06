@@ -57,7 +57,7 @@
     },
     "/properties": {
       "get": {
-        "description": "Port of `@AuraEnabled PropertyController.getPagedPropertyList` (used by propertyTileList).",
+        "description": "Port of `@AuraEnabled(cacheable=true) PropertyController.getPagedPropertyList` (used by propertyTileList). Same filter semantics as the SOQL: case-insensitive `%searchKey%` on name, city or tags; inclusive `maxPrice` / `minBedrooms` / `minBathrooms` bounds; ordered by price ascending.",
         "operationId": "properties_getPagedPropertyList",
         "parameters": [
           {
@@ -128,9 +128,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "Not ported yet (UNT3-16)"
           }
         },
         "summary": "Paged, filtered property list",
@@ -141,7 +138,7 @@
     },
     "/properties/{id}/pictures": {
       "get": {
-        "description": "Port of `@AuraEnabled PropertyController.getPictures` (used by propertyCarousel).",
+        "description": "Port of `@AuraEnabled(cacheable=true) PropertyController.getPictures` (used by propertyCarousel): PNG/JPG/GIF files linked to the property, oldest first. `[]` when none (Apex returned null).",
         "operationId": "properties_getPictures",
         "parameters": [
           {
@@ -166,9 +163,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "Not ported yet (UNT3-16)"
           }
         },
         "summary": "Pictures attached to a property",
@@ -520,48 +514,68 @@
           },
           "address": {
             "type": "string",
-            "description": "Address__c"
+            "description": "Address__c",
+            "nullable": true
           },
           "city": {
             "type": "string",
-            "description": "City__c"
+            "description": "City__c",
+            "nullable": true
           },
           "state": {
             "type": "string",
-            "description": "State__c"
+            "description": "State__c",
+            "nullable": true
           },
           "description": {
             "type": "string",
-            "description": "Description__c"
+            "description": "Description__c",
+            "nullable": true
           },
           "price": {
             "type": "number",
-            "description": "Price__c"
+            "description": "Price__c",
+            "nullable": true
           },
           "baths": {
             "type": "number",
-            "description": "Baths__c"
+            "description": "Baths__c",
+            "nullable": true
           },
           "beds": {
             "type": "number",
-            "description": "Beds__c"
+            "description": "Beds__c",
+            "nullable": true
           },
           "thumbnail": {
             "type": "string",
-            "description": "Thumbnail__c"
+            "description": "Thumbnail__c",
+            "nullable": true
           },
           "latitude": {
             "type": "number",
-            "description": "Location__Latitude__s"
+            "description": "Location__Latitude__s",
+            "nullable": true
           },
           "longitude": {
             "type": "number",
-            "description": "Location__Longitude__s"
+            "description": "Location__Longitude__s",
+            "nullable": true
           }
         },
         "required": [
           "id",
-          "name"
+          "name",
+          "address",
+          "city",
+          "state",
+          "description",
+          "price",
+          "baths",
+          "beds",
+          "thumbnail",
+          "latitude",
+          "longitude"
         ]
       },
       "PagedPropertiesDto": {

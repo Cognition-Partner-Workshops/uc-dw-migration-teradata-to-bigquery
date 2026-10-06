@@ -344,7 +344,7 @@ rows:
   status: mapped
   ticket: UNT3-18
   parity_tests: []
-  notes: Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at) + S3 object; files module
+  notes: Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at, created_by) + S3 object; table + Prisma model File created by the UNT3-16 migration (read by GET /properties/{id}/pictures), S3 write path is the files module (UNT3-18)
 - id: standardObject:ContentDocumentLink
   source: used by Create_property (record element), FileUtilities (DML), PropertyController (SOQL), TestPropertyController (DML)
   target: {kind: column, name: files.record_id, type: uuid}
@@ -445,10 +445,10 @@ rows:
   source: class, with sharing, 2 methods
   target: {kind: service, name: PropertiesService}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-16
   parity_tests: []
-  notes: app/api/src/modules/properties/properties.service.ts; HTTP surface in properties.controller.ts
+  notes: 'app/api/src/modules/properties/properties.service.ts (getPagedPropertyList, getPictures); HTTP surface in properties.controller.ts; cacheable=true -> Cache-Control private, max-age=30 (+ ETag/304) and TanStack Query staleTime 30s (app/web/src/api/queries.ts propertiesQuery / propertyPicturesQuery); with sharing -> permission guard (UNT3-20) once it lands; unit spec properties.service.spec.ts, HTTP spec test/properties.e2e.spec.ts'
 - id: apexClass:SampleDataController
   source: class, with sharing, 5 methods
   target: {kind: service, name: SampleDataService}
@@ -464,7 +464,7 @@ rows:
   status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-16 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); live since UNT3-16 listed itself in tests/parity/characterisation/harness/ported.ts (4 passing); the ContentVersion/ContentDocumentLink DML is fixtures/files.ts createPicture, an insert into files
 - id: apexClass:TestSampleDataController
   source: test class, omitted, 1 methods
   target: {kind: spec, name: tests/parity/characterisation/sample-data-controller.spec.ts}
@@ -590,18 +590,18 @@ rows:
   source: '@AuraEnabled PagedResult getPagedPropertyList(String searchKey, Decimal maxPrice, Integer minBedrooms, Integer minBathrooms, Integer pageSize, Integer pageNumber)'
   target: {kind: endpoint, name: GET /properties}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-16
   parity_tests: []
-  notes: query searchKey, maxPrice, minBedrooms, minBathrooms, pageSize, pageNumber -> PagedPropertiesDto; LIKE %searchKey% on name/city/tags -> Prisma contains (insensitive); same ordering/offset semantics as the SOQL
+  notes: 'query searchKey, maxPrice, minBedrooms, minBathrooms, pageSize, pageNumber -> PagedPropertiesDto (pageSize, pageNumber, totalItemCount = unpaged count, records with every SELECTed field, null when empty); LIKE %searchKey% on name/city/tags -> Prisma contains mode insensitive (ILIKE, pg_trgm GIN indexes properties_name_idx/_city_idx/_tags_idx); Price__c <= / Beds__c >= / Baths__c >= inclusive -> lte/gte over index properties_price_beds_baths_idx; ORDER BY Price__c LIMIT/OFFSET -> orderBy price asc (id tiebreak), take/skip; defaults 9999999/0/0/9/1 in PropertyQueryDto'
 - id: apexMethod:PropertyController.getPictures
   source: '@AuraEnabled List<ContentVersion> getPictures(Id propertyId)'
   target: {kind: endpoint, name: 'GET /properties/{id}/pictures'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-16
   parity_tests: []
-  notes: PropertyPictureDto[] from files where record_id = :id and file_type in (PNG, JPG, GIF), latest version, ordered by created_at asc (Apex ORDER BY CreatedDate); 200 [] when the record has no pictures (Apex returns null)
+  notes: PropertyPictureDto[] {id, title, fileExtension, url} from files where record_id = :id and file_type in (PNG, JPG, GIF) (index files_record_id_file_type_created_at_idx), ordered by created_at asc (Apex ORDER BY CreatedDate; files holds only the latest version); 200 [] when the record has no pictures (Apex returns null); id validated as UUID (400 otherwise)
 - id: apexMethod:SampleDataController.importSampleData
   source: '@AuraEnabled void importSampleData()'
   target: {kind: endpoint, name: POST /sample-data/import}
