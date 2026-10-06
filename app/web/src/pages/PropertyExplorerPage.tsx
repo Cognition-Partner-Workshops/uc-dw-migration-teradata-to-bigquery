@@ -1,5 +1,4 @@
 import { Button, Card } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
@@ -22,13 +21,7 @@ export function PropertyExplorerPage() {
             <PropertyFilter />
             {/* flowruntime:interview Create_property -> CreatePropertyWizard at /properties/new (UNT3-23) */}
             <Card withBorder padding="md" data-testid="create-property-flow">
-              <Button
-                component={Link}
-                to="/properties/new"
-                leftSection={<IconPlus size={16} />}
-                variant="light"
-                fullWidth
-              >
+              <Button component={Link} to="/properties/new" variant="light" fullWidth>
                 Create Property
               </Button>
             </Card>
