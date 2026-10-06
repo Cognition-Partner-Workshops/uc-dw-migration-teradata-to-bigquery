@@ -342,26 +342,26 @@ rows:
   source: used by Dreamhouse (tab standard-File), TestPropertyController (SOQL)
   target: {kind: table, name: files}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at, created_by) + S3 object; table + Prisma model File created by the UNT3-16 migration (read by GET /properties/{id}/pictures), S3 write path is the files module (UNT3-18)
+  notes: Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at, created_by) + object in the S3 files bucket (infra/modules/files; LocalFileStorage under FILES_LOCAL_DIR without FILES_BUCKET); written by FilesService.createFile (POST /files), read by GET /properties/{id}/pictures and served by GET /files/{id} (302 to a pre-signed S3 URL, streamed on local storage); FileType = upper-case extension or UNKNOWN
 - id: standardObject:ContentDocumentLink
   source: used by Create_property (record element), FileUtilities (DML), PropertyController (SOQL), TestPropertyController (DML)
   target: {kind: column, name: files.record_id, type: uuid}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: 'LinkedEntityId -> files.record_id (polymorphic: properties.id today); ShareType/Visibility dropped (no sharing model)'
+  notes: 'LinkedEntityId -> files.record_id (polymorphic: properties.id today, FilesService.requireRecord answers 404 like the failed link insert); ShareType/Visibility dropped (no sharing model)'
 - id: standardObject:ContentVersion
   source: used by Create_property (record element), FileUtilities (DML), FileUtilities (SOQL), PropertyController (SOQL), TestPropertyController (DML)
   target: {kind: table, name: files}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: VersionData -> S3 object (bucket from infra, key files/<id>/<filename>); Title/IsLatest/CreatedDate -> files columns; only the latest version is kept
+  notes: VersionData -> S3 object (key files/<id>/<filename>, written inside the files-row transaction so a storage failure rolls the row back); Title = filename minus extension, PathOnClient = filename (object key); IsLatest/CreatedDate -> files columns; only the latest version is kept; bodies above FILES_MAX_INLINE_BYTES go through POST /files/presigned-upload (uploads/<recordId>/<token>/<filename>) and are finalised with uploadKey
 - id: standardObject:PermissionSet
   source: used by TestPropertyController (SOQL)
   target: {kind: role, name: dreamhouse}
@@ -390,7 +390,7 @@ rows:
   source: used by SampleDataController (SOQL)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
   reason: SampleDataController reads sample_data_* static resources via SOQL; the service reads the same JSON from bundled fixtures.
@@ -406,10 +406,10 @@ rows:
   source: class, with sharing, 1 methods
   target: {kind: service, name: FilesService}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: app/api/src/modules/files/files.service.ts
+  notes: app/api/src/modules/files/files.service.ts (createFile, createPresignedUpload, getDownload) over the FileStorage port (storage/s3-file-storage.ts in AWS, storage/local-file-storage.ts locally); HTTP surface files.controller.ts; specs file-names.spec.ts, test/files.e2e.spec.ts; characterisation tests/parity/characterisation/file-utilities.spec.ts (live, UNT3-18 in ported.ts)
 - id: apexClass:FileUtilitiesTest
   source: test class, with sharing, 4 methods
   target: {kind: spec, name: tests/parity/characterisation/file-utilities.spec.ts}
@@ -417,7 +417,7 @@ rows:
   status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now; unit variant app/api/src/modules/files/files.service.spec.ts
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); live since UNT3-18 added itself to tests/parity/characterisation/harness/ported.ts; HTTP variant app/api/test/files.e2e.spec.ts, unit variant app/api/src/modules/files/file-names.spec.ts
 - id: apexClass:GeocodingService
   source: class, with sharing, 1 methods
   target: {kind: service, name: GeocodingService}
@@ -454,10 +454,10 @@ rows:
   source: class, with sharing, 5 methods
   target: {kind: service, name: SampleDataService}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: app/api/src/modules/sample-data/sample-data.service.ts
+  notes: app/api/src/modules/sample-data/sample-data.service.ts (importSampleData, insertBrokers, insertProperties, insertContacts, randomizeDateListed); admin guard sample-data.guard.ts + policy sample-data.policy.ts (SAMPLE_DATA_IMPORT_ENABLED; off by default in production / against *.rds.amazonaws.com); specs sample-data.service.spec.ts, sample-data.policy.spec.ts, test/sample-data.e2e.spec.ts
 - id: apexClass:TestPropertyController
   source: test class, omitted, 4 methods
   target: {kind: spec, name: tests/parity/characterisation/property-controller.spec.ts}
@@ -473,7 +473,7 @@ rows:
   status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); live since UNT3-18 added itself to tests/parity/characterisation/harness/ported.ts; guard/policy HTTP variant app/api/test/sample-data.e2e.spec.ts
 - id: apexInnerClass:GeocodingService.GeocodingAddress
   source: class, 5 fields
   target: {kind: dto, name: GeocodingAddressDto}
@@ -510,10 +510,10 @@ rows:
   source: '@AuraEnabled String createFile(String base64data, String filename, String recordId)'
   target: {kind: endpoint, name: POST /files}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: 'FilesService.createFile(base64data, filename, recordId): PUT to S3 + insert files row in one transaction; returns FileCreatedDto {id, url}; title = filename minus extension, file_type from the extension; must accept unpadded base64 like EncodingUtil.base64Decode (the Apex fixture is 659 chars); errors -> 400 (bad base64 / blank filename) and 404 (unknown recordId) like AuraHandledException'
+  notes: 'FilesService.createFile(base64data, filename, recordId): files row + object write in one transaction (storage failure rolls the row back); returns FileCreatedDto {id, url: /files/{id}, title, fileType, size}; title = filename minus extension, file_type from the extension; accepts unpadded base64 / data URLs like EncodingUtil.base64Decode (the Apex fixture is 659 chars); errors -> 400 (bad base64 / blank filename / path in filename) and 404 (unknown recordId) like AuraHandledException, 413 above FILES_MAX_INLINE_BYTES; large files: POST /files/presigned-upload then POST /files with uploadKey; GET /files/{id} serves the body; created_by from the bearer token when present'
 - id: apexMethod:FileUtilitiesTest.createFileSucceedsWhenCorrectInput
   source: '@isTest void createFileSucceedsWhenCorrectInput()'
   target: {kind: spec, name: 'tests/parity/characterisation/file-utilities.spec.ts::createFileSucceedsWhenCorrectInput'}
@@ -607,38 +607,42 @@ rows:
   source: '@AuraEnabled void importSampleData()'
   target: {kind: endpoint, name: POST /sample-data/import}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: admin-only (role dreamhouse-admin); deletes properties/brokers/contacts then inserts brokers, properties, contacts in one transaction; Case cleanup dropped
+  notes: 'admin-only (SampleDataImportGuard: HS256 test token in the dreamhouse-admin group until the Cognito verifier of UNT3-20; 401/403 otherwise) and fenced by SampleDataPolicy (SAMPLE_DATA_IMPORT_ENABLED explicit flag; default off in production and against an RDS endpoint); one prisma.$transaction: deleteMany properties (files cascade), brokers, contacts, then insertBrokers/insertProperties/insertContacts; answers 200 {deleted, inserted} counts; Case cleanup dropped'
 - id: apexMethod:SampleDataController.insertBrokers
   source: void insertBrokers()
   target: {kind: serviceMethod, name: SampleDataService.insertBrokers}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: createManyAndReturn from fixtures/brokers.json; returns Broker_Id__c -> brokers.id for the properties
 - id: apexMethod:SampleDataController.insertProperties
   source: void insertProperties()
   target: {kind: serviceMethod, name: SampleDataService.insertProperties}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: createMany from fixtures/properties.json; Broker__r.Broker_Id__c resolved against insertBrokers, Status__c label -> property_status enum, Date_Listed__c from randomizeDateListed
 - id: apexMethod:SampleDataController.insertContacts
   source: void insertContacts()
   target: {kind: serviceMethod, name: SampleDataService.insertContacts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: createMany from fixtures/contacts.json
 - id: apexMethod:SampleDataController.randomizeDateListed
   source: void randomizeDateListed(List<Property__c> properties)
   target: {kind: serviceMethod, name: SampleDataService.randomizeDateListed}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
+  notes: today - floor(random * 90) days as a date-only value (UTC midnight), applied per property while building the createMany rows
 - id: apexMethod:TestPropertyController.createProperties
   source: void createProperties(Integer amount)
   target: {kind: fixture, name: tests/parity/fixtures/properties.ts}
@@ -1441,26 +1445,26 @@ rows:
   source: Sample data used to initialize Broker__c records (2850 bytes)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures/brokers.json}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: same JSON content, keys renamed to camelCase DTO fields
+  notes: same JSON content, keys renamed to the Prisma field names (Broker__r.Broker_Id__c -> brokerId); app/api/src/modules/sample-data/sample-data.service.spec.ts asserts it equals the static resource
 - id: staticResource:sample_data_contacts
   source: Sample data used to initialize Contact records (723 bytes)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures/contacts.json}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: same JSON content, keys renamed to camelCase DTO fields
+  notes: same JSON content, keys renamed to the Prisma field names (Broker__r.Broker_Id__c -> brokerId); app/api/src/modules/sample-data/sample-data.service.spec.ts asserts it equals the static resource
 - id: staticResource:sample_data_properties
   source: Sample data used to initialize Property__c records (9088 bytes)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures/properties.json}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-18
   parity_tests: []
-  notes: same JSON content, keys renamed to camelCase DTO fields
+  notes: same JSON content, keys renamed to the Prisma field names (Broker__r.Broker_Id__c -> brokerId); app/api/src/modules/sample-data/sample-data.service.spec.ts asserts it equals the static resource
 - id: contentAsset:dreamhouselogosquare
   source: dreamhouselogosquare
   target: {kind: asset, name: app/web/public/dreamhouse-logo-square.png}

@@ -2,7 +2,7 @@
   "name": "dreamhouse-api",
   "version": "0.1.0",
   "private": true,
-  "description": "Dreamhouse API \u2014 NestJS + Prisma on PostgreSQL; target of the Salesforce (dreamhouse-lwc) migration",
+  "description": "Dreamhouse API — NestJS + Prisma on PostgreSQL; target of the Salesforce (dreamhouse-lwc) migration",
   "license": "CC0-1.0",
   "engines": {
     "node": ">=20 <21"
@@ -25,7 +25,9 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
     "@aws-sdk/client-secrets-manager": "^3.900.0",
+    "@aws-sdk/s3-request-presigner": "^3.1146.0",
     "@nestjs/common": "^11.1.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.1.0",

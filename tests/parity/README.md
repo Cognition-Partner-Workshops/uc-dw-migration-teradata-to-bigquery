@@ -41,7 +41,7 @@ until then, so:
 
 A port ticket (UNT3-16/17/18/19) adds itself to `PORTED_TICKETS`; from then on its suite is a
 required check. Live today: `TestPropertyController` (UNT3-16), `GeocodingServiceTest` (UNT3-17),
-`Create_property` flow baseline (UNT3-19).
+`FileUtilitiesTest` and `TestSampleDataController` (UNT3-18), `Create_property` flow baseline (UNT3-19).
 
 ## Running locally
 

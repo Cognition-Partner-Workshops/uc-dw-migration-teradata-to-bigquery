@@ -658,9 +658,18 @@
     },
     "/files": {
       "post": {
-        "description": "Port of `@AuraEnabled FileUtilities.createFile` (used by the Property record page picture upload).",
+        "description": "Port of `@AuraEnabled FileUtilities.createFile(base64data, filename, recordId)` (Property record page picture upload). Stores the body in the files bucket and inserts the `files` row linked to the record; the file then shows up in `GET /properties/{id}/pictures` and is served by `GET /files/{id}`. Bodies larger than FILES_MAX_INLINE_BYTES go through `POST /files/presigned-upload` first and are finalised here with `uploadKey` instead of `base64Data`.",
         "operationId": "files_createFile",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "authorization",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -682,8 +691,14 @@
               }
             }
           },
-          "501": {
-            "description": "Not ported yet (UNT3-18)"
+          "400": {
+            "description": "Blank or invalid filename / base64Data (Apex AuraHandledException)"
+          },
+          "404": {
+            "description": "recordId does not exist (Apex: ContentDocumentLink insert failed)"
+          },
+          "413": {
+            "description": "Decoded body exceeds FILES_MAX_INLINE_BYTES"
           }
         },
         "summary": "Upload a file and link it to a record",
@@ -692,13 +707,109 @@
         ]
       }
     },
+    "/files/presigned-upload": {
+      "post": {
+        "description": "Returns a short-lived pre-signed `PUT` URL into the files bucket. After the upload succeeds, call `POST /files` with the returned `uploadKey` to create the file row (no counterpart in Apex, which was limited by request size).",
+        "operationId": "files_createPresignedUpload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignedUploadRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresignedUploadDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "recordId does not exist"
+          },
+          "501": {
+            "description": "Deployment has no S3 files bucket (FILES_BUCKET unset)"
+          }
+        },
+        "summary": "Pre-signed S3 upload for large files",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/files/{id}": {
+      "get": {
+        "description": "Body of the file behind a `files` row (`ContentVersion.VersionData`). With the S3 bucket this answers `302` to a pre-signed URL; without it the API streams the object itself.",
+        "operationId": "files_getFile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File body (local storage)",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Redirect to a pre-signed S3 URL"
+          },
+          "404": {
+            "description": "No such file"
+          }
+        },
+        "summary": "Download a file",
+        "tags": [
+          "files"
+        ]
+      }
+    },
     "/sample-data/import": {
       "post": {
-        "description": "Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC).",
+        "description": "Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC): deletes every property, broker and contact, then inserts the `sample_data_*` static resources, all in one transaction. Requires the `dreamhouse-admin` group and is refused unless the deployment allows it (SAMPLE_DATA_IMPORT_ENABLED).",
         "operationId": "sampleData_importSampleData",
         "parameters": [],
         "responses": {
-          "201": {
+          "200": {
             "description": "",
             "content": {
               "application/json": {
@@ -708,11 +819,19 @@
               }
             }
           },
-          "501": {
-            "description": "Not ported yet (UNT3-18)"
+          "401": {
+            "description": "Missing or invalid bearer token"
+          },
+          "403": {
+            "description": "Import disabled on this deployment, or caller is not a dreamhouse-admin"
           }
         },
-        "summary": "Reset and reload the sample data set",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reset and reload the sample data set (admin only)",
         "tags": [
           "sample-data"
         ]
@@ -1799,20 +1918,25 @@
         "properties": {
           "base64Data": {
             "type": "string",
-            "description": "File body, base64 encoded (ContentVersion.VersionData)"
+            "description": "File body, base64 encoded (ContentVersion.VersionData). Missing padding and a `data:` URL prefix are accepted. Required unless `uploadKey` is given; decoded size is capped by FILES_MAX_INLINE_BYTES."
           },
           "filename": {
             "type": "string",
-            "description": "ContentVersion.Title / PathOnClient"
+            "description": "ContentVersion.Title / PathOnClient",
+            "example": "house01.jpg"
           },
           "recordId": {
             "type": "string",
             "format": "uuid",
             "description": "Record the file is linked to (ContentDocumentLink.LinkedEntityId)"
+          },
+          "uploadKey": {
+            "type": "string",
+            "description": "Key returned by POST /files/presigned-upload once the PUT to S3 completed",
+            "example": "uploads/4f0c.../8e1a.../house01.jpg"
           }
         },
         "required": [
-          "base64Data",
           "filename",
           "recordId"
         ]
@@ -1827,28 +1951,137 @@
           },
           "url": {
             "type": "string",
-            "format": "uri",
-            "description": "Where the stored file can be fetched from (S3)"
+            "description": "API path that serves the file (same value GET /properties/{id}/pictures returns)",
+            "example": "/files/4f0c6a9e-1b2d-4c3e-8f90-123456789abc"
+          },
+          "title": {
+            "type": "string",
+            "description": "ContentVersion.Title (filename without extension)"
+          },
+          "fileType": {
+            "type": "string",
+            "description": "ContentDocument.FileType (upper-case extension)",
+            "example": "JPG"
+          },
+          "size": {
+            "type": "number",
+            "description": "Stored size in bytes"
           }
         },
         "required": [
           "id",
-          "url"
+          "url",
+          "title",
+          "fileType",
+          "size"
+        ]
+      },
+      "PresignedUploadRequestDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "ContentVersion.Title / PathOnClient",
+            "example": "house01.jpg"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Record the file will be linked to"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "MIME type the client will send; derived from the filename when omitted",
+            "example": "image/jpeg"
+          }
+        },
+        "required": [
+          "filename",
+          "recordId"
+        ]
+      },
+      "PresignedUploadDto": {
+        "type": "object",
+        "properties": {
+          "uploadKey": {
+            "type": "string",
+            "description": "Pass back as `uploadKey` to POST /files after the PUT succeeded"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Pre-signed S3 URL to PUT the file body to"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "PUT"
+            ]
+          },
+          "headers": {
+            "type": "object",
+            "description": "Headers the PUT must carry (signed into the URL)",
+            "example": {
+              "Content-Type": "image/jpeg"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "uploadKey",
+          "url",
+          "method",
+          "headers",
+          "expiresAt"
+        ]
+      },
+      "SampleDataCountsDto": {
+        "type": "object",
+        "properties": {
+          "brokers": {
+            "type": "number",
+            "example": 8
+          },
+          "properties": {
+            "type": "number",
+            "example": 12
+          },
+          "contacts": {
+            "type": "number",
+            "example": 5
+          }
+        },
+        "required": [
+          "brokers",
+          "properties",
+          "contacts"
         ]
       },
       "SampleDataImportResultDto": {
         "type": "object",
         "properties": {
+          "deleted": {
+            "description": "Rows deleted before the reload",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SampleDataCountsDto"
+              }
+            ]
+          },
           "inserted": {
-            "type": "object",
-            "example": {
-              "brokers": 8,
-              "properties": 12,
-              "contacts": 10
-            }
+            "description": "Rows inserted from the sample data JSON",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SampleDataCountsDto"
+              }
+            ]
           }
         },
         "required": [
+          "deleted",
           "inserted"
         ]
       }

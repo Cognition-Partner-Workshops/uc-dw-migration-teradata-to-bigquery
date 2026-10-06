@@ -1,0 +1,74 @@
+[
+  {
+    "brokerId": 1,
+    "name": "Caroline Kingsley",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "caroline@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/caroline_kingsley.jpg"
+  },
+  {
+    "brokerId": 2,
+    "name": "Michael Jones",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "michael@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/michael_jones.jpg"
+  },
+  {
+    "brokerId": 3,
+    "name": "Jonathan Bradley",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "jonathan@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/jonathan_bradley.jpg"
+  },
+  {
+    "brokerId": 4,
+    "name": "Jennifer Wu",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "jen@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/jennifer_wu.jpg"
+  },
+  {
+    "brokerId": 5,
+    "name": "Olivia Green",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "olivia@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/olivia_green.jpg"
+  },
+  {
+    "brokerId": 6,
+    "name": "Miriam Aupont",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "miriam@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/miriam_aupont.jpg"
+  },
+  {
+    "brokerId": 7,
+    "name": "Michelle Lambert",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "michelle@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/michelle_lambert.jpg"
+  },
+  {
+    "brokerId": 8,
+    "name": "Victor Ochoa",
+    "title": "Senior Broker",
+    "phone": "617-244-3672",
+    "mobilePhone": "617-244-3672",
+    "email": "victor@dreamhouse.demo",
+    "picture": "https://s3-us-west-2.amazonaws.com/dev-or-devrl-s3-bucket/sample-apps/people/victor_ochoa.jpg"
+  }
+]

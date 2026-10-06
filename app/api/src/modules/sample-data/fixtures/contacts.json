@@ -1,0 +1,32 @@
+[
+  {
+    "firstName": "Brad",
+    "lastName": "Holmes",
+    "phone": "617-555-0143",
+    "email": "bholmes@goodmail.com"
+  },
+  {
+    "firstName": "Leslie",
+    "lastName": "Martin",
+    "phone": "617-555-0112",
+    "email": "leslie@pentagon.com"
+  },
+  {
+    "firstName": "July",
+    "lastName": "Walker",
+    "phone": "617-555-0170",
+    "email": "julywalker@brain.com"
+  },
+  {
+    "firstName": "Anna",
+    "lastName": "Jones",
+    "phone": "617-555-0181",
+    "email": "annaj@mymail.com"
+  },
+  {
+    "firstName": "John",
+    "lastName": "Connor",
+    "phone": "617-555-0133",
+    "email": "jconnor@goodmail.com"
+  }
+]
