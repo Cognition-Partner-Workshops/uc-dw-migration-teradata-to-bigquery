@@ -49,8 +49,9 @@ CI applies the committed migrations to an empty `postgres:16` service and fails 
 The field-by-field Salesforce → column mapping is generated into
 [`docs/migration/schema-mapping.md`](../../docs/migration/schema-mapping.md) by `tools/schema/schema_mapping.py`.
 
-A local Postgres for development: `docker run -d --name dreamhouse-pg -e POSTGRES_USER=dreamhouse -e POSTGRES_PASSWORD=dreamhouse -e POSTGRES_DB=dreamhouse -p 5432:5432 postgres:16-alpine`
-(the docker-compose stack is ticket UNT3-8). The [`Dockerfile`](Dockerfile) builds the Fargate image.
+For local development use the root docker-compose stack (`make up && make migrate`, see the
+[root README](../../README.md#local-development-docker-compose)); [`Dockerfile.dev`](Dockerfile.dev) is its
+hot-reload image. A stand-alone Postgres: `docker run -d --name dreamhouse-pg -e POSTGRES_USER=dreamhouse -e POSTGRES_PASSWORD=dreamhouse -e POSTGRES_DB=dreamhouse -p 5432:5432 postgres:16-alpine`. The [`Dockerfile`](Dockerfile) builds the Fargate image.
 
 ## Configuration
 

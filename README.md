@@ -45,6 +45,38 @@ docs/migration/    Migration docs; docs/migration/mapping.yaml is the 1:1 mappin
 
 `infra/` is intentionally empty here; it is filled by the later migration tickets.
 
+## Local development (docker-compose)
+
+The root [`docker-compose.yml`](docker-compose.yml) + [`Makefile`](Makefile) run the whole
+target stack locally: Postgres 16, the API with hot reload and the web app with HMR. You need
+Docker (Compose v2) and GNU make — no local Node or Postgres. This is the environment the
+workers and the E2E suite use until the AWS environment exists.
+
+```bash
+make up          # build the dev images, start db + api + web, wait until all are healthy
+make migrate     # prisma migrate deploy: apply app/api/prisma/migrations to the local database
+make seed        # load data/migrated/ (the migrated data set; empty until UNT3-12/13 fill it)
+make test        # API and web unit tests, inside the dev containers
+make e2e         # smoke-check the running stack, then run tests/parity once it exists (UNT3-24)
+```
+
+After `make up && make migrate`: API at <http://localhost:3000/health> (`/health/ready` also
+pings Postgres, `/docs`, `/openapi.json`), web at <http://localhost:5173> (its `/api` proxies to
+the API). The source trees are bind-mounted into the containers: saving under `app/api/src`
+restarts Nest, saving under `app/web/src` hot-reloads the browser. `node_modules` live in named
+volumes seeded from the images and are reinstalled automatically when a `package-lock.json`
+changes. Containers run as your uid/gid, so generated files stay yours.
+
+Other targets (`make help` lists them): `make smoke` (what `make e2e` runs first —
+[`tools/dev/smoke.sh`](tools/dev/smoke.sh)), `make lint`, `make logs`, `make psql`,
+`make migrate-dev NAME=<name>` (new migration from `schema.prisma`), `make openapi` (re-export
+the spec and regenerate the web client), `make down`, `make reset` (also drops the database and
+`node_modules` volumes), `make clean` (also removes the images). Ports move with `API_PORT`,
+`WEB_PORT` and `DB_PORT` — e.g. `echo DB_PORT=5433 > .env` when a local Postgres already owns
+5432 (the root `.env` is read by compose and git-ignored). [`compose.yml`](.github/workflows/compose.yml)
+runs `make up && make migrate`, the smoke checks, `make seed` and `make test` on a clean checkout
+in CI.
+
 ## Target API (`app/api`)
 
 [`app/api`](app/api/) is the NestJS + Prisma service (Node 20, TypeScript). It is laid

@@ -1,0 +1,59 @@
+name: compose
+
+on:
+  pull_request:
+    branches: [salesforce-to-aws-demo]
+    paths:
+      - docker-compose.yml
+      - Makefile
+      - tools/dev/**
+      - data/migrated/**
+      - app/api/Dockerfile.dev
+      - app/api/scripts/**
+      - app/api/prisma/**
+      - app/api/package-lock.json
+      - app/web/Dockerfile.dev
+      - app/web/scripts/**
+      - app/web/package-lock.json
+      - .github/workflows/compose.yml
+  push:
+    branches: [salesforce-to-aws-demo]
+    paths:
+      - docker-compose.yml
+      - Makefile
+      - tools/dev/**
+      - data/migrated/**
+      - app/api/Dockerfile.dev
+      - app/api/scripts/**
+      - app/api/prisma/**
+      - app/api/package-lock.json
+      - app/web/Dockerfile.dev
+      - app/web/scripts/**
+      - app/web/package-lock.json
+      - .github/workflows/compose.yml
+
+jobs:
+  compose:
+    name: make up, migrate, smoke, seed, test (clean checkout)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # the runner image ships a Postgres that may hold 5432
+      DB_PORT: "55432"
+    steps:
+      - uses: actions/checkout@v4
+      - name: make up && make migrate (acceptance criterion)
+        run: make up && make migrate
+      - name: Committed migrations are applied
+        run: |
+          docker compose run --rm --no-deps -T api npx prisma migrate status | tee status.txt
+          grep -q 'Database schema is up to date' status.txt
+      - name: API healthy, web served, web -> API proxy
+        run: make smoke
+      - run: make seed
+      - run: make test
+      - name: Logs
+        if: failure()
+        run: docker compose ps && docker compose logs --no-color --tail=200
+      - run: make down
+        if: always()

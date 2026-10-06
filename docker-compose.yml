@@ -1,0 +1,113 @@
+# Local development stack: PostgreSQL 16 + the Dreamhouse API (NestJS, hot reload) + the web
+# app (Vite dev server, HMR). Drive it through the Makefile (`make up`, `make migrate`,
+# `make seed`, `make test`, `make e2e`); see README.md "Local development".
+#
+# Containers run as the host user (DEV_UID/DEV_GID, exported by the Makefile) so files they
+# write into the bind-mounted source trees (dist/, src/generated/) stay owned by you.
+# Ports can be moved with API_PORT / WEB_PORT / DB_PORT (e.g. in a root .env file).
+#
+# The repo is laid out under /workspace inside the containers (app/api, app/web, salesforce,
+# data/migrated) so relative paths in tests and scripts resolve exactly as on the host.
+
+name: dreamhouse
+
+x-dev-user: &dev-user "${DEV_UID:-1000}:${DEV_GID:-1000}"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dreamhouse
+      POSTGRES_PASSWORD: dreamhouse
+      POSTGRES_DB: dreamhouse
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dreamhouse -d dreamhouse"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  api:
+    build:
+      context: app/api
+      dockerfile: Dockerfile.dev
+    user: *dev-user
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      LOG_LEVEL: ${API_LOG_LEVEL:-debug}
+      DATABASE_URL: postgresql://dreamhouse:dreamhouse@db:5432/dreamhouse?schema=public
+      PRISMA_HIDE_UPDATE_MESSAGE: "1"
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - ./app/api:/workspace/app/api
+      - api_node_modules:/workspace/app/api/node_modules
+      - ./data/migrated:/workspace/data/migrated:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # Ready = process up AND PostgreSQL reachable through Prisma.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health/ready >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 15s
+
+  web:
+    build:
+      context: app/web
+      dockerfile: Dockerfile.dev
+    user: *dev-user
+    environment:
+      VITE_API_BASE_URL: /api
+      VITE_DEV_API_PROXY: http://api:3000
+      VITE_AUTH_MODE: stub
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./app/web:/workspace/app/web
+      - web_node_modules:/workspace/app/web/node_modules
+      - ./salesforce:/workspace/salesforce:ro
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+
+  # End-to-end runner for the parity harness (tests/parity, ticket UNT3-24); `make e2e` starts it
+  # only when tests/parity/package.json exists. Opt-in profile so `make up` never builds it.
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.56.1-noble
+    profiles: ["e2e"]
+    user: *dev-user
+    working_dir: /tests
+    environment:
+      HOME: /tmp
+      npm_config_cache: /tmp/npm-cache
+      CI: "true"
+      WEB_BASE_URL: http://web:5173
+      API_BASE_URL: http://api:3000
+      DATABASE_URL: postgresql://dreamhouse:dreamhouse@db:5432/dreamhouse?schema=public
+    volumes:
+      - ./tests/parity:/tests
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    command: ["sh", "-c", "npm ci && npx playwright test"]
+
+volumes:
+  pgdata:
+  api_node_modules:
+  web_node_modules:
