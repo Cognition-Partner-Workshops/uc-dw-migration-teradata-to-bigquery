@@ -42,6 +42,14 @@ describe('AppShell', () => {
     expect(screen.queryByTestId('tab-settings')).not.toBeInTheDocument();
   });
 
+  it('Home tiles follow the same group filter as the navigation', async () => {
+    renderApp({ initialPath: '/', authClient: await signedInStubClient() });
+    await screen.findByRole('navigation', { name: 'Dreamhouse tabs' });
+    expect(screen.getByRole('link', { name: /Property Explorer/ })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Settings/ })).not.toBeInTheDocument();
+  });
+
   it('renders every tab, Settings included, for the dreamhouse-admin group', async () => {
     renderApp({ initialPath: '/', authClient: await signedInStubClient('admin@example.com') });
 

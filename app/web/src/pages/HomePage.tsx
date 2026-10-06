@@ -1,10 +1,12 @@
 import { Card, SimpleGrid, Text, ThemeIcon, Title, UnstyledButton } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import { appTabs } from '@/app/navigation';
+import { visibleTabs } from '@/app/navigation';
+import { useAuth } from '@/auth/use-auth';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 
 export function HomePage() {
-  const tiles = appTabs.filter((tab) => tab.id !== 'home');
+  const { user } = useAuth();
+  const tiles = visibleTabs(user?.groups).filter((tab) => tab.id !== 'home');
   return (
     <>
       <PageHeader
