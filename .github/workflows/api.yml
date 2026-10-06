@@ -3,18 +3,33 @@ name: api
 on:
   pull_request:
     branches: [salesforce-to-aws-demo]
-    paths: ['app/api/**', '.github/workflows/api.yml']
+    paths: ['app/api/**', 'docs/migration/schema-mapping.md', '.github/workflows/api.yml']
   push:
     branches: [salesforce-to-aws-demo]
-    paths: ['app/api/**', '.github/workflows/api.yml']
+    paths: ['app/api/**', 'docs/migration/schema-mapping.md', '.github/workflows/api.yml']
 
 jobs:
   api:
-    name: lint, test, build, smoke
+    name: lint, test, build, migrate, smoke
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dreamhouse
+          POSTGRES_PASSWORD: dreamhouse
+          POSTGRES_DB: dreamhouse
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dreamhouse"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: app/api
+    env:
+      DATABASE_URL: postgresql://dreamhouse:dreamhouse@localhost:5432/dreamhouse?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,6 +41,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+      - name: Prisma schema is valid and the committed migrations apply cleanly to an empty Postgres
+        run: |
+          npx prisma validate
+          npm run prisma:deploy
+          npx prisma migrate status
+      - name: Migrations match schema.prisma (no drift)
+        run: npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
       - name: OpenAPI spec is in sync with the controllers
         run: |
           npm run openapi:export

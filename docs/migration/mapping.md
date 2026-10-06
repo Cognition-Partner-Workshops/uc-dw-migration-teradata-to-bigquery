@@ -18,17 +18,17 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 ## Summary
 
 - Rows: **200** (inventory ids: 200)
-- Status: mapped **183**, ported **11**, tested **0**, passing **0**, dropped **6**
+- Status: mapped **152**, ported **42**, tested **0**, passing **0**, dropped **6**
 - Disposition: port **174**, substitute **20**, dropped **6**
 - Rows with parity tests: **0**
 
 | Source kind | Rows | mapped | ported | tested | passing | dropped | substitute |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Custom objects | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| Custom fields | 32 | 32 | 0 | 0 | 0 | 0 | 4 |
+| Custom objects | 2 | 0 | 2 | 0 | 0 | 0 | 0 |
+| Custom fields | 32 | 4 | 28 | 0 | 0 | 0 | 4 |
 | List views | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 | Compact layouts | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| Standard objects referenced | 10 | 9 | 0 | 0 | 0 | 1 | 5 |
+| Standard objects referenced | 10 | 8 | 1 | 0 | 0 | 1 | 5 |
 | Apex classes | 9 | 8 | 1 | 0 | 0 | 0 | 0 |
 | Apex inner classes | 4 | 2 | 2 | 0 | 0 | 0 | 2 |
 | Apex methods | 23 | 23 | 0 | 0 | 0 | 0 | 2 |
@@ -55,45 +55,45 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `object:Broker__c` | Broker (7 fields, sharing ReadWrite) | table `brokers` | port | mapped | UNT3-11 | — | Prisma model Broker (@@map "brokers"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), audit columns; API module app/api/src/modules/brokers |
-| `object:Property__c` | Property (25 fields, sharing ReadWrite) | table `properties` | port | mapped | UNT3-11 | — | Prisma model Property (@@map "properties"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), owner_id/created_by/created_at/updated_at audit columns; API module app/api/src/modules/properties |
+| `object:Broker__c` | Broker (7 fields, sharing ReadWrite) | table `brokers` | port | ported | UNT3-11 | — | Prisma model Broker (@@map "brokers"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), audit columns; API module app/api/src/modules/brokers |
+| `object:Property__c` | Property (25 fields, sharing ReadWrite) | table `properties` | port | ported | UNT3-11 | — | Prisma model Property (@@map "properties"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), owner_id/created_by/created_at/updated_at audit columns; API module app/api/src/modules/properties |
 
 ## Custom fields
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `field:Broker__c.Broker_Id__c` | Broker Id (Number: 18,0) | column `brokers.broker_id` (numeric(18,0)) | port | mapped | UNT3-11 | — |  |
-| `field:Broker__c.Email__c` | Email (Email) | column `brokers.email` (varchar(80)) | port | mapped | UNT3-11 | — | format validated by class-validator @IsEmail |
-| `field:Broker__c.Mobile_Phone__c` | Mobile Phone (Phone) | column `brokers.mobile_phone` (varchar(40)) | port | mapped | UNT3-11 | — |  |
-| `field:Broker__c.Phone__c` | Phone (Phone) | column `brokers.phone` (varchar(40)) | port | mapped | UNT3-11 | — |  |
+| `field:Broker__c.Broker_Id__c` | Broker Id (Number: 18,0) | column `brokers.broker_id` (numeric(18,0)) | port | ported | UNT3-11 | — |  |
+| `field:Broker__c.Email__c` | Email (Email) | column `brokers.email` (varchar(80)) | port | ported | UNT3-11 | — | format validated by class-validator @IsEmail |
+| `field:Broker__c.Mobile_Phone__c` | Mobile Phone (Phone) | column `brokers.mobile_phone` (varchar(40)) | port | ported | UNT3-11 | — |  |
+| `field:Broker__c.Phone__c` | Phone (Phone) | column `brokers.phone` (varchar(40)) | port | ported | UNT3-11 | — |  |
 | `field:Broker__c.Picture_IMG__c` | Picture (Text: formula) | component `RecordImage` | substitute | mapped | UNT3-22 | — | **substitute**: IMAGE() display formula; no stored column. The record page/tile renders <img src={picture}> from brokers.picture with the same size. |
-| `field:Broker__c.Picture__c` | Picture (Url) | column `brokers.picture` (varchar(255)) | port | mapped | UNT3-11 | — |  |
-| `field:Broker__c.Title__c` | Title (Text: 30) | column `brokers.title` (varchar(30)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Address__c` | Address (Text: 100) | column `properties.address` (varchar(100)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Assessed_Value__c` | Assessed Value (Currency: 18,0) | column `properties.assessed_value` (numeric(18,2)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Baths__c` | Baths (Number: 2,0) | column `properties.baths` (integer) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Beds__c` | Beds (Number: 2,0) | column `properties.beds` (integer) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Broker__c` | Broker (Lookup: -> Broker__c) | column `properties.broker_id` (uuid references brokers(id) on delete set null) | port | mapped | UNT3-11 | — | FK brokers(id), ON DELETE SET NULL (deleteConstraint SetNull); relationship Properties -> Prisma relation broker/properties; API exposes brokerId |
-| `field:Property__c.City__c` | City (Text: 50) | column `properties.city` (varchar(50)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Date_Agreement__c` | Date Agreement (Date) | column `properties.date_agreement` (date) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Date_Closed__c` | Date Closed (Date) | column `properties.date_closed` (date) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Date_Contracted__c` | Date Contracted (Date) | column `properties.date_contracted` (date) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Date_Listed__c` | Date Listed (Date) | column `properties.date_listed` (date) | port | mapped | UNT3-11 | — | default TODAY() - 10 applied in PropertiesService.create (not a DB default) |
-| `field:Property__c.Date_Pre_Market__c` | Date Pre Market (Date) | column `properties.date_pre_market` (date) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Days_On_Market__c` | Days On Market (Number: formula) | computed `PropertyDto.daysOnMarket` (integer) | port | mapped | UNT3-11 | — | TODAY() - Date_Listed__c is not immutable, so not a generated column: computed in PropertiesService from properties.date_listed (UTC date) and exposed on the DTO; also a SQL view column properties_v.days_on_market for the data reconciliation. |
-| `field:Property__c.Description__c` | Description (LongTextArea: 500) | column `properties.description` (text) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Location__c` | Location (Location) | column `properties.location_latitude` (numeric(10,7)) | port | mapped | UNT3-11 | — | (convention exception: Compound Geolocation field -> two columns: properties.location_latitude and properties.location_longitude (Salesforce exposes them as Location__Latitude__s / Location__Longitude__s).) |
+| `field:Broker__c.Picture__c` | Picture (Url) | column `brokers.picture` (varchar(255)) | port | ported | UNT3-11 | — |  |
+| `field:Broker__c.Title__c` | Title (Text: 30) | column `brokers.title` (varchar(30)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Address__c` | Address (Text: 100) | column `properties.address` (varchar(100)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Assessed_Value__c` | Assessed Value (Currency: 18,0) | column `properties.assessed_value` (numeric(18,2)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Baths__c` | Baths (Number: 2,0) | column `properties.baths` (integer) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Beds__c` | Beds (Number: 2,0) | column `properties.beds` (integer) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Broker__c` | Broker (Lookup: -> Broker__c) | column `properties.broker_id` (uuid references brokers(id) on delete set null) | port | ported | UNT3-11 | — | FK brokers(id), ON DELETE SET NULL (deleteConstraint SetNull); relationship Properties -> Prisma relation broker/properties; API exposes brokerId |
+| `field:Property__c.City__c` | City (Text: 50) | column `properties.city` (varchar(50)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Date_Agreement__c` | Date Agreement (Date) | column `properties.date_agreement` (date) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Date_Closed__c` | Date Closed (Date) | column `properties.date_closed` (date) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Date_Contracted__c` | Date Contracted (Date) | column `properties.date_contracted` (date) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Date_Listed__c` | Date Listed (Date) | column `properties.date_listed` (date) | port | ported | UNT3-11 | — | default TODAY() - 10 applied in PropertiesService.create (not a DB default) |
+| `field:Property__c.Date_Pre_Market__c` | Date Pre Market (Date) | column `properties.date_pre_market` (date) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Days_On_Market__c` | Days On Market (Number: formula) | column `properties_v.days_on_market` (integer) | port | ported | UNT3-11 | — | TODAY() - Date_Listed__c is not immutable, so not a generated column: view properties_v (prisma/migrations) exposes days_on_market = CURRENT_DATE - date_listed (0 when null, formulaTreatBlanksAs BlankAsZero); PropertiesService (UNT3-16) computes the same value as PropertyDto.daysOnMarket. (convention exception: Formula field -> column of the view properties_v (same name as the table column would have), not a stored column of properties.) |
+| `field:Property__c.Description__c` | Description (LongTextArea: 500) | column `properties.description` (text) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Location__c` | Location (Location) | column `properties.location_latitude` (numeric(10,7)) | port | ported | UNT3-11 | — | (convention exception: Compound Geolocation field -> two columns: properties.location_latitude and properties.location_longitude (Salesforce exposes them as Location__Latitude__s / Location__Longitude__s).) |
 | `field:Property__c.Picture_IMG__c` | Main Picture (Text: formula) | component `RecordImage` | substitute | mapped | UNT3-22 | — | **substitute**: IMAGE() display formula; no stored column. The record page/tile renders <img src={picture}> from properties.picture with the same size. |
-| `field:Property__c.Picture__c` | Picture (Url) | column `properties.picture` (varchar(255)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Price_Sold__c` | Price Sold (Currency: 8,0) | column `properties.price_sold` (numeric(18,2)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Price__c` | Asking Price (Currency: 8,0) | column `properties.price` (numeric(18,2)) | port | mapped | UNT3-11 | — |  |
+| `field:Property__c.Picture__c` | Picture (Url) | column `properties.picture` (varchar(255)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Price_Sold__c` | Price Sold (Currency: 8,0) | column `properties.price_sold` (numeric(18,2)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Price__c` | Asking Price (Currency: 8,0) | column `properties.price` (numeric(18,2)) | port | ported | UNT3-11 | — |  |
 | `field:Property__c.Record_Link__c` | Record Link (Text: formula) | route `/properties/:id` | substitute | mapped | UNT3-22 | — | **substitute**: Formula builds the Salesforce record URL ($Api.Partner_Server_URL + Id); the equivalent is the web app route, exposed as PropertyDto.recordUrl for exports. |
-| `field:Property__c.State__c` | State (Text: 20) | column `properties.state` (varchar(20)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Status__c` | Status (Picklist: Contracted/Pre Market/Available/Under Agreement/Closed) | column `properties.status` (property_status (enum)) | port | mapped | UNT3-11 | — | restricted picklist -> Postgres enum property_status (Contracted, Pre Market, Available, Under Agreement, Closed); API validates with class-validator @IsEnum |
-| `field:Property__c.Tags__c` | Tags (Text: 255) | column `properties.tags` (varchar(255)) | port | mapped | UNT3-11 | — |  |
+| `field:Property__c.State__c` | State (Text: 20) | column `properties.state` (varchar(20)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Status__c` | Status (Picklist: Contracted/Pre Market/Available/Under Agreement/Closed) | column `properties.status` (property_status (enum)) | port | ported | UNT3-11 | — | restricted picklist -> Postgres enum property_status (Contracted, Pre Market, Available, Under Agreement, Closed); API validates with class-validator @IsEnum |
+| `field:Property__c.Tags__c` | Tags (Text: 255) | column `properties.tags` (varchar(255)) | port | ported | UNT3-11 | — |  |
 | `field:Property__c.Thumbnail_IMG__c` | Main Thumbnail (Text: formula) | component `RecordImage` | substitute | mapped | UNT3-22 | — | **substitute**: IMAGE() display formula; no stored column. The record page/tile renders <img src={thumbnail}> from properties.thumbnail with the same size. |
-| `field:Property__c.Thumbnail__c` | Thumbnail (Url) | column `properties.thumbnail` (varchar(255)) | port | mapped | UNT3-11 | — |  |
-| `field:Property__c.Zip__c` | Zip (Text: 10) | column `properties.zip` (varchar(10)) | port | mapped | UNT3-11 | — |  |
+| `field:Property__c.Thumbnail__c` | Thumbnail (Url) | column `properties.thumbnail` (varchar(255)) | port | ported | UNT3-11 | — |  |
+| `field:Property__c.Zip__c` | Zip (Text: 10) | column `properties.zip` (varchar(10)) | port | ported | UNT3-11 | — |  |
 
 ## List views
 
@@ -114,7 +114,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `standardObject:Case` | used by SampleDataController (DML), SampleDataController (SOQL) | — | dropped | dropped | UNT3-18 | — | **dropped**: Only touched by SampleDataController.importSampleData to delete all Cases before import; the target app has no cases. |
-| `standardObject:Contact` | used by Dreamhouse (tab standard-Contact), SampleDataController (DML), SampleDataController (SOQL), TestSampleDataController (SOQL) | table `contacts` | port | mapped | UNT3-11 | — | Sample data only (sample_data_contacts, standard-Contact tab). Prisma model Contact: id, sf_id, first_name, last_name, email, phone, mobile_phone, title, mailing_* columns; API module app/api/src/modules/contacts |
+| `standardObject:Contact` | used by Dreamhouse (tab standard-Contact), SampleDataController (DML), SampleDataController (SOQL), TestSampleDataController (SOQL) | table `contacts` | port | ported | UNT3-11 | — | Sample data only (sample_data_contacts, standard-Contact tab). Prisma model Contact: id, sf_id, first_name, last_name, email, phone, mobile_phone, title, mailing_* columns; API module app/api/src/modules/contacts |
 | `standardObject:ContentDocument` | used by Dreamhouse (tab standard-File), TestPropertyController (SOQL) | table `files` | port | mapped | UNT3-18 | — | Collapsed with ContentVersion/ContentDocumentLink into one files table (id, sf_id, title, file_type, s3_key, record_id, created_at) + S3 object; files module |
 | `standardObject:ContentDocumentLink` | used by Create_property (record element), FileUtilities (DML), PropertyController (SOQL), TestPropertyController (DML) | column `files.record_id` (uuid) | port | mapped | UNT3-18 | — | LinkedEntityId -> files.record_id (polymorphic: properties.id today); ShareType/Visibility dropped (no sharing model) |
 | `standardObject:ContentVersion` | used by Create_property (record element), FileUtilities (DML), FileUtilities (SOQL), PropertyController (SOQL), TestPropertyController (DML) | table `files` | port | mapped | UNT3-18 | — | VersionData -> S3 object (bucket from infra, key files/<id>/<filename>); Title/IsLatest/CreatedDate -> files columns; only the latest version is kept |

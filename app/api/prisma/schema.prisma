@@ -1,13 +1,24 @@
-// Prisma schema for the Dreamhouse API.
+// Prisma schema for the Dreamhouse API — the Salesforce object model (Property__c,
+// Broker__c and the standard Contact used by the sample-data importer) translated to
+// PostgreSQL by ticket UNT3-11. Field-by-field provenance is generated into
+// docs/migration/schema-mapping.md (tools/schema/schema_mapping.py).
 //
-// Conventions (see README "Naming"):
-//   - Model and field names are camelCase / PascalCase in code.
-//   - Every model maps to a snake_case table with @@map, every field to a snake_case
-//     column with @map, e.g.  model Property { dateListed DateTime? @map("date_listed") ... @@map("properties") }
-//
-// The Salesforce object model (Property__c, Broker__c, Contact) is translated into
-// models here by ticket UNT3-11; until then the schema only declares the datasource
-// and the client generator so the service compiles and migrations can be run.
+// Conventions (see README "Naming" and docs/migration/mapping.yaml `conventions.sql`):
+//   - Model and field names are PascalCase / camelCase in code; every model maps to a
+//     snake_case plural table (@@map) and every field to a snake_case column (@map).
+//   - Every table has `id uuid` PK, `sf_id char(18) unique` (the Salesforce record Id,
+//     kept for traceability / reconciliation; null for records born in the target) and
+//     the audit columns created_at / updated_at / created_by / owner_id
+//     (CreatedDate / LastModifiedDate / CreatedById / OwnerId).
+//   - Salesforce types: Text(n) -> varchar(n); LongTextArea -> text; Email -> varchar(80);
+//     Phone -> varchar(40); Url -> varchar(255); Number(p,0) -> integer (p <= 9) or
+//     numeric(p,0); Currency -> numeric(18,2); Date -> date; restricted Picklist ->
+//     Postgres enum; Geolocation -> two numeric(10,7) columns; Lookup -> uuid FK
+//     (deleteConstraint SetNull -> ON DELETE SET NULL; master-detail would be CASCADE);
+//     Formula -> SQL view column (properties_v) or API DTO field.
+//   - Value-range rules that Salesforce enforces per field (Number(2,0) digits, Currency
+//     precision, latitude/longitude bounds) are CHECK constraints in the migration SQL;
+//     Prisma does not model CHECKs, so they live only in prisma/migrations/*.sql.
 
 datasource db {
   provider = "postgresql"
@@ -16,4 +27,151 @@ datasource db {
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
+}
+
+/// Property__c.Status__c — restricted picklist (labels kept verbatim via @map).
+enum PropertyStatus {
+  Contracted
+  PreMarket      @map("Pre Market")
+  Available
+  UnderAgreement @map("Under Agreement")
+  Closed
+
+  @@map("property_status")
+}
+
+/// Broker__c
+model Broker {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Salesforce 18-character record Id (Broker__c.Id)
+  sfId        String?  @unique @map("sf_id") @db.Char(18)
+  /// Broker__c.Name (standard Name field, Text 80)
+  name        String   @db.VarChar(80)
+  /// Broker_Id__c — Number(18,0), external id
+  brokerId    Decimal? @map("broker_id") @db.Decimal(18, 0)
+  /// Title__c — Text(30)
+  title       String?  @db.VarChar(30)
+  /// Phone__c — Phone
+  phone       String?  @db.VarChar(40)
+  /// Mobile_Phone__c — Phone
+  mobilePhone String?  @map("mobile_phone") @db.VarChar(40)
+  /// Email__c — Email
+  email       String?  @db.VarChar(80)
+  /// Picture__c — Url
+  picture     String?  @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy String?  @map("created_by") @db.VarChar(128)
+  ownerId   String?  @map("owner_id") @db.VarChar(128)
+
+  /// Broker__c.Properties__r (relationship name "Properties")
+  properties Property[]
+
+  @@index([brokerId])
+  @@map("brokers")
+}
+
+/// Property__c
+model Property {
+  id   String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Salesforce 18-character record Id (Property__c.Id)
+  sfId String? @unique @map("sf_id") @db.Char(18)
+  /// Property__c.Name (standard Name field, Text 80)
+  name String  @db.VarChar(80)
+
+  /// Address__c — Text(100)
+  address     String? @db.VarChar(100)
+  /// City__c — Text(50)
+  city        String? @db.VarChar(50)
+  /// State__c — Text(20)
+  state       String? @db.VarChar(20)
+  /// Zip__c — Text(10)
+  zip         String? @db.VarChar(10)
+  /// Description__c — LongTextArea(500)
+  description String? @db.Text
+  /// Tags__c — Text(255)
+  tags        String? @db.VarChar(255)
+
+  /// Price__c (Asking Price) — Currency(8,0)
+  price         Decimal? @db.Decimal(18, 2)
+  /// Price_Sold__c — Currency(8,0)
+  priceSold     Decimal? @map("price_sold") @db.Decimal(18, 2)
+  /// Assessed_Value__c — Currency(18,0)
+  assessedValue Decimal? @map("assessed_value") @db.Decimal(18, 2)
+  /// Beds__c — Number(2,0)
+  beds          Int?
+  /// Baths__c — Number(2,0)
+  baths         Int?
+
+  /// Status__c — restricted Picklist
+  status PropertyStatus?
+
+  /// Date_Listed__c — Date (Salesforce default TODAY() - 10 is applied by PropertiesService)
+  dateListed     DateTime? @map("date_listed") @db.Date
+  /// Date_Pre_Market__c — Date
+  datePreMarket  DateTime? @map("date_pre_market") @db.Date
+  /// Date_Contracted__c — Date
+  dateContracted DateTime? @map("date_contracted") @db.Date
+  /// Date_Agreement__c — Date
+  dateAgreement  DateTime? @map("date_agreement") @db.Date
+  /// Date_Closed__c — Date
+  dateClosed     DateTime? @map("date_closed") @db.Date
+
+  /// Location__c — Geolocation (scale 7): Location__Latitude__s
+  locationLatitude  Decimal? @map("location_latitude") @db.Decimal(10, 7)
+  /// Location__c — Geolocation (scale 7): Location__Longitude__s
+  locationLongitude Decimal? @map("location_longitude") @db.Decimal(10, 7)
+
+  /// Picture__c — Url
+  picture   String? @db.VarChar(255)
+  /// Thumbnail__c — Url
+  thumbnail String? @db.VarChar(255)
+
+  /// Broker__c — Lookup(Broker__c), deleteConstraint SetNull
+  brokerId String? @map("broker_id") @db.Uuid
+  broker   Broker? @relation(fields: [brokerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy String?  @map("created_by") @db.VarChar(128)
+  ownerId   String?  @map("owner_id") @db.VarChar(128)
+
+  @@index([brokerId])
+  @@index([status])
+  @@index([dateListed])
+  @@map("properties")
+}
+
+/// Standard Contact — only the fields the app touches (sample-data importer, Contacts tab).
+model Contact {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// Salesforce 18-character record Id (Contact.Id)
+  sfId              String? @unique @map("sf_id") @db.Char(18)
+  /// Contact.FirstName — Text(40)
+  firstName         String? @map("first_name") @db.VarChar(40)
+  /// Contact.LastName — Text(80), required
+  lastName          String  @map("last_name") @db.VarChar(80)
+  /// Contact.Email — Email
+  email             String? @db.VarChar(80)
+  /// Contact.Phone — Phone
+  phone             String? @db.VarChar(40)
+  /// Contact.MobilePhone — Phone
+  mobilePhone       String? @map("mobile_phone") @db.VarChar(40)
+  /// Contact.Title — Text(128)
+  title             String? @db.VarChar(128)
+  /// Contact.MailingAddress — compound address, one column per component
+  mailingStreet     String? @map("mailing_street") @db.VarChar(255)
+  mailingCity       String? @map("mailing_city") @db.VarChar(40)
+  mailingState      String? @map("mailing_state") @db.VarChar(80)
+  mailingPostalCode String? @map("mailing_postal_code") @db.VarChar(20)
+  mailingCountry    String? @map("mailing_country") @db.VarChar(80)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdBy String?  @map("created_by") @db.VarChar(128)
+  ownerId   String?  @map("owner_id") @db.VarChar(128)
+
+  @@index([lastName, firstName])
+  @@map("contacts")
 }
