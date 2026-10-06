@@ -1269,6 +1269,8 @@ export interface operations {
     properties_getPagedPropertyList: {
         parameters: {
             query?: {
+                /** @description Only the properties of this broker (the `Properties__r` related list of the Broker record page; no Apex counterpart) */
+                brokerId?: string;
                 maxPrice?: number;
                 minBathrooms?: number;
                 minBedrooms?: number;

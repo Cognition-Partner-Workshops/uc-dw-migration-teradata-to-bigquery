@@ -116,6 +116,16 @@
               "default": 0,
               "type": "number"
             }
+          },
+          {
+            "name": "brokerId",
+            "required": false,
+            "in": "query",
+            "description": "Only the properties of this broker (the `Properties__r` related list of the Broker record page; no Apex counterpart)",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
           }
         ],
         "responses": {

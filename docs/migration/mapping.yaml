@@ -86,12 +86,12 @@ rows:
   parity_tests: []
 - id: field:Broker__c.Picture_IMG__c
   source: 'Picture (Text: formula)'
-  target: {kind: component, name: RecordImage}
+  target: {kind: component, name: RecordFieldValue}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  reason: IMAGE() display formula; no stored column. The record page/tile renders <img src={picture}> from brokers.picture with the same size.
+  reason: IMAGE() display formula; no stored column. RecordFieldValue renders an `image` field (<img src={record.picture}>) with the same size.
 - id: field:Broker__c.Picture__c
   source: Picture (Url)
   target: {kind: column, name: brokers.picture, type: varchar(255)}
@@ -211,12 +211,12 @@ rows:
   convention_exception: 'Compound Geolocation field -> two columns: properties.location_latitude and properties.location_longitude (Salesforce exposes them as Location__Latitude__s / Location__Longitude__s).'
 - id: field:Property__c.Picture_IMG__c
   source: 'Main Picture (Text: formula)'
-  target: {kind: component, name: RecordImage}
+  target: {kind: component, name: RecordFieldValue}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  reason: IMAGE() display formula; no stored column. The record page/tile renders <img src={picture}> from properties.picture with the same size.
+  reason: IMAGE() display formula; no stored column. RecordFieldValue renders an `image` field (<img src={record.picture}>) with the same size.
 - id: field:Property__c.Picture__c
   source: Picture (Url)
   target: {kind: column, name: properties.picture, type: varchar(255)}
@@ -242,10 +242,11 @@ rows:
   source: 'Record Link (Text: formula)'
   target: {kind: route, name: '/properties/:id'}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
   reason: Formula builds the Salesforce record URL ($Api.Partner_Server_URL + Id); the equivalent is the web app route, exposed as PropertyDto.recordUrl for exports.
+  notes: The web app route /properties/:id (propertyRoute) is what RecordList / NavigateToRecord link to; no PropertyDto.recordUrl is needed by the pages.
 - id: field:Property__c.State__c
   source: 'State (Text: 20)'
   target: {kind: column, name: properties.state, type: varchar(20)}
@@ -270,9 +271,9 @@ rows:
   parity_tests: []
 - id: field:Property__c.Thumbnail_IMG__c
   source: 'Main Thumbnail (Text: formula)'
-  target: {kind: component, name: RecordImage}
+  target: {kind: component, name: RecordFieldValue}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
   reason: IMAGE() display formula; no stored column. The record page/tile renders <img src={thumbnail}> from properties.thumbnail with the same size.
@@ -294,34 +295,34 @@ rows:
   source: 'All: NAME'
   target: {kind: config, name: app/web/src/pages/brokers/brokerListView.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: 'Columns of the /brokers list page (Mantine DataTable): name'
+  notes: BROKER_LIST_VIEW single Name (link) column; rendered by RecordList on /brokers with the New action.
 - id: listView:Property__c.All
   source: 'All: NAME, City__c, Beds__c, Price__c, Status__c'
   target: {kind: config, name: app/web/src/pages/properties/propertyListView.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: 'Columns of the /properties list page: name, city, beds, price, status'
+  notes: PROPERTY_LIST_VIEW columns Name (link), City, Beds, Price, Status in listViews/All order; rendered by RecordList on /properties with the New action.
 - id: compactLayout:Broker__c.Broker_Compact
   source: 'Broker Compact: Name, Title__c, Phone__c, Mobile_Phone__c, Email__c'
   target: {kind: config, name: 'app/web/src/pages/brokers/brokerLayout.ts::highlights'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: 'Record page highlights panel fields: name, title, phone, mobilePhone, email'
+  notes: BROKER_HIGHLIGHTS = Name, Title, Phone, Mobile Phone, Email -> RecordHighlights on the record page.
 - id: compactLayout:Property__c.Property_Compact_Layout
   source: 'Property Compact Layout: Name, City__c, Price__c, Beds__c, Baths__c'
   target: {kind: config, name: 'app/web/src/pages/properties/propertyLayout.ts::highlights'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: 'Record page highlights panel fields: name, city, price, beds, baths'
+  notes: PROPERTY_HIGHLIGHTS = Name, City, Price, Beds, Baths -> RecordHighlights on the record page.
 - id: standardObject:Case
   source: used by SampleDataController (DML), SampleDataController (SOQL)
   target: null
@@ -692,18 +693,18 @@ rows:
   source: Broker Card (lightning__RecordPage)
   target: {kind: component, name: BrokerCard}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: LDS getRecord(Property__c.Broker__c) -> TanStack Query over GET /properties/{id} + GET /brokers/{id}; link to /brokers/:id
+  notes: Reads brokerId of the property, lightning-record-form (Name, Mobile Phone | Phone, Email) -> RecordForm with inline edit through PATCH /brokers/{id}; "Navigate to record" -> /brokers/:id.
 - id: lwc:daysOnMarket
   source: Days on Market (lightning__AppPage, lightning__RecordPage, lightning__HomePage)
   target: {kind: component, name: DaysOnMarket}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: LDS getRecord(Date_Listed__c, Days_On_Market__c) -> PropertyDto.dateListed/daysOnMarket; PropertySelected subscription -> selectedProperty store
+  notes: Days_On_Market__c computed from dateListed (TODAY() - Date_Listed__c); normal <30, warning <60, alert; bar over MAX_DAYS_CHART=90; record page recordId or PropertySelected (selected URL param).
 - id: lwc:errorPanel
   source: errorPanel (internal)
   target: {kind: component, name: ErrorPanel}
@@ -732,10 +733,10 @@ rows:
   source: Navigate to Record Page (lightning__FlowScreen)
   target: {kind: component, name: NavigateToRecord}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: 'Flow-screen component -> last wizard step: router navigate to /properties/:id'
+  notes: standard__recordPage/view -> <Navigate to=recordRoute(objectApiName, recordId)>; recordRoute also backs the Name links of RecordList and the lookup output field.
 - id: lwc:paginator
   source: paginator (internal)
   target: {kind: component, name: Paginator}
@@ -748,10 +749,10 @@ rows:
   source: Property Carousel (lightning__RecordPage)
   target: {kind: component, name: PropertyCarousel}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: GET /properties/{id}/pictures + upload via POST /files; lightning/mediaUtils processImage -> browser canvas resize in app/web/src/lib/images.ts
+  notes: GET /properties/{id}/pictures in a carousel titled with the address; "Add picture" upload = processImage (canvas 500x500 fill, JPEG .75, white background; lightning/mediaUtils) -> base64 -> POST /files (FileUtilities.createFile) -> pictures query invalidated (refreshApex).
 - id: lwc:propertyFilter
   source: Property Filter (lightning__AppPage)
   target: {kind: component, name: PropertyFilter}
@@ -772,10 +773,10 @@ rows:
   source: Property Location (lightning__RecordPage)
   target: {kind: component, name: PropertyLocation}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: LDS getRecord(Location) -> PropertyDto.locationLatitude/Longitude; lightning/mobileCapabilities getLocationService -> navigator.geolocation
+  notes: navigator.geolocation vs Location__Latitude__s/Longitude__s (latitude/longitude) -> Haversine distance in miles; mobile getLocationService branch has no counterpart (browser geolocation only).
 - id: lwc:propertyMap
   source: Property Map (lightning__AppPage, lightning__RecordPage)
   target: {kind: component, name: PropertyMap}
@@ -828,18 +829,18 @@ rows:
   source: salesforce/force-app/main/default/lwc/brokerCard/__tests__/brokerCard.test.js
   target: {kind: spec, name: app/web/src/components/BrokerCard/BrokerCard.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: Ported to Vitest + Testing Library against the mocked API (mockApi); same cases as the Jest suite minus the LMS subscribe/unsubscribe and jest-axe accessibility checks.
 - id: lwcTest:daysOnMarket/daysOnMarket.test.js
   source: salesforce/force-app/main/default/lwc/daysOnMarket/__tests__/daysOnMarket.test.js
   target: {kind: spec, name: app/web/src/components/DaysOnMarket/DaysOnMarket.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: Ported to Vitest + Testing Library against the mocked API (mockApi); same cases as the Jest suite minus the LMS subscribe/unsubscribe and jest-axe accessibility checks.
 - id: lwcTest:errorPanel/errorPanel.test.js
   source: salesforce/force-app/main/default/lwc/errorPanel/__tests__/errorPanel.test.js
   target: {kind: spec, name: app/web/src/components/ErrorPanel/ErrorPanel.test.tsx}
@@ -860,10 +861,10 @@ rows:
   source: salesforce/force-app/main/default/lwc/navigateToRecord/__tests__/navigateToRecord.test.js
   target: {kind: spec, name: app/web/src/components/NavigateToRecord/NavigateToRecord.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: Ported to Vitest + Testing Library against the mocked API (mockApi); same cases as the Jest suite minus the LMS subscribe/unsubscribe and jest-axe accessibility checks.
 - id: lwcTest:paginator/paginator.test.js
   source: salesforce/force-app/main/default/lwc/paginator/__tests__/paginator.test.js
   target: {kind: spec, name: app/web/src/components/Paginator/Paginator.test.tsx}
@@ -876,10 +877,10 @@ rows:
   source: salesforce/force-app/main/default/lwc/propertyCarousel/__tests__/propertyCarousel.test.js
   target: {kind: spec, name: app/web/src/components/PropertyCarousel/PropertyCarousel.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: Ported to Vitest + Testing Library against the mocked API (mockApi); same cases as the Jest suite minus the LMS subscribe/unsubscribe and jest-axe accessibility checks.
 - id: lwcTest:propertyFilter/propertyFilter.test.js
   source: salesforce/force-app/main/default/lwc/propertyFilter/__tests__/propertyFilter.test.js
   target: {kind: spec, name: app/web/src/components/PropertyFilter/PropertyFilter.test.tsx}
@@ -900,10 +901,10 @@ rows:
   source: salesforce/force-app/main/default/lwc/propertyLocation/__tests__/propertyLocation.test.js
   target: {kind: spec, name: app/web/src/components/PropertyLocation/PropertyLocation.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: Ported to Vitest + Testing Library against the mocked API (mockApi); same cases as the Jest suite minus the LMS subscribe/unsubscribe and jest-axe accessibility checks.
 - id: lwcTest:propertyMap/propertyMap.test.js
   source: salesforce/force-app/main/default/lwc/propertyMap/__tests__/propertyMap.test.js
   target: {kind: spec, name: app/web/src/components/PropertyMap/PropertyMap.test.tsx}
@@ -972,10 +973,10 @@ rows:
   source: Broker Record Page (RecordPage for Broker__c)
   target: {kind: route, name: '/brokers/:id'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: 'BrokerRecordPage: highlights (compact layout), details from brokerLayout.ts, related properties list'
+  notes: 'Layout parity checklist (Broker_Record_Page, app/web/src/pages/BrokerRecordPage.tsx): [x] highlights panel = Broker_Compact (Name, Title, Phone, Mobile Phone, Email) + Edit/Delete actions; [x] main tabset Related | Details; [x] Details = Picture (Picture image, Picture URL), Information (Name, Title, Email | Phone, Mobile Phone), System Information (Created By | Last Modified By as createdAt/updatedAt); [x] sidebar + Related = Properties__r related list (Name, Address, Price, Beds, Baths; 10 rows; GET /properties?brokerId=); [x] inline edit per field with server field errors on the input; [ ] OwnerId / record ownership (no counterpart, left out); [ ] Activities / Chatter related lists (no counterpart, dropped).'
 - id: flexipage:Property_Explorer
   source: Property Explorer (AppPage)
   target: {kind: route, name: /property-explorer}
@@ -996,10 +997,10 @@ rows:
   source: Property Record Page (RecordPage for Property__c)
   target: {kind: route, name: '/properties/:id'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: 'PropertyRecordPage: highlights, detail tabs (Details/Dates/Broker) from propertyLayout.ts, sidebar BrokerCard, DaysOnMarket, PropertyMap, PropertyLocation, PropertyCarousel; related files list'
+  notes: 'Layout parity checklist (Property_Record_Page, app/web/src/pages/PropertyRecordPage.tsx): [x] highlights panel = Property_Compact_Layout (Name, City, Price, Beds, Baths) + Edit/Delete actions; [x] main tabset Related | Details | Dates | Broker; [x] Details = Information (Name, Address, State, Zip, Tags, Status | Main Picture), Description, System Information (Created By | Last Modified By as createdAt/updatedAt); [x] Dates = Date Contracted, Date Pre Market, Date Closed | Date Listed, Date Agreement; [x] Broker tab = brokerCard; Related = Files related list (pictures endpoint); [x] sidebar order brokerCard, daysOnMarket, propertyMap, propertyLocation, propertyCarousel; [x] inline edit per field with Save/Cancel, output.fieldErrors shown under the input, output.errors on top; [ ] OwnerId / record ownership (no counterpart, left out); [ ] mobile template (desktop template only).'
 - id: flexipage:Settings
   source: Settings (AppPage)
   target: {kind: route, name: /settings}
@@ -1012,18 +1013,18 @@ rows:
   source: 'Broker__c: 4 sections, 10 fields'
   target: {kind: config, name: app/web/src/pages/brokers/brokerLayout.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: sections Picture / Information / System Information with the same field order; related list Properties (name, address, price, beds, baths, status)
+  notes: 'BROKER_FIELDS + BROKER_LAYOUT_SECTIONS: New/Edit modal = Picture (Picture image, Picture), Information (Name, Title, Email | Phone, Mobile Phone), System Information (read-only). OwnerId omitted (no ownership model); Properties__r related list (Name, Address, Price, Beds, Baths) on the record page.'
 - id: layout:Property__c-Property Layout
   source: 'Property__c: 6 sections, 26 fields'
   target: {kind: config, name: app/web/src/pages/properties/propertyLayout.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-22
   parity_tests: []
-  notes: sections and field order 1:1; related Files list -> files; Activities/History related lists dropped (no activities in target)
+  notes: 'PROPERTY_FIELDS + PROPERTY_LAYOUT_SECTIONS: New/Edit modal = Information (Name, Address, City, State, Zip, Days On Market (read-only formula), Tags | Status, Beds, Baths, Price, Location, Broker), Description, Dates (Contracted, Pre Market, Listed, Agreement, Closed), Pictures (Picture, Main Picture, Thumbnail, Thumbnail Picture), System Information (read-only). OwnerId omitted (no ownership model); Custom Links section empty in the source; Files related list rendered on the record page Related tab.'
 - id: tab:Broker__c
   source: Broker__c (customObject)
   target: {kind: route, name: /brokers}

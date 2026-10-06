@@ -1,0 +1,51 @@
+/* lwc/daysOnMarket/daysOnMarket.css */
+.badge {
+  text-align: center;
+  margin-right: 4px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: #ffffff;
+  min-width: 96px;
+}
+
+.badge.alert,
+.bar.alert {
+  background-color: #c23934;
+}
+
+.badge.normal,
+.bar.normal {
+  background-color: #00716b;
+}
+
+.badge.warning,
+.bar.warning {
+  background-color: #f28c00;
+}
+
+.bar {
+  transform: translate3d(0, 0, 0);
+  height: 58px;
+  transition: all 0.5s ease-in-out;
+  position: absolute;
+  left: 2px;
+  top: 0;
+}
+
+.axis {
+  display: flex;
+  font-weight: 200;
+}
+
+.axis > div {
+  flex: 1;
+  height: 60px;
+  border-bottom: solid 1px rgb(216, 221, 230);
+  border-left: solid 1px rgb(216, 221, 230);
+}
+
+.legend {
+  margin-top: 60px;
+  padding-left: 4px;
+  white-space: nowrap;
+}

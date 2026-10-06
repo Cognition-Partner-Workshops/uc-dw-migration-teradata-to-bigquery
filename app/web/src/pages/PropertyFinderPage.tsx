@@ -1,4 +1,5 @@
 import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout';
+import { DaysOnMarket } from '@/components/DaysOnMarket/DaysOnMarket';
 import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
 import { PropertyFilter } from '@/components/PropertyFilter/PropertyFilter';
@@ -24,10 +25,7 @@ export function PropertyFinderPage() {
         right={
           <>
             <PropertySummary />
-            <MigrationPlaceholder
-              ticket="UNT3-22"
-              sources={[{ name: 'daysOnMarket', kind: 'LWC' }]}
-            />
+            <DaysOnMarket />
           </>
         }
       />

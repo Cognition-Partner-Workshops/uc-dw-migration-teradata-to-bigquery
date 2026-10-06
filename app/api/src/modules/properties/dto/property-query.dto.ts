@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 /** Query parameters of Apex `PropertyController.getPagedPropertyList`. */
@@ -30,4 +30,13 @@ export class PropertyQueryDto extends PaginationQueryDto {
   @IsInt()
   @Min(0)
   minBathrooms: number = 0;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'Only the properties of this broker (the `Properties__r` related list of the Broker record page; no Apex counterpart)',
+  })
+  @IsOptional()
+  @IsUUID()
+  brokerId?: string;
 }

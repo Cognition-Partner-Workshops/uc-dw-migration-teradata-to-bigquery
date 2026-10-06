@@ -213,7 +213,8 @@ export class PropertiesService {
    * `(Name LIKE :p OR City__c LIKE :p OR Tags__c LIKE :p) AND Price__c <= :maxPrice AND Beds__c >= :minBedrooms
    * AND Baths__c >= :minBathrooms` with `p = '%' + searchKey + '%'`. SOQL LIKE is case-insensitive, hence
    * `mode: 'insensitive'` (ILIKE, served by the pg_trgm indexes). Null Price/Beds/Baths never satisfy a
-   * SOQL comparison and never satisfy the Prisma filters either.
+   * SOQL comparison and never satisfy the Prisma filters either. `brokerId` narrows the list to one
+   * broker's properties (the Broker record page's `Properties__r` related list).
    */
   static searchWhere(query: PropertyQueryDto): Prisma.PropertyWhereInput {
     const searchKey = query.searchKey ?? '';
@@ -223,6 +224,7 @@ export class PropertiesService {
       price: { lte: query.maxPrice },
       beds: { gte: query.minBedrooms },
       baths: { gte: query.minBathrooms },
+      ...(query.brokerId ? { brokerId: query.brokerId } : {}),
     };
   }
 
