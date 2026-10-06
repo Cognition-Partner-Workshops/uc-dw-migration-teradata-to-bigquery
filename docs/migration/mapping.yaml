@@ -16,6 +16,18 @@ source:
 
 target:
   api: app/api (TypeScript, NestJS + Prisma, PostgreSQL) on ECS Fargate + ALB
+  api_scaffold:                      # UNT3-6 — Node 20, NestJS 11, Prisma 7, Vitest, pino, zod config (+ Secrets Manager)
+    readme: app/api/README.md        # includes the Apex-concept -> service concept map
+    openapi: app/api/openapi/openapi.json   # exported from the controllers; served live at /openapi.json (+ /docs)
+    health: [GET /health, GET /health/ready]
+    ci: .github/workflows/api.yml
+    modules:                         # one Nest module per Salesforce object / Apex domain; stubs answer 501 until ported
+      properties:  {path: app/api/src/modules/properties,  sources: [Property__c, PropertyController, TestPropertyController, PagedResult]}
+      brokers:     {path: app/api/src/modules/brokers,     sources: [Broker__c]}
+      contacts:    {path: app/api/src/modules/contacts,    sources: [Contact]}
+      files:       {path: app/api/src/modules/files,       sources: [FileUtilities, FileUtilitiesTest, ContentVersion, ContentDocumentLink]}
+      geocoding:   {path: app/api/src/modules/geocoding,   sources: [GeocodingService, GeocodingServiceTest, nominatim_openstreetmap]}
+      sample-data: {path: app/api/src/modules/sample-data, sources: [SampleDataController, TestSampleDataController, sample_data_brokers, sample_data_properties, sample_data_contacts]}
   web: app/web (React)
   infra: infra/ (Terraform, AWS 599083837640, us-east-1)
   parity: tests/parity/ (live against both apps)
@@ -25,42 +37,42 @@ artifacts:
     - name: Property__c
       path: salesforce/force-app/main/default/objects/Property__c
       fields: [Address__c, Assessed_Value__c, Baths__c, Beds__c, Broker__c, City__c, Date_Agreement__c, Date_Closed__c, Date_Contracted__c, Date_Listed__c, Date_Pre_Market__c, Days_On_Market__c, Description__c, Location__c, Picture_IMG__c, Picture__c, Price_Sold__c, Price__c, Record_Link__c, State__c, Status__c, Tags__c, Thumbnail_IMG__c, Thumbnail__c, Zip__c]
-      target: null   # Postgres table + Prisma model
+      target: null   # Postgres table + Prisma model (app/api/prisma/schema.prisma); API module app/api/src/modules/properties
       ticket: UNT3-11
     - name: Broker__c
       path: salesforce/force-app/main/default/objects/Broker__c
       fields: [Broker_Id__c, Email__c, Mobile_Phone__c, Phone__c, Picture_IMG__c, Picture__c, Title__c]
-      target: null
+      target: null   # Prisma model; API module app/api/src/modules/brokers
       ticket: UNT3-11
     - name: Contact            # standard object; only sample data is shipped
       path: salesforce/data/contacts-data.json
-      target: null
+      target: null   # Prisma model; API module app/api/src/modules/contacts
       ticket: UNT3-11
 
   apex:
     - name: PropertyController
       path: salesforce/force-app/main/default/classes/PropertyController.cls
       tests: [TestPropertyController]
-      target: null   # API endpoints (property list / paging / pictures)
+      target: app/api/src/modules/properties  # GET /properties (getPagedPropertyList), GET /properties/{id}/pictures (getPictures); stub 501 until UNT3-16
       ticket: UNT3-4
     - name: GeocodingService
       path: salesforce/force-app/main/default/classes/GeocodingService.cls
       tests: [GeocodingServiceTest]
-      target: null   # geocoding via OpenStreetMap Nominatim
+      target: app/api/src/modules/geocoding   # POST /geocoding/addresses (geocodeAddresses); stub 501 until UNT3-17
       ticket: UNT3-4
     - name: SampleDataController
       path: salesforce/force-app/main/default/classes/SampleDataController.cls
       tests: [TestSampleDataController]
-      target: null   # seed/import tooling
+      target: app/api/src/modules/sample-data # POST /sample-data/import (importSampleData); stub 501 until UNT3-18
       ticket: UNT3-4
     - name: FileUtilities
       path: salesforce/force-app/main/default/classes/FileUtilities.cls
       tests: [FileUtilitiesTest]
-      target: null   # file/picture upload
+      target: app/api/src/modules/files       # POST /files (createFile); stub 501 until UNT3-18
       ticket: UNT3-4
     - name: PagedResult
       path: salesforce/force-app/main/default/classes/PagedResult.cls
-      target: null   # paged API response DTO
+      target: app/api/src/common/dto/paged-result.dto.ts   # PagedResultDto
       ticket: UNT3-4
 
   lwc:

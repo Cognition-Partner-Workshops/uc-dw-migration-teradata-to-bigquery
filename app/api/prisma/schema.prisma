@@ -1,0 +1,19 @@
+// Prisma schema for the Dreamhouse API.
+//
+// Conventions (see README "Naming"):
+//   - Model and field names are camelCase / PascalCase in code.
+//   - Every model maps to a snake_case table with @@map, every field to a snake_case
+//     column with @map, e.g.  model Property { dateListed DateTime? @map("date_listed") ... @@map("properties") }
+//
+// The Salesforce object model (Property__c, Broker__c, Contact) is translated into
+// models here by ticket UNT3-11; until then the schema only declares the datasource
+// and the client generator so the service compiles and migrations can be run.
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}

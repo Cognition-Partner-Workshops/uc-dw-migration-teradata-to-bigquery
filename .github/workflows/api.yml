@@ -1,0 +1,43 @@
+name: api
+
+on:
+  pull_request:
+    branches: [salesforce-to-aws-demo]
+    paths: ['app/api/**', '.github/workflows/api.yml']
+  push:
+    branches: [salesforce-to-aws-demo]
+    paths: ['app/api/**', '.github/workflows/api.yml']
+
+jobs:
+  api:
+    name: lint, test, build, smoke
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/api/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: OpenAPI spec is in sync with the controllers
+        run: |
+          npm run openapi:export
+          git diff --exit-code -- openapi/openapi.json
+      - name: Smoke test /health and /openapi.json
+        env:
+          NODE_ENV: production
+          PORT: 3000
+          DATABASE_URL: postgresql://unused:unused@127.0.0.1:1/unused
+        run: |
+          node dist/main.js & echo $! > server.pid
+          for i in $(seq 1 20); do curl -fs localhost:3000/health && break; sleep 1; done
+          curl -fs localhost:3000/health | tee /dev/stderr | grep -q '"status":"ok"'
+          curl -fs localhost:3000/openapi.json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["info"]["title"]=="Dreamhouse API"; print(len(d["paths"]), "paths")'
+          kill "$(cat server.pid)"
