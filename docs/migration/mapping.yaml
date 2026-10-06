@@ -45,7 +45,7 @@ rows:
   status: ported
   ticket: UNT3-11
   parity_tests: []
-  notes: Prisma model Broker (@@map "brokers"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), audit columns; API module app/api/src/modules/brokers
+  notes: 'Prisma model Broker (@@map "brokers"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), audit columns; API module app/api/src/modules/brokers. Record CRUD (UNT3-19): GET /brokers, GET/PATCH/DELETE /brokers/{id}, POST /brokers (BrokersService; BrokerDto/CreateBrokerDto/UpdateBrokerDto validate the field sizes server-side; delete clears Property__c.Broker__c via ON DELETE SET NULL)'
 - id: object:Property__c
   source: Property (25 fields, sharing ReadWrite)
   target: {kind: table, name: properties}
@@ -53,7 +53,7 @@ rows:
   status: ported
   ticket: UNT3-11
   parity_tests: []
-  notes: Prisma model Property (@@map "properties"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), owner_id/created_by/created_at/updated_at audit columns; API module app/api/src/modules/properties
+  notes: 'Prisma model Property (@@map "properties"); id uuid PK, sf_id char(18) unique, name varchar(80) (standard Name), owner_id/created_by/created_at/updated_at audit columns; API module app/api/src/modules/properties. Record CRUD (UNT3-19): GET /properties/{id}, POST /properties (Create_property flow, geocode option), PATCH/DELETE /properties/{id} (PropertiesService.findOne/create/update/remove; PropertyDto/CreatePropertyDto/UpdatePropertyDto in dto/property-record.dto.ts mirror the field sizes, ranges, picklist and Location__c pairing; database CHECK/FK failures are translated to the same field errors by PrismaExceptionFilter)'
 - id: field:Broker__c.Broker_Id__c
   source: 'Broker Id (Number: 18,0)'
   target: {kind: column, name: brokers.broker_id, type: 'numeric(18,0)'}
@@ -176,7 +176,7 @@ rows:
   status: ported
   ticket: UNT3-11
   parity_tests: []
-  notes: default TODAY() - 10 applied in PropertiesService.create (not a DB default)
+  notes: Field default TODAY() - 10 only prefilled the standard New form; the only create path of the app, the Create_property flow, assigns $Flow.CurrentDate, so PropertiesService.create defaults dateListed to the current date when omitted (not a DB default). API shape YYYY-MM-DD (IsCalendarDate)
 - id: field:Property__c.Date_Pre_Market__c
   source: Date Pre Market (Date)
   target: {kind: column, name: properties.date_pre_market, type: date}
@@ -336,7 +336,7 @@ rows:
   status: ported
   ticket: UNT3-11
   parity_tests: []
-  notes: 'Sample data only (sample_data_contacts, standard-Contact tab). Prisma model Contact: id, sf_id, first_name, last_name, email, phone, mobile_phone, title, mailing_* columns; API module app/api/src/modules/contacts'
+  notes: 'Sample data only (sample_data_contacts, standard-Contact tab). Prisma model Contact: id, sf_id, first_name, last_name, email, phone, mobile_phone, title, mailing_* columns; API module app/api/src/modules/contacts. Read-only API (UNT3-19): GET /contacts, GET /contacts/{id} (ContactsService); the permission set grants no Contact CRUD, writes stay with POST /sample-data/import (UNT3-18)'
 - id: standardObject:ContentDocument
   source: used by Dreamhouse (tab standard-File), TestPropertyController (SOQL)
   target: {kind: table, name: files}
@@ -424,7 +424,7 @@ rows:
   status: ported
   ticket: UNT3-17
   parity_tests: []
-  notes: app/api/src/modules/geocoding/geocoding.service.ts (geocodeAddresses + single-address geocodeAddress for the properties module; in-process result cache GEOCODING_CACHE_TTL_SECONDS/GEOCODING_CACHE_MAX_ENTRIES) over nominatim.client.ts (typed fetch, User-Agent, timeout, retry, 1 req/s); unit specs geocoding.service.spec.ts + nominatim.client.spec.ts; live smoke geocoding.live.spec.ts behind GEOCODING_LIVE_SMOKE=1
+  notes: app/api/src/modules/geocoding/geocoding.service.ts (geocodeAddresses + single-address geocodeAddress for the properties module, with onError 'throw' so the Create_property fault path surfaces on a failed callout (UNT3-19); in-process result cache GEOCODING_CACHE_TTL_SECONDS/GEOCODING_CACHE_MAX_ENTRIES) over nominatim.client.ts (typed fetch, User-Agent, timeout, retry, 1 req/s); unit specs geocoding.service.spec.ts + nominatim.client.spec.ts; live smoke geocoding.live.spec.ts behind GEOCODING_LIVE_SMOKE=1
 - id: apexClass:GeocodingServiceTest
   source: test class, with sharing, 3 methods
   target: {kind: spec, name: tests/parity/characterisation/geocoding-service.spec.ts}
@@ -960,8 +960,8 @@ rows:
   disposition: port
   status: mapped
   ticket: UNT3-23
-  parity_tests: []
-  notes: 'CreatePropertyWizard (app/web/src/pages/properties/CreatePropertyWizard.tsx): screens address -> geocode (POST /geocoding/addresses) -> property_details -> create (POST /properties) -> upload_picture (POST /files, sets picture/thumbnail) -> navigate_to_record_detail; fault screens Error2-5/error_creating_records keep the same messages'
+  parity_tests: [create-property-flow]
+  notes: 'Flow logic is the API (UNT3-19): one POST /properties with the screen inputs (new_property, address incl. country, property_details) and geocode: true = the geocode_address action (GeocodingService.geocodeAddress); create_property assignments Status__c Available and Date_Listed__c $Flow.CurrentDate are applied server-side; fault connectors -> 400 field errors (output.fieldErrors) / 502 GEOCODING_FAULT with nothing created. Baseline fixture tests/parity/fixtures/create-property-flow.ts, spec tests/parity/characterisation/create-property-flow.spec.ts. Web (UNT3-23): CreatePropertyWizard (app/web/src/pages/properties/CreatePropertyWizard.tsx) mirrors the screens, then upload_picture (POST /files, sets picture/thumbnail) -> navigate_to_record_detail; fault screens Error2-5/error_creating_records keep the same messages'
 - id: flexipage:Broker_Record_Page
   source: Broker Record Page (RecordPage for Broker__c)
   target: {kind: route, name: '/brokers/:id'}
@@ -1113,7 +1113,7 @@ rows:
   status: mapped
   ticket: UNT3-20
   parity_tests: []
-  notes: 'group dreamhouse: create/read/update/delete on /brokers; viewAll/modifyAll -> no ownership filter (matches org-wide ReadWrite)'
+  notes: 'group dreamhouse: create/read/update/delete on /brokers (endpoints POST /brokers, GET /brokers + /brokers/{id}, PATCH /brokers/{id}, DELETE /brokers/{id} exist since UNT3-19); viewAll/modifyAll -> no ownership filter (matches org-wide ReadWrite)'
 - id: permission:dreamhouse.object.Property__c
   source: object CRUD create,read,edit,delete + viewAllRecords,modifyAllRecords
   target: {kind: policy, name: policy.properties.crud}
@@ -1121,7 +1121,7 @@ rows:
   status: mapped
   ticket: UNT3-20
   parity_tests: []
-  notes: 'group dreamhouse: create/read/update/delete on /properties; viewAll/modifyAll -> no ownership filter (matches org-wide ReadWrite)'
+  notes: 'group dreamhouse: create/read/update/delete on /properties (endpoints POST /properties, GET /properties + /properties/{id}, PATCH /properties/{id}, DELETE /properties/{id} exist since UNT3-19); viewAll/modifyAll -> no ownership filter (matches org-wide ReadWrite)'
 - id: permission:dreamhouse.field.Broker__c.Broker_Id__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.broker_id}
