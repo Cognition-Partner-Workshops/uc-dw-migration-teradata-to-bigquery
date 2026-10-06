@@ -34,7 +34,7 @@ resource "aws_ecr_lifecycle_policy" "api" {
       selection = {
         tagStatus   = "any"
         countType   = "imageCountMoreThan"
-        countNumber = 10
+        countNumber = 20
       }
       action = { type = "expire" }
     }]
@@ -358,4 +358,62 @@ resource "aws_ecs_service" "api" {
   propagate_tags = "SERVICE"
 
   depends_on = [aws_lb_listener.http, aws_iam_role_policy.task, aws_iam_role_policy_attachment.execution]
+}
+
+# ----- One-off migration task --------------------------------------------------------------------
+# `prisma migrate deploy` runs as a standalone Fargate task (same network, roles and secret as the
+# API) before each service roll-out: `make -C infra migrate` / the deploy workflow run it and wait
+# for the exit code. The image is the Dockerfile's `migrate` stage (dev dependencies, prisma CLI).
+
+data "aws_iam_policy_document" "execution_secret" {
+  statement {
+    sid       = "InjectDatabaseUrl"
+    actions   = ["secretsmanager:GetSecretValue"]
+    resources = [var.app_secret_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "execution_secret" {
+  name   = "app-secret"
+  role   = aws_iam_role.execution.id
+  policy = data.aws_iam_policy_document.execution_secret.json
+}
+
+resource "aws_ecs_task_definition" "migrate" {
+  family                   = "${var.name}-api-migrate"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.cpu
+  memory                   = var.memory
+  execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.task.arn
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name      = "migrate"
+      image     = "${aws_ecr_repository.api.repository_url}:${var.migrate_image_tag}"
+      essential = true
+      command   = ["npx", "prisma", "migrate", "deploy"]
+      environment = [
+        { name = "NODE_ENV", value = "production" },
+        { name = "AWS_REGION", value = var.aws_region },
+      ]
+      secrets = [
+        { name = "DATABASE_URL", valueFrom = "${var.app_secret_arn}:DATABASE_URL::" },
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.api.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = "migrate"
+        }
+      }
+    }
+  ])
 }

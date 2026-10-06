@@ -100,3 +100,21 @@ variable "csp_image_sources" {
     "https://s3-us-west-2.amazonaws.com",
   ]
 }
+
+variable "github_repository" {
+  description = "owner/repo whose GitHub Actions workflows may assume the CI/CD roles (OIDC)"
+  type        = string
+  default     = "Cognition-Partner-Workshops/uc-dw-migration-teradata-to-bigquery"
+}
+
+variable "github_branch" {
+  description = "Branch whose pushes deploy the demo"
+  type        = string
+  default     = "salesforce-to-aws-demo"
+}
+
+variable "create_github_oidc_provider" {
+  description = "Create the GitHub OIDC provider instead of using the account's existing one"
+  type        = bool
+  default     = false
+}

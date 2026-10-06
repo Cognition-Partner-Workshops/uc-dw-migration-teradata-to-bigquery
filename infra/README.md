@@ -38,7 +38,7 @@ Requires Terraform ≥ 1.11, the AWS CLI, Docker and GNU make, with `AWS_ACCESS_
 `AWS_SECRET_ACCESS_KEY` of account 599083837640 in the environment (never in files).
 
 ```bash
-make -C infra up          # bootstrap backend -> apply -> build+push API image -> roll ECS -> build+upload web -> smoke
+make -C infra up          # bootstrap backend -> apply -> build+push API image -> migrate -> roll ECS -> build+upload web -> smoke
 make -C infra plan        # must print "No changes" after `up`
 make -C infra output      # non-secret outputs (api_url, web_url, cognito ids, bucket names, ...)
 make -C infra smoke       # ALB /health, CloudFront SPA (+ deep link), CloudFront /api proxy, CSP header
@@ -48,10 +48,31 @@ make -C infra destroy-backend   # then remove the state bucket (all versions) an
 
 From the repository root the same targets are reachable as `make infra-<target>`.
 
-Deploying a new API build: `make -C infra push deploy-api` (the service runs `<ecr>:latest`;
-each push also tags the git SHA). Deploying the web app: `make -C infra deploy-web` builds
+Deploying a new API build: `make -C infra push migrate deploy-api` (the service runs `<ecr>:latest`;
+each push also tags the git SHA and pushes the Dockerfile's `migrate` stage as `<ecr>:migrate`).
+`migrate` runs `prisma migrate deploy` as a one-off Fargate task (`sf2aws-demo-api-migrate`, same
+subnets, security group and `DATABASE_URL` secret as the API), waits for it and prints its log.
+Deploying the web app: `make -C infra deploy-web` builds
 `app/web` with `VITE_AUTH_MODE=cognito` and the pool/client ids from the outputs, uploads
 `dist/` (hashed assets immutable, `index.html` no-cache) and invalidates the distribution.
+
+## CI/CD (GitHub Actions, OIDC — no AWS keys in GitHub)
+
+`modules/cicd` creates two IAM roles that trust the account's GitHub OIDC provider
+(`token.actions.githubusercontent.com`, looked up; `create_github_oidc_provider = true` creates it
+in a fresh account) for this repository only:
+
+| Role | Trusted token subject | Used by | Allowed to |
+| --- | --- | --- | --- |
+| `sf2aws-demo-github-plan` | `repo:<repo>:pull_request`, `…:ref:refs/heads/salesforce-to-aws-demo` | [`infra.yml`](../.github/workflows/infra.yml) `plan` job | `ReadOnlyAccess` + read the state bucket/lock table → `terraform plan -lock=false` |
+| `sf2aws-demo-github-deploy` | `…:ref:refs/heads/salesforce-to-aws-demo` | [`deploy.yml`](../.github/workflows/deploy.yml) | push to the API ECR repository, `ecs:RunTask` of the migration task definition, `ecs:UpdateService` on the API service, `iam:PassRole` of the two task roles, read the migration log, put/delete objects in the web bucket, invalidate the distribution, read the state |
+
+Pull requests: `fmt -check`, `validate`, secret grep, shellcheck and a plan whose output lands in the
+job summary (changes do not fail the check). Pushes to `salesforce-to-aws-demo` touching
+`app/api`, `app/web` or the scripts run `deploy.yml`: `make push` → `make migrate` → `make deploy-api`
+→ `make deploy-web` → `make smoke`, i.e. the same targets as a manual deployment. The deploy role
+cannot create or change AWS resources, so Terraform changes stay a human `make -C infra apply`
+(the PR plan shows what is pending).
 
 ## Secrets
 
@@ -72,4 +93,5 @@ Sized for a demo: single NAT gateway, one `db.t4g.micro`, one 0.25 vCPU Fargate 
 everything, including data, without manual steps.
 
 CI (`.github/workflows/infra.yml`) runs `terraform fmt -check`, `terraform validate`,
-a secret-pattern grep and shellcheck; it has no AWS credentials, so plan/apply stay manual.
+a secret-pattern grep, shellcheck and a read-only `terraform plan` through the OIDC plan role;
+`apply` stays manual (see *CI/CD* above).
