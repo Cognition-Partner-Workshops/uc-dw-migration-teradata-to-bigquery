@@ -1,0 +1,21 @@
+# syntax=docker/dockerfile:1
+# Development image used by the root docker-compose.yml (hot reload). The source tree is
+# bind-mounted at /workspace/app/api and node_modules lives in a named volume seeded from this image;
+# scripts/dev-entrypoint.sh reinstalls when package-lock.json changes and regenerates the
+# Prisma client before starting. The production image is ./Dockerfile.
+FROM node:20-alpine
+ENV NODE_ENV=development \
+    HOME=/tmp \
+    npm_config_cache=/tmp/npm-cache \
+    npm_config_update_notifier=false
+WORKDIR /workspace/app/api
+COPY package.json package-lock.json ./
+# chmod in the same layer: the container runs as the host user (compose `user:`), who must be
+# able to write caches and reinstall into the node_modules volume.
+RUN npm ci --ignore-scripts \
+    && sha256sum package-lock.json > node_modules/.package-lock.sha256 \
+    && chmod -R a+rwX node_modules
+COPY scripts/dev-entrypoint.sh ./scripts/dev-entrypoint.sh
+EXPOSE 3000
+ENTRYPOINT ["sh", "/workspace/app/api/scripts/dev-entrypoint.sh"]
+CMD ["npm", "run", "start:dev"]
