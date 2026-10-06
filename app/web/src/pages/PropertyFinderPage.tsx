@@ -1,3 +1,4 @@
+import { BarcodeScanner } from '@/components/BarcodeScanner/BarcodeScanner';
 import { ThreeColumnLayout } from '@/components/layout/ThreeColumnLayout';
 import { MigrationPlaceholder } from '@/components/MigrationPlaceholder/MigrationPlaceholder';
 import { PageHeader } from '@/components/PageHeader/PageHeader';
@@ -5,7 +6,7 @@ import { PropertyFilter } from '@/components/PropertyFilter/PropertyFilter';
 import { PropertyListMap } from '@/components/PropertyListMap/PropertyListMap';
 import { PropertySummary } from '@/components/PropertySummary/PropertySummary';
 
-/** flexipages/Property_Finder: barcodeScanner + propertyFilter | propertyListMap | propertySummary + daysOnMarket. */
+/** flexipages/Property_Finder: barcodeScanner (BarcodeDetector substitute) + propertyFilter | propertyListMap | propertySummary + daysOnMarket. */
 export function PropertyFinderPage() {
   return (
     <>
@@ -13,10 +14,7 @@ export function PropertyFinderPage() {
       <ThreeColumnLayout
         left={
           <>
-            <MigrationPlaceholder
-              ticket="UNT3-23"
-              sources={[{ name: 'barcodeScanner', kind: 'LWC (mobile only)' }]}
-            />
+            <BarcodeScanner />
             <PropertyFilter />
           </>
         }

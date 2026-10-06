@@ -83,7 +83,7 @@ describe('AppShell', () => {
     expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.getByTestId('active-tab')).toHaveTextContent('Settings');
     expect(screen.getByTestId('tab-settings')).toHaveAttribute('data-active', 'true');
-    expect(screen.getByTestId('migration-placeholder')).toHaveTextContent('UNT3-22');
+    expect(screen.getByTestId('sample-data-importer')).toBeInTheDocument();
   });
 
   it('shows the API health from GET /health through the typed client', async () => {

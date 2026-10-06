@@ -683,11 +683,11 @@ rows:
   source: Barcode Scanner (lightning__AppPage)
   target: {kind: component, name: BarcodeScanner}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-23
   parity_tests: []
   reason: lightning/mobileCapabilities getBarcodeScanner is Salesforce-mobile only; the web uses the browser BarcodeDetector API when available and falls back to manual entry.
-  notes: app/web/src/components/BarcodeScanner/BarcodeScanner.tsx; scanned value navigates to /properties/:id
+  notes: 'app/web/src/components/BarcodeScanner/BarcodeScanner.tsx on Property Finder; qrScanner.ts wraps window.BarcodeDetector + getUserMedia behind the mobile API shape (isAvailable/beginCapture/endCapture, userDismissedScanner); scanned value (Id or record URL) navigates to /properties/:id; manual Property Id entry when the browser has no BarcodeDetector; cancel/failure -> sticky notifications (Scanning Canceled / Barcode Scanner Error)'
 - id: lwc:brokerCard
   source: Broker Card (lightning__RecordPage)
   target: {kind: component, name: BrokerCard}
@@ -812,18 +812,18 @@ rows:
   source: Sample Property Importer (lightning__AppPage)
   target: {kind: component, name: SampleDataImporter}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: POST /sample-data/import with confirm dialog; admin only; toast -> Mantine notifications
+  notes: 'app/web/src/components/SampleDataImporter/SampleDataImporter.tsx on SettingsPage (/settings, RequireGroup dreamhouse-admin): Import Data -> confirm Modal -> POST /sample-data/import, then invalidates every query; toasts Success / Sample data successfully imported and Error while importing data / <API message> as Mantine notifications'
 - id: lwcTest:barcodeScanner/barcodeScanner.test.js
   source: salesforce/force-app/main/default/lwc/barcodeScanner/__tests__/barcodeScanner.test.js
   target: {kind: spec, name: app/web/src/components/BarcodeScanner/BarcodeScanner.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: Vitest + Testing Library port of the Jest suite (unavailable -> directions, available -> Scan QR Code button, scan -> navigate, cancel / error toasts) over the barcodeDetector mock, plus the manual-entry fallback; qrScanner.test.ts covers the BarcodeDetector wrapper
 - id: lwcTest:brokerCard/brokerCard.test.js
   source: salesforce/force-app/main/default/lwc/brokerCard/__tests__/brokerCard.test.js
   target: {kind: spec, name: app/web/src/components/BrokerCard/BrokerCard.test.tsx}
@@ -948,10 +948,10 @@ rows:
   source: salesforce/force-app/main/default/lwc/sampleDataImporter/__tests__/sampleDataImporter.test.js
   target: {kind: spec, name: app/web/src/components/SampleDataImporter/SampleDataImporter.test.tsx}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: Vitest + Testing Library port of the Jest suite (same cases, API mocked)
+  notes: Vitest + Testing Library port of the Jest suite (success / error toasts, API mocked) plus the confirm-dialog cancel and the dreamhouse-admin-only route
 - id: aura:pageTemplate_2_7_3
   source: 'component: Three columns layout (Just one on mobile)'
   target: {kind: component, name: ThreeColumnLayout}
@@ -964,10 +964,10 @@ rows:
   source: Create Property (Flow, 17 elements)
   target: {kind: route, name: /properties/new}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-23
   parity_tests: [create-property-flow]
-  notes: 'Flow logic is the API (UNT3-19): one POST /properties with the screen inputs (new_property, address incl. country, property_details) and geocode: true = the geocode_address action (GeocodingService.geocodeAddress); create_property assignments Status__c Available and Date_Listed__c $Flow.CurrentDate are applied server-side; fault connectors -> 400 field errors (output.fieldErrors) / 502 GEOCODING_FAULT with nothing created. Baseline fixture tests/parity/fixtures/create-property-flow.ts, spec tests/parity/characterisation/create-property-flow.spec.ts. Web (UNT3-23): CreatePropertyWizard (app/web/src/pages/properties/CreatePropertyWizard.tsx) mirrors the screens, then upload_picture (POST /files, sets picture/thumbnail) -> navigate_to_record_detail; fault screens Error2-5/error_creating_records keep the same messages'
+  notes: 'Flow logic is the API (UNT3-19): one POST /properties with the screen inputs (new_property, address incl. country, property_details) and geocode: true = the geocode_address action (GeocodingService.geocodeAddress); create_property assignments Status__c Available and Date_Listed__c $Flow.CurrentDate are applied server-side; fault connectors -> 400 field errors (output.fieldErrors) / 502 GEOCODING_FAULT with nothing created. Baseline fixture tests/parity/fixtures/create-property-flow.ts, spec tests/parity/characterisation/create-property-flow.spec.ts. Web (UNT3-23): CreatePropertyPage -> CreatePropertyWizard (app/web/src/components/CreatePropertyWizard/, flow as data in createPropertyFlow.ts) with the same screens/labels/defaults (New Property: price 100000; Property Details: 4 beds, 2 baths), Complete this field. on required inputs, then upload_picture (POST /files per picture, optional = the If_content_document_found default outcome) and set_main_picture (PATCH picture/thumbnail = absolute /files URL) -> navigate_to_record_detail (/properties/:id); fault screens keep the flow texts: Error5 Error retrieving geocoded address. (Previous -> Address), error_creating_records Error creating records. Try again. (+ field errors, no Previous), Error2/3 Unknown error retrieving uploaded picture., Error4 Unknown error setting picture as Property thumbnail.; CreatePropertyWizard.test.tsx asserts the parity fixture body for the baseline inputs'
 - id: flexipage:Broker_Record_Page
   source: Broker Record Page (RecordPage for Broker__c)
   target: {kind: route, name: '/brokers/:id'}
@@ -991,7 +991,7 @@ rows:
   status: ported
   ticket: UNT3-21
   parity_tests: []
-  notes: 'app/web/src/pages/PropertyFinderPage.tsx in ThreeColumnLayout: BarcodeScanner placeholder (UNT3-23) + PropertyFilter | PropertyListMap | PropertySummary + DaysOnMarket placeholder (UNT3-22)'
+  notes: 'app/web/src/pages/PropertyFinderPage.tsx in ThreeColumnLayout: BarcodeScanner (UNT3-23) + PropertyFilter | PropertyListMap | PropertySummary + DaysOnMarket placeholder (UNT3-22)'
 - id: flexipage:Property_Record_Page
   source: Property Record Page (RecordPage for Property__c)
   target: {kind: route, name: '/properties/:id'}
@@ -1004,10 +1004,10 @@ rows:
   source: Settings (AppPage)
   target: {kind: route, name: /settings}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: 'SettingsPage: SampleDataImporter; visible to role dreamhouse-admin only'
+  notes: 'app/web/src/pages/SettingsPage.tsx: PageHeader + SampleDataImporter; route wrapped in RequireGroup dreamhouse-admin (routes.tsx), tab hidden from other groups (navigation.ts); AppShell.test.tsx + SampleDataImporter.test.tsx cover both'
 - id: layout:Broker__c-Broker Layout
   source: 'Broker__c: 4 sections, 10 fields'
   target: {kind: config, name: app/web/src/pages/brokers/brokerLayout.ts}
@@ -1063,7 +1063,7 @@ rows:
   status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); visible to / openable by group dreamhouse-admin only (UNT3-20, RequireGroup in routes.tsx); page body (UNT3-23) pending
+  notes: nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); visible to / openable by group dreamhouse-admin only (UNT3-20, RequireGroup in routes.tsx); page body SampleDataImporter (UNT3-23)
 - id: application:Dreamhouse
   source: 'Dreamhouse: tabs standard-home, Property_Explorer, Property_Finder, standard-Contact, Property__c, Broker__c, standard-File, Settings'
   target: {kind: component, name: AppShell}
@@ -1581,10 +1581,11 @@ rows:
   source: exports getBarcodeScanner, getLocationService, resetBarcodeScannerStubs, setBarcodeScanError, setBarcodeScannerAvailable, setDeviceLocationServiceAvailable, setUserCanceledScan
   target: {kind: mock, name: app/web/src/test/mocks/barcodeDetector.ts}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
   reason: Mobile capabilities are replaced by browser APIs; the BarcodeDetector and navigator.geolocation stubs cover the same cases (available / unavailable / cancelled / error).
+  notes: getBarcodeScanner stub with setBarcodeScannerAvailable / setUserCanceledScan / setBarcodeScanError / resetBarcodeScannerStubs (UNT3-23); getLocationService -> navigator.geolocation stub stays with UNT3-21/22
 - id: jestMock:lightning/navigation
   source: exports CurrentPageReference, NavigationMixin, getGenerateUrlCalledWith, getNavigateCalledWith
   target: {kind: mock, name: app/web/src/test/mocks/router.ts}
@@ -1597,10 +1598,11 @@ rows:
   source: exports ShowToastEvent, ShowToastEventName
   target: {kind: mock, name: app/web/src/test/mocks/notifications.ts}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-21
   parity_tests: []
   reason: ShowToastEvent becomes Mantine notifications; the helper spies notifications.show.
+  notes: mockNotifications() -> { show, toast(i) } (UNT3-23)
 - id: jestMock:schema
   source: exports Property__c
   target: null

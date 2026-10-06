@@ -410,25 +410,25 @@ export type components = {
         };
         CreateBrokerDto: {
             /** @description Broker_Id__c (Number 18,0) as a digit string */
-            brokerId?: Record<string, never>;
+            brokerId?: string | null;
             /**
              * Format: email
              * @description Email__c
              */
-            email?: Record<string, never>;
+            email?: string | null;
             /** @description Mobile_Phone__c */
-            mobilePhone?: Record<string, never>;
+            mobilePhone?: string | null;
             /** @description Broker__c.Name (required) */
             name: string;
             /** @description Phone__c */
-            phone?: Record<string, never>;
+            phone?: string | null;
             /**
              * Format: uri
              * @description Picture__c
              */
-            picture?: Record<string, never>;
+            picture?: string | null;
             /** @description Title__c */
-            title?: Record<string, never>;
+            title?: string | null;
         };
         CreateFileDto: {
             /** @description File body, base64 encoded (ContentVersion.VersionData). Missing padding and a `data:` URL prefix are accepted. Required unless `uploadKey` is given; decoded size is capped by FILES_MAX_INLINE_BYTES. */
@@ -451,70 +451,70 @@ export type components = {
         };
         CreatePropertyDto: {
             /** @description Address__c (flow: property_address.street) */
-            address?: Record<string, never>;
+            address?: string | null;
             /** @description Assessed_Value__c */
-            assessedValue?: Record<string, never>;
+            assessedValue?: number | null;
             /** @description Baths__c (flow: number_of_baths, screen default 2) */
-            baths?: Record<string, never>;
+            baths?: number | null;
             /** @description Beds__c (flow: number_of_beds, screen default 4) */
-            beds?: Record<string, never>;
+            beds?: number | null;
             /**
              * Format: uuid
              * @description Broker__c lookup (flow: property_broker.recordId)
              */
-            brokerId?: Record<string, never>;
+            brokerId?: string | null;
             /** @description City__c (flow: property_address.city) */
-            city?: Record<string, never>;
+            city?: string | null;
             /** @description Only used for geocoding (flow: property_address.country → geocode_address.country); not stored */
             country?: string;
             /** @description Date_Agreement__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            dateAgreement?: Record<string, never>;
+            dateAgreement?: string | null;
             /** @description Date_Closed__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            dateClosed?: Record<string, never>;
+            dateClosed?: string | null;
             /** @description Date_Contracted__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            dateContracted?: Record<string, never>;
+            dateContracted?: string | null;
             /** @description Date_Listed__c, YYYY-MM-DD (Salesforce Date / Postgres date); defaults to the current date ($Flow.CurrentDate) */
-            dateListed?: Record<string, never>;
+            dateListed?: string | null;
             /** @description Date_Pre_Market__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            datePreMarket?: Record<string, never>;
+            datePreMarket?: string | null;
             /** @description Description__c (flow: property_description) */
-            description?: Record<string, never>;
+            description?: string | null;
             /**
              * @description Create_property flow option: run the geocode_address action (Apex GeocodingService → Nominatim) on address/city/state/country/zip and store the result as latitude/longitude. A geocoder failure answers 502 GEOCODING_FAULT (flow fault path) and creates nothing.
              * @default false
              */
-            geocode: boolean;
+            geocode?: boolean;
             /** @description Location__Latitude__s; must be set together with longitude (ignored when geocode=true) */
-            latitude?: Record<string, never>;
+            latitude?: number | null;
             /** @description Location__Longitude__s; must be set together with latitude (ignored when geocode=true) */
-            longitude?: Record<string, never>;
+            longitude?: number | null;
             /** @description Property__c.Name (flow: property_name, required) */
             name: string;
             /**
              * Format: uri
              * @description Picture__c
              */
-            picture?: Record<string, never>;
+            picture?: string | null;
             /** @description Price__c (flow: property_price, screen default 100000) */
-            price?: Record<string, never>;
+            price?: number | null;
             /** @description Price_Sold__c */
-            priceSold?: Record<string, never>;
+            priceSold?: number | null;
             /** @description State__c (flow: property_address.province) */
-            state?: Record<string, never>;
+            state?: string | null;
             /**
              * @description Status__c restricted picklist; defaults to the flow value `Available`
-             * @enum {string}
+             * @enum {string|null}
              */
-            status?: "Contracted" | "Pre Market" | "Available" | "Under Agreement" | "Closed";
+            status?: "Contracted" | "Pre Market" | "Available" | "Under Agreement" | "Closed" | null;
             /** @description Tags__c (flow: property_tags) */
-            tags?: Record<string, never>;
+            tags?: string | null;
             /**
              * Format: uri
              * @description Thumbnail__c
              */
-            thumbnail?: Record<string, never>;
+            thumbnail?: string | null;
             /** @description Zip__c (flow: property_address.postalCode) */
-            zip?: Record<string, never>;
+            zip?: string | null;
         };
         FieldErrorDto: {
             /**
@@ -764,92 +764,92 @@ export type components = {
         };
         UpdateBrokerDto: {
             /** @description Broker_Id__c (Number 18,0) as a digit string */
-            brokerId?: Record<string, never>;
+            brokerId?: string | null;
             /**
              * Format: email
              * @description Email__c
              */
-            email?: Record<string, never>;
+            email?: string | null;
             /** @description Mobile_Phone__c */
-            mobilePhone?: Record<string, never>;
+            mobilePhone?: string | null;
             /** @description Broker__c.Name */
             name?: string;
             /** @description Phone__c */
-            phone?: Record<string, never>;
+            phone?: string | null;
             /**
              * Format: uri
              * @description Picture__c
              */
-            picture?: Record<string, never>;
+            picture?: string | null;
             /** @description Title__c */
-            title?: Record<string, never>;
+            title?: string | null;
         };
         UpdatePropertyDto: {
             /** @description Address__c (flow: property_address.street) */
-            address?: Record<string, never>;
+            address?: string | null;
             /** @description Assessed_Value__c */
-            assessedValue?: Record<string, never>;
+            assessedValue?: number | null;
             /** @description Baths__c (flow: number_of_baths, screen default 2) */
-            baths?: Record<string, never>;
+            baths?: number | null;
             /** @description Beds__c (flow: number_of_beds, screen default 4) */
-            beds?: Record<string, never>;
+            beds?: number | null;
             /**
              * Format: uuid
              * @description Broker__c lookup (flow: property_broker.recordId)
              */
-            brokerId?: Record<string, never>;
+            brokerId?: string | null;
             /** @description City__c (flow: property_address.city) */
-            city?: Record<string, never>;
+            city?: string | null;
             /** @description Only used for geocoding (flow: property_address.country → geocode_address.country); not stored */
             country?: string;
             /** @description Date_Agreement__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            dateAgreement?: Record<string, never>;
+            dateAgreement?: string | null;
             /** @description Date_Closed__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            dateClosed?: Record<string, never>;
+            dateClosed?: string | null;
             /** @description Date_Contracted__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            dateContracted?: Record<string, never>;
+            dateContracted?: string | null;
             /** @description Date_Listed__c, YYYY-MM-DD (Salesforce Date / Postgres date); defaults to the current date ($Flow.CurrentDate) */
-            dateListed?: Record<string, never>;
+            dateListed?: string | null;
             /** @description Date_Pre_Market__c, YYYY-MM-DD (Salesforce Date / Postgres date) */
-            datePreMarket?: Record<string, never>;
+            datePreMarket?: string | null;
             /** @description Description__c (flow: property_description) */
-            description?: Record<string, never>;
+            description?: string | null;
             /**
              * @description Create_property flow option: run the geocode_address action (Apex GeocodingService → Nominatim) on address/city/state/country/zip and store the result as latitude/longitude. A geocoder failure answers 502 GEOCODING_FAULT (flow fault path) and creates nothing.
              * @default false
              */
-            geocode: boolean;
+            geocode?: boolean;
             /** @description Location__Latitude__s; must be set together with longitude (ignored when geocode=true) */
-            latitude?: Record<string, never>;
+            latitude?: number | null;
             /** @description Location__Longitude__s; must be set together with latitude (ignored when geocode=true) */
-            longitude?: Record<string, never>;
+            longitude?: number | null;
             /** @description Property__c.Name */
             name?: string;
             /**
              * Format: uri
              * @description Picture__c
              */
-            picture?: Record<string, never>;
+            picture?: string | null;
             /** @description Price__c (flow: property_price, screen default 100000) */
-            price?: Record<string, never>;
+            price?: number | null;
             /** @description Price_Sold__c */
-            priceSold?: Record<string, never>;
+            priceSold?: number | null;
             /** @description State__c (flow: property_address.province) */
-            state?: Record<string, never>;
+            state?: string | null;
             /**
              * @description Status__c restricted picklist; defaults to the flow value `Available`
-             * @enum {string}
+             * @enum {string|null}
              */
-            status?: "Contracted" | "Pre Market" | "Available" | "Under Agreement" | "Closed";
+            status?: "Contracted" | "Pre Market" | "Available" | "Under Agreement" | "Closed" | null;
             /** @description Tags__c (flow: property_tags) */
-            tags?: Record<string, never>;
+            tags?: string | null;
             /**
              * Format: uri
              * @description Thumbnail__c
              */
-            thumbnail?: Record<string, never>;
+            thumbnail?: string | null;
             /** @description Zip__c (flow: property_address.postalCode) */
-            zip?: Record<string, never>;
+            zip?: string | null;
         };
     };
     responses: never;

@@ -5,6 +5,7 @@ import { AppShell } from '@/app/AppShell';
 import { BrokerRecordPage } from '@/pages/BrokerRecordPage';
 import { BrokersPage } from '@/pages/BrokersPage';
 import { ContactsPage } from '@/pages/ContactsPage';
+import { CreatePropertyPage } from '@/pages/CreatePropertyPage';
 import { FilesPage } from '@/pages/FilesPage';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -29,6 +30,7 @@ export const routes: RouteObject[] = [
           { path: '/property-finder', element: <PropertyFinderPage /> },
           { path: '/contacts', element: <ContactsPage /> },
           { path: '/properties', element: <PropertiesPage /> },
+          { path: '/properties/new', element: <CreatePropertyPage /> },
           { path: '/properties/:id', element: <PropertyRecordPage /> },
           { path: '/brokers', element: <BrokersPage /> },
           { path: '/brokers/:id', element: <BrokerRecordPage /> },

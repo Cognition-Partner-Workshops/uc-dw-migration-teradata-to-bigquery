@@ -101,3 +101,16 @@ export const brokerQuery = (brokerId: string) =>
     staleTime: CACHEABLE_STALE_TIME,
     enabled: brokerId.length > 0,
   });
+
+/** Broker__c tab list view / the Broker__c lookup options of a record form: GET /brokers. */
+export const brokersQuery = queryOptions({
+  queryKey: queryKeys.brokers,
+  queryFn: async ({ signal }) => {
+    const { data, response } = await api.GET('/brokers', { signal });
+    if (!response.ok || !data) {
+      throw new Error(`Loading brokers failed (${response.status})`);
+    }
+    return data;
+  },
+  staleTime: CACHEABLE_STALE_TIME,
+});

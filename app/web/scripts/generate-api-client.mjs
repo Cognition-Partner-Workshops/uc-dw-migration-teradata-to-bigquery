@@ -17,7 +17,12 @@ const source =
 const outFile = resolve(here, '../src/api/schema.d.ts');
 
 const input = /^https?:\/\//.test(source) ? new URL(source) : new URL(`file://${resolve(source)}`);
-const ast = await openapiTS(input, { alphabetize: true, exportType: true });
+// defaultNonNullable: a `default` in the document does not make a request field required for the client
+const ast = await openapiTS(input, {
+  alphabetize: true,
+  exportType: true,
+  defaultNonNullable: false,
+});
 const header = `/* eslint-disable */\n// GENERATED FILE — do not edit. Regenerate with \`npm run api:generate\` (source: app/api/openapi/openapi.json).\n`;
 const output = header + astToString(ast);
 
