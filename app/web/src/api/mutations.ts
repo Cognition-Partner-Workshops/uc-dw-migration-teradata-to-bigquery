@@ -116,11 +116,7 @@ export function useCreateFile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: CreateFileDto): Promise<FileCreatedDto> => {
-      const { data, error, response } = await api.POST('/files', {
-        // The bearer token is set by the auth middleware; the declared header param is a stub.
-        params: { header: { authorization: '' } },
-        body,
-      });
+      const { data, error, response } = await api.POST('/files', { body });
       if (!response.ok || !data) throw toApiRequestError(response, error, 'Uploading the file');
       return data;
     },
