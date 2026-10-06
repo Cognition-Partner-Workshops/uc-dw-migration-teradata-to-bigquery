@@ -34,7 +34,22 @@ target:
       files:       {path: app/api/src/modules/files,       sources: [FileUtilities, FileUtilitiesTest, ContentVersion, ContentDocumentLink]}
       geocoding:   {path: app/api/src/modules/geocoding,   sources: [GeocodingService, GeocodingServiceTest, nominatim_openstreetmap]}
       sample-data: {path: app/api/src/modules/sample-data, sources: [SampleDataController, TestSampleDataController, sample_data_brokers, sample_data_properties, sample_data_contacts]}
-  web: app/web (React)
+  web: app/web (React 18 + Vite + TypeScript, Mantine, React Router, TanStack Query, Leaflet) on S3 + CloudFront
+  web_scaffold:                      # UNT3-7 — Node 22, Vite 7, Vitest + Testing Library
+    readme: app/web/README.md
+    ci: .github/workflows/web.yml    # api:generate --check, lint, test, build, vite preview smoke
+    api_client:                      # typed client generated from the API's OpenAPI document
+      script: app/web/scripts/generate-api-client.mjs   # npm run api:generate [--check | <url>]
+      source: app/api/openapi/openapi.json              # operationIds are now <resource>_<method> (unique)
+      output: app/web/src/api/schema.d.ts               # consumed by openapi-fetch in app/web/src/api/client.ts
+    tabs_config: app/web/src/app/tabs.ts                # one entry per <tabs> of Dreamhouse.app-meta.xml; asserted by tabs.test.ts
+    routes: app/web/src/app/routes.tsx
+    shell: app/web/src/components/AppShell.tsx
+    auth:
+      interface: app/web/src/auth/types.ts
+      stub: app/web/src/auth/stub-auth-client.ts        # VITE_AUTH_MODE=stub (local default)
+      cognito: app/web/src/auth/cognito-auth-client.ts  # VITE_AUTH_MODE=cognito + VITE_COGNITO_USER_POOL_ID/CLIENT_ID (infra ticket)
+    map: app/web/src/components/MapView.tsx             # Leaflet 1.9.4 via react-leaflet
   infra: infra/ (Terraform, AWS 599083837640, us-east-1)
   parity: tests/parity/ (live against both apps)
 
@@ -116,8 +131,19 @@ artifacts:
     layouts: ["Broker__c-Broker Layout", "Property__c-Property Layout"]
     prompts: [Property, PropertyExplorer, PropertyFinder]
     content_assets: [dreamhouselogosquare]
-    target: null   # React routes / pages
-    ticket: UNT3-4
+    target: app/web/src/app/tabs.ts + app/web/src/app/routes.tsx   # UNT3-7: shell, tabs and routes; page bodies are placeholders until UNT3-21/22
+    ticket: UNT3-7
+    routes:                          # Dreamhouse.app-meta.xml <tabs> -> React route (same order)
+      standard-home:     {path: /,                  page: app/web/src/pages/HomePage.tsx}
+      Property_Explorer: {path: /property-explorer, page: app/web/src/pages/PropertyExplorerPage.tsx, flexipage: Property_Explorer, ticket: UNT3-21}
+      Property_Finder:   {path: /property-finder,   page: app/web/src/pages/PropertyFinderPage.tsx,   flexipage: Property_Finder,   ticket: UNT3-21}
+      standard-Contact:  {path: /contacts,          page: app/web/src/pages/ContactsPage.tsx,         ticket: UNT3-22}
+      Property__c:       {path: /properties, record: /properties/:id, page: app/web/src/pages/PropertiesPage.tsx, record_page: app/web/src/pages/PropertyRecordPage.tsx, flexipage: Property_Record_Page, layout: "Property__c-Property Layout", ticket: UNT3-22}
+      Broker__c:         {path: /brokers,    record: /brokers/:id,    page: app/web/src/pages/BrokersPage.tsx,    record_page: app/web/src/pages/BrokerRecordPage.tsx,   flexipage: Broker_Record_Page,   layout: "Broker__c-Broker Layout",     ticket: UNT3-22}
+      standard-File:     {path: /files,             page: app/web/src/pages/FilesPage.tsx,            ticket: UNT3-22}
+      Settings:          {path: /settings,          page: app/web/src/pages/SettingsPage.tsx,         flexipage: Settings, ticket: UNT3-22}
+    login: {path: /login, page: app/web/src/pages/LoginPage.tsx, auth: Cognito user pool (stubbed locally via VITE_AUTH_MODE=stub)}
+    content_assets_target: app/web/public/dreamhouse.svg   # logo/favicon, Dreamhouse green #86BD4A from the app metadata
 
   security:
     permission_sets: [dreamhouse]
@@ -127,7 +153,7 @@ artifacts:
     ticket: UNT3-4
 
   static_resources:
-    - {name: leafletjs,              target: null, ticket: UNT3-4}
+    - {name: leafletjs,              target: "leaflet@1.9.4 + react-leaflet (app/web/src/components/MapView.tsx)", ticket: UNT3-7}
     - {name: sample_data_brokers,    target: null, ticket: UNT3-4}
     - {name: sample_data_contacts,   target: null, ticket: UNT3-4}
     - {name: sample_data_properties, target: null, ticket: UNT3-4}

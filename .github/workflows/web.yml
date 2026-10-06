@@ -1,0 +1,36 @@
+name: web
+
+on:
+  pull_request:
+    branches: [salesforce-to-aws-demo]
+    paths: ['app/web/**', 'app/api/openapi/**', '.github/workflows/web.yml']
+  push:
+    branches: [salesforce-to-aws-demo]
+    paths: ['app/web/**', 'app/api/openapi/**', '.github/workflows/web.yml']
+
+jobs:
+  web:
+    name: api client, lint, test, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/web/package-lock.json
+      - run: npm ci
+      - name: Generated API client is in sync with app/api/openapi/openapi.json
+        run: npm run api:generate -- --check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Built shell serves index.html
+        run: |
+          npx vite preview --port 4173 & echo $! > preview.pid
+          for i in $(seq 1 20); do curl -fs localhost:4173/ && break; sleep 1; done
+          curl -fs localhost:4173/ | grep -q '<div id="root">'
+          kill "$(cat preview.pid)"
