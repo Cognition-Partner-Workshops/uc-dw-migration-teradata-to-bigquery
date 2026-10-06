@@ -45,9 +45,21 @@ export const configSchema = z.object({
     .enum(['true', 'false', '1', '0'])
     .transform((value) => value === 'true' || value === '1')
     .optional(),
-  // HS256 secret of the bearer tokens the characterisation specs mint (tests/parity/fixtures/users.ts);
-  // only honoured outside production. The Cognito JWKS verifier arrives with UNT3-20.
-  AUTH_TEST_JWT_SECRET: z.string().min(1).optional(),
+  // Authentication (src/auth): how bearer tokens are verified. Defaults per NODE_ENV —
+  // production: cognito, test: test (HS256 fixtures), development: stub (web stub client).
+  AUTH_MODE: z.enum(['cognito', 'test', 'stub']).optional(),
+  // Cognito user pool the ECS task definition passes (infra/modules/api); required when AUTH_MODE=cognito.
+  COGNITO_USER_POOL_ID: z.string().min(1).optional(),
+  COGNITO_CLIENT_ID: z.string().min(1).optional(),
+  // Region of the pool (defaults to the prefix of the pool id) / full issuer override (local emulators).
+  COGNITO_REGION: z.string().min(1).optional(),
+  COGNITO_ISSUER: z.string().url().optional(),
+  // AUTH_MODE=test: the secret/issuer tests/parity/fixtures/users.ts signs its `System.runAs` tokens with.
+  AUTH_TEST_JWT_SECRET: z.string().min(1).default('dreamhouse-characterisation'),
+  AUTH_TEST_ISSUER: z
+    .string()
+    .url()
+    .default('https://cognito-idp.us-east-1.amazonaws.com/dreamhouse-test'),
 });
 
 export type RawConfig = z.input<typeof configSchema>;

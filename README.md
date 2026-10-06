@@ -130,6 +130,7 @@ builds and smoke-tests the built shell on every PR touching `app/web` or the Ope
 
 ## Mapping matrix
 
+[`docs/migration/permissions.md`](docs/migration/permissions.md) is the permission matrix (permission set → Cognito groups → API guards).
 [`docs/migration/mapping.yaml`](docs/migration/mapping.yaml) is the single source of
 truth for the 1:1 mapping from every Salesforce artifact to its target
 (Postgres table/column, API endpoint, React component, infra resource), one row per

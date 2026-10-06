@@ -1,5 +1,6 @@
 import { createBrowserRouter, createMemoryRouter, type RouteObject } from 'react-router-dom';
 import { RequireAuth } from '@/auth/RequireAuth';
+import { RequireGroup } from '@/auth/RequireGroup';
 import { AppShell } from '@/app/AppShell';
 import { BrokerRecordPage } from '@/pages/BrokerRecordPage';
 import { BrokersPage } from '@/pages/BrokersPage';
@@ -32,7 +33,14 @@ export const routes: RouteObject[] = [
           { path: '/brokers', element: <BrokersPage /> },
           { path: '/brokers/:id', element: <BrokerRecordPage /> },
           { path: '/files', element: <FilesPage /> },
-          { path: '/settings', element: <SettingsPage /> },
+          {
+            path: '/settings',
+            element: (
+              <RequireGroup group="dreamhouse-admin">
+                <SettingsPage />
+              </RequireGroup>
+            ),
+          },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

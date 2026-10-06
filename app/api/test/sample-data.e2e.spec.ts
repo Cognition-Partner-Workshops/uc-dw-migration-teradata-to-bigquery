@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -7,15 +6,12 @@ import './setup-env';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.factory';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { TEST_JWT_SECRET, adminUser, mintAccessToken } from './support/test-users';
 
-function mint(groups: string[], secret = 'dreamhouse-characterisation', exp?: number): string {
-  const b64 = (v: string | Buffer) => Buffer.from(v).toString('base64url');
-  const header = b64(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = b64(
-    JSON.stringify({ sub: 'test-admin', username: 'admin', 'cognito:groups': groups, exp }),
-  );
-  const signature = createHmac('sha256', secret).update(`${header}.${payload}`).digest();
-  return `Bearer ${header}.${payload}.${b64(signature)}`;
+/** FileUtilities/SampleData callers: the test admin with the given groups (asUser() for the happy path). */
+function mint(groups: string[], secret = TEST_JWT_SECRET, exp?: number): string {
+  const expiresInSeconds = exp === undefined ? undefined : exp - Math.floor(Date.now() / 1000);
+  return `Bearer ${mintAccessToken({ ...adminUser, groups }, { secret, expiresInSeconds })}`;
 }
 
 /** Guard + policy around POST /sample-data/import (the import itself: tests/parity/.../sample-data-controller.spec.ts). */

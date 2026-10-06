@@ -22,6 +22,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { RequirePermission, SfObjectAccess } from '../../auth/decorators';
 import { ApiErrorDto } from '../../common/errors/api-error.dto';
 import { PropertyQueryDto } from './dto/property-query.dto';
 import { CreatePropertyDto, PropertyDto, UpdatePropertyDto } from './dto/property-record.dto';
@@ -38,12 +39,19 @@ export const CACHEABLE = 'private, max-age=30, stale-while-revalidate=60';
 const FIELD_ERRORS = { type: ApiErrorDto, description: 'Field errors (output.fieldErrors)' };
 const NOT_FOUND = { description: 'No property with this id' };
 
+/**
+ * Authorization (src/auth/policy.ts): object CRUD of `Property__c` per route; the two Apex
+ * methods additionally need class access to PropertyController/PagedResult (`properties.invoke`).
+ * Field-level security of Property__c applies to every body and response (`@SfObjectAccess`).
+ */
 @ApiTags('properties')
 @Controller('properties')
+@SfObjectAccess('Property__c')
 export class PropertiesController {
   constructor(private readonly properties: PropertiesService) {}
 
   @Get()
+  @RequirePermission('properties.read', 'properties.invoke')
   @Header('Cache-Control', CACHEABLE)
   @ApiOperation({
     summary: 'Paged, filtered property list',
@@ -58,6 +66,7 @@ export class PropertiesController {
   }
 
   @Post()
+  @RequirePermission('properties.create')
   @ApiOperation({
     summary: 'Create a property (Create_property flow)',
     description:
@@ -79,6 +88,7 @@ export class PropertiesController {
   }
 
   @Get(':id')
+  @RequirePermission('properties.read')
   @Header('Cache-Control', CACHEABLE)
   @ApiOperation({
     summary: 'Get a property',
@@ -92,6 +102,7 @@ export class PropertiesController {
   }
 
   @Patch(':id')
+  @RequirePermission('properties.edit')
   @ApiOperation({
     summary: 'Update a property',
     description:
@@ -110,6 +121,7 @@ export class PropertiesController {
   }
 
   @Delete(':id')
+  @RequirePermission('properties.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a property',
@@ -123,6 +135,7 @@ export class PropertiesController {
   }
 
   @Get(':id/pictures')
+  @RequirePermission('properties.read', 'properties.invoke', 'files.read')
   @Header('Cache-Control', CACHEABLE)
   @ApiOperation({
     summary: 'Pictures attached to a property',

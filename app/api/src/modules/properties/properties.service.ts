@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { assertRecordAccess, ownershipColumns, recordAccessWhere } from '../../auth/sharing';
 import { ERROR_CODES } from '../../common/errors/api-error.dto';
 import {
   FieldErrorsException,
@@ -160,7 +161,11 @@ export class PropertiesService {
    * Input defaults (`?? DEFAULT_MAX_PRICE`, `?? 0`, `?? 9`, `?? 1`) are applied by PropertyQueryDto.
    */
   async getPagedPropertyList(query: PropertyQueryDto): Promise<PagedPropertiesDto> {
-    const where = PropertiesService.searchWhere(query);
+    // `WITH USER_MODE` (lines 46, 73): sharing of the running user — empty for Public Read/Write + View All.
+    const where = {
+      ...PropertiesService.searchWhere(query),
+      ...recordAccessWhere('Property__c', 'read'),
+    };
     const offset = (query.pageNumber - 1) * query.pageSize;
 
     const [totalItemCount, rows] = await this.prisma.$transaction([
@@ -234,6 +239,7 @@ export class PropertiesService {
   async findOne(id: string): Promise<PropertyDto> {
     const row = await this.prisma.property.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Property not found');
+    assertRecordAccess('Property__c', 'read', row);
     return PropertiesService.toRecord(row);
   }
 
@@ -249,7 +255,10 @@ export class PropertiesService {
    */
   async create(input: CreatePropertyDto): Promise<PropertyDto> {
     const { geocode, country, ...fields } = input;
-    const data = toData(fields) as Prisma.PropertyUncheckedCreateInput;
+    const data = {
+      ...toData(fields),
+      ...ownershipColumns(),
+    } as Prisma.PropertyUncheckedCreateInput;
     data.status ??= STATUS_TO_ENUM[CREATE_PROPERTY_FLOW_DEFAULTS.status];
     data.dateListed ??= fromCalendarDate(currentDate());
 
@@ -270,6 +279,7 @@ export class PropertiesService {
     const { geocode, country, ...fields } = input;
     const current = await this.prisma.property.findUnique({ where: { id } });
     if (!current) throw new NotFoundException('Property not found');
+    assertRecordAccess('Property__c', 'edit', current);
     const data = toData(fields);
 
     if (geocode) {
@@ -299,6 +309,9 @@ export class PropertiesService {
   /** LDS `deleteRecord(Property__c)`; `files` rows cascade (ContentDocumentLink). 404 via P2025. */
   async remove(id: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
+      const current = await tx.property.findUnique({ where: { id }, select: { ownerId: true } });
+      if (!current) throw new NotFoundException('Property not found');
+      assertRecordAccess('Property__c', 'delete', current);
       await tx.property.delete({ where: { id } });
     });
   }

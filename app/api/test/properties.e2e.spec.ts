@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { asUser, standardUser } from './support/test-users';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import './setup-env';
 import { AppModule } from '../src/app.module';
@@ -55,12 +56,15 @@ describe('GET /properties, GET /properties/:id/pictures (http)', () => {
     prisma.file.findMany.mockReset().mockResolvedValue([]);
   });
 
+  // Requests run as the Standard User + `dreamhouse` permission set (TestPropertyController runAs).
+  const http = () => request.agent(app.getHttpServer()).set(asUser(standardUser));
+
   afterAll(async () => {
     await app.close();
   });
 
   it('returns the Apex PagedResult shape, defaults omitted filters like the Apex method and caches', async () => {
-    const res = await request(app.getHttpServer()).get('/properties?searchKey=cam').expect(200);
+    const res = await http().get('/properties?searchKey=cam').expect(200);
     expect(res.headers['cache-control']).toBe(CACHEABLE);
     expect(res.headers.etag).toBeDefined();
     expect(res.body).toEqual({
@@ -99,7 +103,7 @@ describe('GET /properties, GET /properties/:id/pictures (http)', () => {
   });
 
   it('coerces and forwards the paging / filter query parameters', async () => {
-    await request(app.getHttpServer())
+    await http()
       .get('/properties?maxPrice=500000&minBedrooms=2&minBathrooms=1&pageSize=10&pageNumber=3')
       .expect(200);
     expect(prisma.property.findMany).toHaveBeenCalledWith(
@@ -116,17 +120,12 @@ describe('GET /properties, GET /properties/:id/pictures (http)', () => {
   });
 
   it('answers 304 to a conditional refetch of an unchanged page', async () => {
-    const first = await request(app.getHttpServer()).get('/properties').expect(200);
-    await request(app.getHttpServer())
-      .get('/properties')
-      .set('If-None-Match', first.headers.etag)
-      .expect(304);
+    const first = await http().get('/properties').expect(200);
+    await http().get('/properties').set('If-None-Match', first.headers.etag).expect(304);
   });
 
   it('serves pictures as [] when none are linked, with the same caching', async () => {
-    const res = await request(app.getHttpServer())
-      .get(`/properties/${PROPERTY_ID}/pictures`)
-      .expect(200);
+    const res = await http().get(`/properties/${PROPERTY_ID}/pictures`).expect(200);
     expect(res.headers['cache-control']).toBe(CACHEABLE);
     expect(res.body).toEqual([]);
     expect(prisma.file.findMany).toHaveBeenCalledWith(
@@ -137,6 +136,6 @@ describe('GET /properties, GET /properties/:id/pictures (http)', () => {
   });
 
   it('rejects a non-UUID property id', async () => {
-    await request(app.getHttpServer()).get('/properties/a0x5e000001abc/pictures').expect(400);
+    await http().get('/properties/a0x5e000001abc/pictures').expect(400);
   });
 });

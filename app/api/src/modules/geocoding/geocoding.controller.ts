@@ -1,10 +1,13 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CoordinatesDto, GeocodeAddressesDto, GeocodingAddressDto } from './dto/geocoding.dto';
+import { RequirePermission } from '../../auth/decorators';
 import { GeocodingService } from './geocoding.service';
 
+/** GeocodingService ran as a flow action: no Apex class access needed, any app user may call it (`geocoding.invoke`). */
 @ApiTags('geocoding')
 @Controller()
+@RequirePermission('geocoding.invoke')
 export class GeocodingController {
   constructor(private readonly geocoding: GeocodingService) {}
 

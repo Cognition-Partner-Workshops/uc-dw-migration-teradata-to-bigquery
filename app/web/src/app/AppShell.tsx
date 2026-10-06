@@ -16,7 +16,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconLogout } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/use-auth';
-import { appTabs, findActiveTab } from '@/app/navigation';
+import { findActiveTab, visibleTabs } from '@/app/navigation';
 import { ApiStatus } from '@/components/ApiStatus/ApiStatus';
 import { DreamhouseLogo } from '@/components/DreamhouseLogo/DreamhouseLogo';
 
@@ -92,7 +92,7 @@ export function AppShell() {
       <MantineAppShell.Navbar p="xs">
         <MantineAppShell.Section grow component={ScrollArea}>
           <nav aria-label="Dreamhouse tabs">
-            {appTabs.map((tab) => (
+            {visibleTabs(user?.groups).map((tab) => (
               <NavLink
                 key={tab.id}
                 component={Link}

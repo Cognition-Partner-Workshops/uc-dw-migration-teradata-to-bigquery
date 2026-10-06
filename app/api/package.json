@@ -38,6 +38,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
+    "jose": "^6.2.12",
     "nestjs-pino": "^4.4.0",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",

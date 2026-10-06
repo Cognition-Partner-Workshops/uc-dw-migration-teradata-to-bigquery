@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { asUser, standardUser } from './support/test-users';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import './setup-env';
 import { AppModule } from '../src/app.module';
@@ -160,7 +161,8 @@ describe('record CRUD (http)', () => {
     await app.close();
   });
 
-  const http = () => request(app.getHttpServer());
+  // Requests run as the Standard User + `dreamhouse` permission set (TestPropertyController runAs).
+  const http = () => request.agent(app.getHttpServer()).set(asUser(standardUser));
 
   describe('field-error contract (output.fieldErrors, Lightning UI API shape)', () => {
     it('answers 400 with one entry per failed rule, keyed by API field, with Salesforce StatusCode names', async () => {
@@ -573,6 +575,8 @@ describe('record CRUD (http)', () => {
         .expect(201);
       expect(prisma.broker.create).toHaveBeenCalledWith({
         data: {
+          ownerId: 'test-standarduser',
+          createdBy: 'test-standarduser',
           name: 'Caroline Kingsley',
           brokerId: new Prisma.Decimal('1'),
           email: 'caroline@dreamhouse.demo',

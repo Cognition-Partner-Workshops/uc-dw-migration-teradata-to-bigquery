@@ -19,6 +19,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { RequirePermission, SfObjectAccess } from '../../auth/decorators';
 import { ApiErrorDto } from '../../common/errors/api-error.dto';
 import { BrokersService } from './brokers.service';
 import { BrokerDto, CreateBrokerDto, UpdateBrokerDto } from './dto/broker.dto';
@@ -29,10 +30,12 @@ import { BrokerDto, CreateBrokerDto, UpdateBrokerDto } from './dto/broker.dto';
  */
 @ApiTags('brokers')
 @Controller('brokers')
+@SfObjectAccess('Broker__c')
 export class BrokersController {
   constructor(private readonly brokers: BrokersService) {}
 
   @Get()
+  @RequirePermission('brokers.read')
   @ApiOperation({
     summary: 'List brokers',
     description: 'Broker__c tab (list view), ordered by name.',
@@ -43,6 +46,7 @@ export class BrokersController {
   }
 
   @Get(':id')
+  @RequirePermission('brokers.read')
   @ApiOperation({
     summary: 'Get a broker',
     description: 'LDS `getRecord` as used by the brokerCard LWC / Broker_Record_Page.',
@@ -54,6 +58,7 @@ export class BrokersController {
   }
 
   @Post()
+  @RequirePermission('brokers.create')
   @ApiOperation({ summary: 'Create a broker', description: 'LDS `createRecord(Broker__c)`.' })
   @ApiCreatedResponse({ type: BrokerDto })
   @ApiBadRequestResponse({ type: ApiErrorDto, description: 'Field errors (output.fieldErrors)' })
@@ -62,6 +67,7 @@ export class BrokersController {
   }
 
   @Patch(':id')
+  @RequirePermission('brokers.edit')
   @ApiOperation({ summary: 'Update a broker', description: 'LDS `updateRecord(Broker__c)`.' })
   @ApiOkResponse({ type: BrokerDto })
   @ApiBadRequestResponse({ type: ApiErrorDto, description: 'Field errors (output.fieldErrors)' })
@@ -74,6 +80,7 @@ export class BrokersController {
   }
 
   @Delete(':id')
+  @RequirePermission('brokers.delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete a broker',

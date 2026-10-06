@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -8,6 +7,7 @@ import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.factory';
 import { FILE_STORAGE, FileStorage } from '../src/modules/files/storage/file-storage';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { adminUser, asUser } from './support/test-users';
 
 process.env.FILES_MAX_INLINE_BYTES = '128';
 
@@ -15,18 +15,6 @@ const PROPERTY_ID = '11111111-1111-4111-8111-111111111111';
 const FILE_ID = '22222222-2222-4222-8222-222222222222';
 const ONE_PIXEL_PNG =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC';
-
-function token(username: string): string {
-  const b64 = (v: string | Buffer) => Buffer.from(v).toString('base64url');
-  const header = b64(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = b64(
-    JSON.stringify({ sub: `test-${username}`, username, 'cognito:groups': ['dreamhouse'] }),
-  );
-  const signature = createHmac('sha256', 'dreamhouse-characterisation')
-    .update(`${header}.${payload}`)
-    .digest();
-  return `Bearer ${header}.${payload}.${b64(signature)}`;
-}
 
 /**
  * HTTP surface of the FileUtilities port with Prisma stubbed out and the local file storage
@@ -95,7 +83,7 @@ describe('POST /files, GET /files/:id (http)', () => {
   it('stores the body, inserts the files row and serves it back under the returned url', async () => {
     const created = await request(app.getHttpServer())
       .post('/files')
-      .set('authorization', token('standarduser'))
+      .set(asUser(adminUser))
       .send({ base64Data: ONE_PIXEL_PNG, filename: 'house01.png', recordId: PROPERTY_ID })
       .expect(201);
 
@@ -109,7 +97,7 @@ describe('POST /files, GET /files/:id (http)', () => {
     expect(row).toMatchObject({
       s3Key: `files/${created.body.id}/house01.png`,
       recordId: PROPERTY_ID,
-      createdBy: 'standarduser',
+      createdBy: 'admin',
     });
     expect(await storage.headObject(row.s3Key)).toEqual({
       contentLength: Buffer.from(ONE_PIXEL_PNG, 'base64').length,
@@ -117,6 +105,7 @@ describe('POST /files, GET /files/:id (http)', () => {
 
     const served = await request(app.getHttpServer())
       .get(created.body.url)
+      .set(asUser(adminUser))
       .buffer(true)
       .parse((res, done) => {
         const chunks: Buffer[] = [];
@@ -145,6 +134,7 @@ describe('POST /files, GET /files/:id (http)', () => {
     });
     await request(app.getHttpServer())
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: ONE_PIXEL_PNG, filename: 'house01.png', recordId: PROPERTY_ID })
       .expect(500);
     expect(putObject).toHaveBeenCalledTimes(1);
@@ -156,38 +146,50 @@ describe('POST /files, GET /files/:id (http)', () => {
     // FileUtilitiesTest.createFileFailsWhenIncorrectRecordId
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: ONE_PIXEL_PNG, filename: 'f.png', recordId: 'INVALID_ID' })
       .expect(400);
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: ONE_PIXEL_PNG, filename: 'f.png', recordId: FILE_ID })
       .expect(404);
     // FileUtilitiesTest.createFileFailsWhenIncorrectBase64Data
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: '', filename: 'f.png', recordId: PROPERTY_ID })
       .expect(400);
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: '%%%', filename: 'f.png', recordId: PROPERTY_ID })
       .expect(400);
-    await api.post('/files').send({ filename: 'f.png', recordId: PROPERTY_ID }).expect(400);
+    await api
+      .post('/files')
+      .set(asUser(adminUser))
+      .send({ filename: 'f.png', recordId: PROPERTY_ID })
+      .expect(400);
     // FileUtilitiesTest.createFileFailsWhenIncorrectFilename
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: ONE_PIXEL_PNG, filename: '', recordId: PROPERTY_ID })
       .expect(400);
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: ONE_PIXEL_PNG, filename: '   ', recordId: PROPERTY_ID })
       .expect(400);
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: ONE_PIXEL_PNG, filename: '../x.png', recordId: PROPERTY_ID })
       .expect(400);
     // one body source at a time
     await api
       .post('/files')
+      .set(asUser(adminUser))
       .send({
         base64Data: ONE_PIXEL_PNG,
         uploadKey: `uploads/${PROPERTY_ID}/x/f.png`,
@@ -202,6 +204,7 @@ describe('POST /files, GET /files/:id (http)', () => {
     const big = Buffer.alloc(129, 1).toString('base64');
     const res = await request(app.getHttpServer())
       .post('/files')
+      .set(asUser(adminUser))
       .send({ base64Data: big, filename: 'big.bin', recordId: PROPERTY_ID })
       .expect(413);
     expect(res.body.message).toContain('presigned-upload');
@@ -213,6 +216,7 @@ describe('POST /files, GET /files/:id (http)', () => {
 
     await request(app.getHttpServer())
       .post('/files')
+      .set(asUser(adminUser))
       .send({
         uploadKey: `uploads/${FILE_ID}/token/house02.jpg`,
         filename: 'house02.jpg',
@@ -221,6 +225,7 @@ describe('POST /files, GET /files/:id (http)', () => {
       .expect(400);
     await request(app.getHttpServer())
       .post('/files')
+      .set(asUser(adminUser))
       .send({
         uploadKey: `uploads/${PROPERTY_ID}/missing/house02.jpg`,
         filename: 'house02.jpg',
@@ -230,6 +235,7 @@ describe('POST /files, GET /files/:id (http)', () => {
 
     const created = await request(app.getHttpServer())
       .post('/files')
+      .set(asUser(adminUser))
       .send({ uploadKey, filename: 'house02.jpg', recordId: PROPERTY_ID })
       .expect(201);
     expect(created.body).toMatchObject({ fileType: 'JPG', size: 10 });
@@ -242,17 +248,19 @@ describe('POST /files, GET /files/:id (http)', () => {
   it('POST /files/presigned-upload needs the S3 bucket (501 on local storage) and an existing record', async () => {
     await request(app.getHttpServer())
       .post('/files/presigned-upload')
+      .set(asUser(adminUser))
       .send({ filename: 'big.jpg', recordId: FILE_ID })
       .expect(404);
     const res = await request(app.getHttpServer())
       .post('/files/presigned-upload')
+      .set(asUser(adminUser))
       .send({ filename: 'big.jpg', recordId: PROPERTY_ID })
       .expect(501);
     expect(res.body.message).toContain('FILES_BUCKET');
   });
 
   it('GET /files/:id answers 404 for unknown ids and 400 for non-uuids', async () => {
-    await request(app.getHttpServer()).get(`/files/${FILE_ID}`).expect(404);
-    await request(app.getHttpServer()).get('/files/not-a-uuid').expect(400);
+    await request(app.getHttpServer()).get(`/files/${FILE_ID}`).set(asUser(adminUser)).expect(404);
+    await request(app.getHttpServer()).get('/files/not-a-uuid').set(asUser(adminUser)).expect(400);
   });
 });
