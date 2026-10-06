@@ -36,7 +36,7 @@ jobs:
           cache-dependency-path: |
             app/api/package-lock.json
             tests/parity/package-lock.json
-      - name: Install the API (linked into tests/parity as a file: dependency)
+      - name: "Install the API (tests/parity links it as a file: dependency)"
         run: npm ci
         working-directory: app/api
       - run: npm ci
