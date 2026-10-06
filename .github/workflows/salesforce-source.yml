@@ -1,0 +1,45 @@
+name: salesforce-source
+
+on:
+  pull_request:
+    branches: [salesforce-to-aws-demo]
+  push:
+    branches: [salesforce-to-aws-demo]
+
+jobs:
+  validate-metadata:
+    name: sf project convert (offline metadata validation)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: salesforce
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: salesforce/package-lock.json
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+      - name: Convert source to Metadata API format
+        run: |
+          sf project convert source --output-dir /tmp/mdapi-out
+          echo "Metadata types in package.xml:" && grep -c '<name>' /tmp/mdapi-out/package.xml
+
+  lwc-tests:
+    name: LWC jest + eslint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: salesforce
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: salesforce/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run test:unit

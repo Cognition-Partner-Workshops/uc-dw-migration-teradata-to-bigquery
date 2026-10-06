@@ -1,0 +1,121 @@
+# 1:1 mapping matrix: Salesforce (trailheadapps/dreamhouse-lwc) -> React + NestJS/Prisma + Postgres on AWS.
+# Every PR that touches an artifact must keep this file current.
+# target: null means "not mapped yet"; the ticket that owns the mapping is noted in `ticket`.
+
+source:
+  repo: https://github.com/trailheadapps/dreamhouse-lwc
+  pinned_commit: 119e53db0138ca7be3e2d3e4e75f3447e616c535
+  pinned_date: "2026-10-01"
+  import_method: git subtree --squash (prefix salesforce/)
+  sfdx_project: salesforce/sfdx-project.json
+  source_api_version: "64.0"
+  validation:
+    offline: sf project convert source  # 19 metadata types in package.xml
+    lwc_tests: npm run test:unit         # 17 suites / 83 tests
+    live: sf project deploy validate --source-dir force-app --test-level RunLocalTests
+
+target:
+  api: app/api (TypeScript, NestJS + Prisma, PostgreSQL) on ECS Fargate + ALB
+  web: app/web (React)
+  infra: infra/ (Terraform, AWS 599083837640, us-east-1)
+  parity: tests/parity/ (live against both apps)
+
+artifacts:
+  objects:
+    - name: Property__c
+      path: salesforce/force-app/main/default/objects/Property__c
+      fields: [Address__c, Assessed_Value__c, Baths__c, Beds__c, Broker__c, City__c, Date_Agreement__c, Date_Closed__c, Date_Contracted__c, Date_Listed__c, Date_Pre_Market__c, Days_On_Market__c, Description__c, Location__c, Picture_IMG__c, Picture__c, Price_Sold__c, Price__c, Record_Link__c, State__c, Status__c, Tags__c, Thumbnail_IMG__c, Thumbnail__c, Zip__c]
+      target: null   # Postgres table + Prisma model
+      ticket: UNT3-11
+    - name: Broker__c
+      path: salesforce/force-app/main/default/objects/Broker__c
+      fields: [Broker_Id__c, Email__c, Mobile_Phone__c, Phone__c, Picture_IMG__c, Picture__c, Title__c]
+      target: null
+      ticket: UNT3-11
+    - name: Contact            # standard object; only sample data is shipped
+      path: salesforce/data/contacts-data.json
+      target: null
+      ticket: UNT3-11
+
+  apex:
+    - name: PropertyController
+      path: salesforce/force-app/main/default/classes/PropertyController.cls
+      tests: [TestPropertyController]
+      target: null   # API endpoints (property list / paging / pictures)
+      ticket: UNT3-4
+    - name: GeocodingService
+      path: salesforce/force-app/main/default/classes/GeocodingService.cls
+      tests: [GeocodingServiceTest]
+      target: null   # geocoding via OpenStreetMap Nominatim
+      ticket: UNT3-4
+    - name: SampleDataController
+      path: salesforce/force-app/main/default/classes/SampleDataController.cls
+      tests: [TestSampleDataController]
+      target: null   # seed/import tooling
+      ticket: UNT3-4
+    - name: FileUtilities
+      path: salesforce/force-app/main/default/classes/FileUtilities.cls
+      tests: [FileUtilitiesTest]
+      target: null   # file/picture upload
+      ticket: UNT3-4
+    - name: PagedResult
+      path: salesforce/force-app/main/default/classes/PagedResult.cls
+      target: null   # paged API response DTO
+      ticket: UNT3-4
+
+  lwc:
+    - {name: barcodeScanner,         target: null, ticket: UNT3-4}
+    - {name: brokerCard,             target: null, ticket: UNT3-4}
+    - {name: daysOnMarket,           target: null, ticket: UNT3-4}
+    - {name: errorPanel,             target: null, ticket: UNT3-4}
+    - {name: ldsUtils,               target: null, ticket: UNT3-4}
+    - {name: listContactsFromDevice, target: null, ticket: UNT3-4}
+    - {name: navigateToRecord,       target: null, ticket: UNT3-4}
+    - {name: paginator,              target: null, ticket: UNT3-4}
+    - {name: propertyCarousel,       target: null, ticket: UNT3-4}
+    - {name: propertyFilter,         target: null, ticket: UNT3-4}
+    - {name: propertyListMap,        target: null, ticket: UNT3-4}
+    - {name: propertyLocation,       target: null, ticket: UNT3-4}
+    - {name: propertyMap,            target: null, ticket: UNT3-4}
+    - {name: propertySummary,        target: null, ticket: UNT3-4}
+    - {name: propertyTile,           target: null, ticket: UNT3-4}
+    - {name: propertyTileList,       target: null, ticket: UNT3-4}
+    - {name: sampleDataImporter,     target: null, ticket: UNT3-4}
+  aura:
+    - {name: pageTemplate_2_7_3, target: null, ticket: UNT3-4}
+
+  flows:
+    - {name: Create_property, type: screen flow, target: null, ticket: UNT3-4}
+
+  message_channels:
+    - {name: FiltersChange,    target: null, ticket: UNT3-4}
+    - {name: PropertySelected, target: null, ticket: UNT3-4}
+
+  ui_shell:
+    application: [Dreamhouse]
+    tabs: [Broker__c, Property_Explorer, Property_Finder, Property__c, Settings]
+    flexipages: [Broker_Record_Page, Property_Explorer, Property_Finder, Property_Record_Page, Settings]
+    layouts: ["Broker__c-Broker Layout", "Property__c-Property Layout"]
+    prompts: [Property, PropertyExplorer, PropertyFinder]
+    content_assets: [dreamhouselogosquare]
+    target: null   # React routes / pages
+    ticket: UNT3-4
+
+  security:
+    permission_sets: [dreamhouse]
+    csp_trusted_sites: [openStreetMap, s3_us_west_2_amazonaws_com]
+    remote_site_settings: [nominatim_openstreetmap]
+    target: null   # auth/roles + egress rules
+    ticket: UNT3-4
+
+  static_resources:
+    - {name: leafletjs,              target: null, ticket: UNT3-4}
+    - {name: sample_data_brokers,    target: null, ticket: UNT3-4}
+    - {name: sample_data_contacts,   target: null, ticket: UNT3-4}
+    - {name: sample_data_properties, target: null, ticket: UNT3-4}
+
+  sample_data:
+    plan: salesforce/data/sample-data-plan.json
+    files: [salesforce/data/brokers-data.json, salesforce/data/properties-data.json, salesforce/data/contacts-data.json]
+    target: null   # data is extracted from the live org (UNT3-12), not from these files
+    ticket: UNT3-12
