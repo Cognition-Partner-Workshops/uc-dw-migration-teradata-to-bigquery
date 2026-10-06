@@ -161,7 +161,7 @@ export type paths = {
         };
         /**
          * Paged, filtered property list
-         * @description Port of `@AuraEnabled PropertyController.getPagedPropertyList` (used by propertyTileList).
+         * @description Port of `@AuraEnabled(cacheable=true) PropertyController.getPagedPropertyList` (used by propertyTileList). Same filter semantics as the SOQL: case-insensitive `%searchKey%` on name, city or tags; inclusive `maxPrice` / `minBedrooms` / `minBathrooms` bounds; ordered by price ascending.
          */
         get: operations["properties_getPagedPropertyList"];
         put?: never;
@@ -181,7 +181,7 @@ export type paths = {
         };
         /**
          * Pictures attached to a property
-         * @description Port of `@AuraEnabled PropertyController.getPictures` (used by propertyCarousel).
+         * @description Port of `@AuraEnabled(cacheable=true) PropertyController.getPictures` (used by propertyCarousel): PNG/JPG/GIF files linked to the property, oldest first. `[]` when none (Apex returned null).
          */
         get: operations["properties_getPictures"];
         put?: never;
@@ -318,29 +318,29 @@ export type components = {
         };
         PropertySummaryDto: {
             /** @description Address__c */
-            address?: string;
+            address: string | null;
             /** @description Baths__c */
-            baths?: number;
+            baths: number | null;
             /** @description Beds__c */
-            beds?: number;
+            beds: number | null;
             /** @description City__c */
-            city?: string;
+            city: string | null;
             /** @description Description__c */
-            description?: string;
+            description: string | null;
             /** Format: uuid */
             id: string;
             /** @description Location__Latitude__s */
-            latitude?: number;
+            latitude: number | null;
             /** @description Location__Longitude__s */
-            longitude?: number;
+            longitude: number | null;
             /** @description Property__c.Name */
             name: string;
             /** @description Price__c */
-            price?: number;
+            price: number | null;
             /** @description State__c */
-            state?: string;
+            state: string | null;
             /** @description Thumbnail__c */
-            thumbnail?: string;
+            thumbnail: string | null;
         };
         ReadinessDto: {
             /**
@@ -605,13 +605,6 @@ export interface operations {
                     "application/json": components["schemas"]["PagedPropertiesDto"];
                 };
             };
-            /** @description Not ported yet (UNT3-16) */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
         };
     };
     properties_getPictures: {
@@ -632,13 +625,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PropertyPictureDto"][];
                 };
-            };
-            /** @description Not ported yet (UNT3-16) */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

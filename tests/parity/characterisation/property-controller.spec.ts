@@ -108,7 +108,7 @@ describe('TestPropertyController', () => {
 
     // lines 94-98: ContentVersion { Title = MOCK_PICTURE_NAME, PathOnClient = 'picture.png' }
     // lines 101-110: ContentDocumentLink { LinkedEntityId = property.Id, ShareType = 'V' }.
-    await createPicture(ctx.api, {
+    await createPicture(ctx.prisma, {
       propertyId: property.id,
       title: MOCK_PICTURE_NAME,
       extension: 'png',
@@ -142,8 +142,12 @@ describe('TestPropertyController', () => {
     // Not an Apex test case, but PropertyController.cls line 90 (`ContentDocument.FileType IN ('PNG','JPG','GIF')`)
     // is behaviour the LWC relies on; pinned here so UNT3-16 cannot regress it silently.
     const property = await createProperty(ctx.prisma, { name: 'Name' });
-    await createPicture(ctx.api, { propertyId: property.id, title: 'floorplan', extension: 'pdf' });
-    await createPicture(ctx.api, {
+    await createPicture(ctx.prisma, {
+      propertyId: property.id,
+      title: 'floorplan',
+      extension: 'pdf',
+    });
+    await createPicture(ctx.prisma, {
       propertyId: property.id,
       title: MOCK_PICTURE_NAME,
       extension: 'jpg',

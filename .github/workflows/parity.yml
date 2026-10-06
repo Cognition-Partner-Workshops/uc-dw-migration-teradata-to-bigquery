@@ -47,12 +47,12 @@ jobs:
         working-directory: tests/parity
       - run: npm run typecheck
         working-directory: tests/parity
-      - name: Characterisation specs, pending suites as todo (must be green)
-        run: npm test
-        working-directory: tests/parity
-      - name: Apply the committed migrations
+      - name: Apply the committed migrations (ported suites run against the real schema)
         run: npm run prisma:deploy
         working-directory: app/api
+      - name: Characterisation specs, ported suites live, pending suites as todo (must be green)
+        run: npm test
+        working-directory: tests/parity
       - name: Full characterisation run against the scaffold (red baseline, informational until the ports land)
         run: npm run test:all
         working-directory: tests/parity

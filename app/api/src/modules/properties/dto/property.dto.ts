@@ -1,7 +1,10 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { PagedResultDto } from '../../../common/dto/paged-result.dto';
 
-/** Fields selected by `PropertyController.getPagedPropertyList` from Property__c. */
+/**
+ * Fields selected by `PropertyController.getPagedPropertyList` from Property__c. Every selected
+ * field is present on each record (SOQL returns null for empty fields; so does the JSON).
+ */
 export class PropertySummaryDto {
   @ApiProperty({ format: 'uuid' })
   id: string;
@@ -9,35 +12,35 @@ export class PropertySummaryDto {
   @ApiProperty({ description: 'Property__c.Name' })
   name: string;
 
-  @ApiPropertyOptional({ description: 'Address__c' })
-  address?: string;
+  @ApiProperty({ description: 'Address__c', nullable: true, type: String })
+  address: string | null;
 
-  @ApiPropertyOptional({ description: 'City__c' })
-  city?: string;
+  @ApiProperty({ description: 'City__c', nullable: true, type: String })
+  city: string | null;
 
-  @ApiPropertyOptional({ description: 'State__c' })
-  state?: string;
+  @ApiProperty({ description: 'State__c', nullable: true, type: String })
+  state: string | null;
 
-  @ApiPropertyOptional({ description: 'Description__c' })
-  description?: string;
+  @ApiProperty({ description: 'Description__c', nullable: true, type: String })
+  description: string | null;
 
-  @ApiPropertyOptional({ description: 'Price__c' })
-  price?: number;
+  @ApiProperty({ description: 'Price__c', nullable: true, type: Number })
+  price: number | null;
 
-  @ApiPropertyOptional({ description: 'Baths__c' })
-  baths?: number;
+  @ApiProperty({ description: 'Baths__c', nullable: true, type: Number })
+  baths: number | null;
 
-  @ApiPropertyOptional({ description: 'Beds__c' })
-  beds?: number;
+  @ApiProperty({ description: 'Beds__c', nullable: true, type: Number })
+  beds: number | null;
 
-  @ApiPropertyOptional({ description: 'Thumbnail__c' })
-  thumbnail?: string;
+  @ApiProperty({ description: 'Thumbnail__c', nullable: true, type: String })
+  thumbnail: string | null;
 
-  @ApiPropertyOptional({ description: 'Location__Latitude__s' })
-  latitude?: number;
+  @ApiProperty({ description: 'Location__Latitude__s', nullable: true, type: Number })
+  latitude: number | null;
 
-  @ApiPropertyOptional({ description: 'Location__Longitude__s' })
-  longitude?: number;
+  @ApiProperty({ description: 'Location__Longitude__s', nullable: true, type: Number })
+  longitude: number | null;
 }
 
 export class PagedPropertiesDto extends PagedResultDto<PropertySummaryDto> {

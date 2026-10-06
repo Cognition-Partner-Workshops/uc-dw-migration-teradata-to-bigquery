@@ -7,6 +7,7 @@
  * current red baseline.
  */
 export const PORTED_TICKETS: ReadonlySet<string> = new Set<string>([
+  'UNT3-16', // TestPropertyController → GET /properties, GET /properties/{id}/pictures
   'UNT3-17', // GeocodingServiceTest → POST /geocoding/addresses
 ]);
 

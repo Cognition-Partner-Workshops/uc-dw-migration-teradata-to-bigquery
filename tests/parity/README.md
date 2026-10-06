@@ -19,18 +19,18 @@ test method, is `docs/migration/mapping.yaml` (ids `apexMethod:<TestClass>.<meth
 
 ## How the Apex test runtime maps
 
-| Apex                                                     | Here                                                                                                                                                                                                      |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Test transaction rolled back after each `@isTest` method | `useApiTestContext()` opens an interactive Prisma transaction per test and rolls it back; the booted Nest app's `PrismaService` is proxied onto it (`characterisation/harness/transactional-prisma.ts`)   |
-| `@TestSetup` / `insert new Property__c(...)`             | `fixtures/properties.ts` (`createProperties(prisma, 5)` = `TestPropertyController.createProperties`), `fixtures/files.ts`                                                                                 |
-| `Test.setMock(HttpCalloutMock.class, …)`                 | MSW handlers for Nominatim in `mocks/nominatim.ts` (`nominatimSuccess()`, `nominatimError()`); they also record the intercepted calls so "no callout" cases can be asserted                               |
-| `System.runAs(testUser)`                                 | `.set(asUser(standardUser))`: a bearer token for a user in the matching Cognito group, minted with `AUTH_TEST_JWT_SECRET` (`fixtures/users.ts`); the API guard (UNT3-20) accepts these in `NODE_ENV=test` |
-| `System.assertEquals` / `Assert.*`                       | `expect(...)`                                                                                                                                                                                             |
-| `AuraHandledException`                                   | an HTTP 4xx from the endpoint                                                                                                                                                                             |
+| Apex                                                     | Here                                                                                                                                                                                                                             |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Test transaction rolled back after each `@isTest` method | `useApiTestContext()` opens an interactive Prisma transaction per test and rolls it back; the booted Nest app's `PrismaService` is proxied onto it (`characterisation/harness/transactional-prisma.ts`)                          |
+| `@TestSetup` / `insert new Property__c(...)`             | `fixtures/properties.ts` (`createProperties(prisma, 5)` = `TestPropertyController.createProperties`), `fixtures/files.ts` (`createPicture(prisma, …)` = `insert ContentVersion` + `insert ContentDocumentLink`, one `files` row) |
+| `Test.setMock(HttpCalloutMock.class, …)`                 | MSW handlers for Nominatim in `mocks/nominatim.ts` (`nominatimSuccess()`, `nominatimError()`); they also record the intercepted calls so "no callout" cases can be asserted                                                      |
+| `System.runAs(testUser)`                                 | `.set(asUser(standardUser))`: a bearer token for a user in the matching Cognito group, minted with `AUTH_TEST_JWT_SECRET` (`fixtures/users.ts`); the API guard (UNT3-20) accepts these in `NODE_ENV=test`                        |
+| `System.assertEquals` / `Assert.*`                       | `expect(...)`                                                                                                                                                                                                                    |
+| `AuraHandledException`                                   | an HTTP 4xx from the endpoint                                                                                                                                                                                                    |
 
 ## Pending vs. live suites
 
-The target endpoints are still 501 scaffolds. `characterise('<ApexTestClass>', '<ticket>')`
+Suites go live one port at a time. `characterise('<ApexTestClass>', '<ticket>')`
 returns `it` once the ticket is listed in `characterisation/harness/ported.ts`, and `it.todo`
 until then, so:
 
@@ -39,7 +39,7 @@ until then, so:
   everything and shows the current red baseline.
 
 A port ticket (UNT3-16/17/18) adds itself to `PORTED_TICKETS`; from then on its suite is a
-required check.
+required check. Live today: `TestPropertyController` (UNT3-16).
 
 ## Running locally
 
