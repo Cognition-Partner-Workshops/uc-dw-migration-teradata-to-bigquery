@@ -1,9 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AppConfigService } from '../../config/app-config.service';
 import { CoordinatesDto, GeocodingAddressDto } from './dto/geocoding.dto';
-import { NominatimClient, NominatimPlace, NominatimSearchParams } from './nominatim.client';
+import {
+  NominatimClient,
+  NominatimPlace,
+  NominatimSearchParams,
+  NominatimError,
+} from './nominatim.client';
 
 const NO_MATCH: Readonly<CoordinatesDto> = Object.freeze({ lat: null, lon: null });
+
+export interface GeocodeOptions {
+  /**
+   * `'null'` (default): every failure becomes null coordinates. `'throw'`: a callout that got
+   * no HTTP answer at all (network/timeout) is rethrown; non-200 answers still give nulls.
+   */
+  onError?: 'null' | 'throw';
+}
 
 /**
  * Port of Apex `GeocodingService` (`@InvocableMethod geocodeAddresses`, Create_property flow).
@@ -45,8 +58,16 @@ export class GeocodingService {
     return computedCoordinates;
   }
 
-  /** Single-address form for the properties module and `POST /geocode`. */
-  async geocodeAddress(address: GeocodingAddressDto): Promise<CoordinatesDto> {
+  /**
+   * Single-address form for the properties module and `POST /geocode`. A callout error answers
+   * null coordinates by default (the HTTP-status check of GeocodingService.cls line 41); with
+   * `onError: 'throw'` it propagates instead, which is the flow's fault connector on the
+   * geocode_address action (Create_property flow → Error5 screen).
+   */
+  async geocodeAddress(
+    address: GeocodingAddressDto,
+    options: GeocodeOptions = {},
+  ): Promise<CoordinatesDto> {
     const params = toSearchParams(address);
     // GeocodingService.cls line 29: `if (geocodingUrl != BASE_URL)` — nothing to look up.
     if (!params) return { ...NO_MATCH };
@@ -61,6 +82,11 @@ export class GeocodingService {
       this.toCache(key, coords);
       return { ...coords };
     } catch (error) {
+      // An HTTP answer that is not 200 is the Apex `if (response.getStatusCode() == 200)` miss:
+      // empty Coordinates, no fault. Only a failed callout (no status at all) can fault the flow.
+      if (options.onError === 'throw' && !(error instanceof NominatimError && error.status)) {
+        throw error;
+      }
       this.logger.warn(
         `Geocoding failed (${(error as Error).message}); returning null coordinates like the Apex callout did`,
       );

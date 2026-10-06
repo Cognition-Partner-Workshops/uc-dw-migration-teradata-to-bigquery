@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Prisma } from '../../generated/prisma/client';
 import type { PrismaService } from '../../prisma/prisma.service';
+import type { GeocodingService } from '../geocoding/geocoding.service';
 import { PropertyQueryDto } from './dto/property-query.dto';
 import { PICTURE_FILE_TYPES, PropertiesService } from './properties.service';
 
@@ -14,7 +15,15 @@ function prismaStub() {
     property: { count: vi.fn(), findMany: vi.fn() },
     file: { findMany: vi.fn() },
   };
-  return { prisma, service: new PropertiesService(prisma as unknown as PrismaService) };
+  const geocoding = { geocodeAddress: vi.fn() };
+  return {
+    prisma,
+    geocoding,
+    service: new PropertiesService(
+      prisma as unknown as PrismaService,
+      geocoding as unknown as GeocodingService,
+    ),
+  };
 }
 
 describe('PropertiesService.searchWhere (PropertyController.cls lines 37-47 / 62-69)', () => {
