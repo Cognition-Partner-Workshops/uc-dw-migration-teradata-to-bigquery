@@ -43,7 +43,8 @@ docs/migration/    Migration docs; docs/migration/mapping.yaml is the 1:1 mappin
 .github/workflows/ CI for this branch
 ```
 
-`infra/` is intentionally empty here; it is filled by the later migration tickets.
+`infra/` holds the Terraform for the AWS demo environment (`make infra-up` / `make infra-plan` /
+`make infra-destroy`; details in [`infra/README.md`](infra/README.md)).
 
 ## Local development (docker-compose)
 

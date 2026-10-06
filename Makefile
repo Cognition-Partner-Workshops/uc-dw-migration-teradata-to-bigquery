@@ -6,6 +6,7 @@
 #   make test      unit tests of the API and the web app + the Apex characterisation specs (tests/parity)
 #   make characterise  run every characterisation spec for real (red until the Apex ports land)
 #   make e2e       smoke-check the running stack, then run the Playwright E2E suite when it exists
+#   make infra-<target>  AWS demo environment (infra/Makefile): infra-up, infra-plan, infra-destroy, ...
 #
 # Containers run as your uid/gid so files written into the bind-mounted source trees stay yours;
 # always go through make (or export DEV_UID/DEV_GID yourself before calling docker compose directly).
@@ -28,7 +29,7 @@ RUN_WEB := $(COMPOSE) run --rm --no-deps web
 # separate because the image's /tmp/npm-cache belongs to root.
 RUN_PARITY := $(COMPOSE) run --rm -e npm_config_cache=/tmp/parity-npm-cache api sh -c 'cd /workspace/tests/parity && npm ci --no-audit --no-fund &&
 
-.PHONY: help up down restart ps logs build migrate migrate-status migrate-dev seed test characterise lint e2e smoke psql openapi reset clean
+.PHONY: help up down restart ps logs build migrate migrate-status migrate-dev seed test characterise lint e2e smoke psql openapi reset clean infra-%
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -104,3 +105,6 @@ reset: ## Stop everything and delete the database and node_modules volumes
 
 clean: reset ## reset + remove the dev images
 	$(COMPOSE) --profile e2e down --rmi local
+
+infra-%: ## AWS demo environment: make infra-up | infra-plan | infra-apply | infra-destroy | infra-help (see infra/Makefile)
+	$(MAKE) -C infra $*

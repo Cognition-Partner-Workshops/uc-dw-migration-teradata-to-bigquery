@@ -1496,18 +1496,18 @@ rows:
   source: https://tile.openstreetmap.org (ImgSrc)
   target: {kind: infra, name: 'infra/modules/web/cloudfront.tf::response_headers_policy.img-src'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-9
   parity_tests: []
-  notes: CSP img-src https://tile.openstreetmap.org (and connect-src for tile fetches) on the CloudFront response headers policy
+  notes: aws_cloudfront_response_headers_policy.web (local.csp) img-src https://tile.openstreetmap.org https://*.tile.openstreetmap.org (Leaflet tile subdomains); value from var.csp_image_sources in infra/envs/demo/variables.tf
 - id: cspTrustedSite:s3_us_west_2_amazonaws_com
   source: https://s3-us-west-2.amazonaws.com (ImgSrc)
   target: {kind: infra, name: 'infra/modules/web/cloudfront.tf::response_headers_policy.img-src'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-9
   parity_tests: []
-  notes: CSP img-src https://s3-us-west-2.amazonaws.com (sample picture URLs) plus the demo files bucket
+  notes: aws_cloudfront_response_headers_policy.web (local.csp) img-src https://s3-us-west-2.amazonaws.com (sample picture URLs) plus the demo files bucket https://sf2aws-demo-files-599083837640.s3.us-east-1.amazonaws.com (module.files)
 - id: callout:GeocodingService.geocodeAddresses
   source: http https://nominatim.openstreetmap.org/search?format=json
   target: {kind: httpClient, name: GeocodingService.geocodeAddress}

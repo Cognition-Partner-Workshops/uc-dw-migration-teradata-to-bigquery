@@ -1,0 +1,42 @@
+name: infra
+
+on:
+  push:
+    branches: [salesforce-to-aws-demo]
+    paths: ['infra/**', '.github/workflows/infra.yml']
+  pull_request:
+    branches: [salesforce-to-aws-demo]
+    paths: ['infra/**', '.github/workflows/infra.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: terraform fmt + validate (no AWS access)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.x'
+          terraform_wrapper: false
+      - name: terraform fmt -check
+        run: make fmt-check
+      - name: terraform validate (envs/demo, backend disabled)
+        run: make validate
+      - name: No secrets in the Terraform sources
+        run: |
+          ! grep -rnE 'AKIA[0-9A-Z]{16}|aws_secret_access_key|password\s*=\s*"[^"]+"' --include='*.tf' --include='*.tfvars' --include='*.sh' . \
+            || { echo 'possible secret committed under infra/'; exit 1; }
+
+  scripts:
+    name: shellcheck infra/scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck -x -P SCRIPTDIR infra/scripts/*.sh
