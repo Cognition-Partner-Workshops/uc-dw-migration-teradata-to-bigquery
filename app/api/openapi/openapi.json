@@ -1,0 +1,769 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "liveness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Liveness: the process is up (no dependency checks)",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "readiness",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessDto"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Readiness: PostgreSQL reachable through Prisma",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/properties": {
+      "get": {
+        "description": "Port of `@AuraEnabled PropertyController.getPagedPropertyList` (used by propertyTileList).",
+        "operationId": "getPagedPropertyList",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 9,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageNumber",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "searchKey",
+            "required": false,
+            "in": "query",
+            "description": "Matches name, city or tags (SOQL `LIKE %searchKey%`)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 9999999,
+              "type": "number"
+            }
+          },
+          {
+            "name": "minBedrooms",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "minBathrooms",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 0,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagedPropertiesDto"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-16)"
+          }
+        },
+        "summary": "Paged, filtered property list",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/properties/{id}/pictures": {
+      "get": {
+        "description": "Port of `@AuraEnabled PropertyController.getPictures` (used by propertyCarousel).",
+        "operationId": "getPictures",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PropertyPictureDto"
+                  }
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-16)"
+          }
+        },
+        "summary": "Pictures attached to a property",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/brokers": {
+      "get": {
+        "description": "Replaces the Broker__c list view / tab.",
+        "operationId": "findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BrokerDto"
+                  }
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-19)"
+          }
+        },
+        "summary": "List brokers",
+        "tags": [
+          "brokers"
+        ]
+      }
+    },
+    "/brokers/{id}": {
+      "get": {
+        "description": "Replaces `lightning/uiRecordApi getRecord` on Broker__c (brokerCard LWC).",
+        "operationId": "findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrokerDto"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-19)"
+          }
+        },
+        "summary": "Get a broker",
+        "tags": [
+          "brokers"
+        ]
+      }
+    },
+    "/contacts": {
+      "get": {
+        "operationId": "findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContactDto"
+                  }
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-19)"
+          }
+        },
+        "summary": "List contacts",
+        "tags": [
+          "contacts"
+        ]
+      }
+    },
+    "/files": {
+      "post": {
+        "description": "Port of `@AuraEnabled FileUtilities.createFile` (used by the Property record page picture upload).",
+        "operationId": "createFile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileCreatedDto"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-18)"
+          }
+        },
+        "summary": "Upload a file and link it to a record",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/geocoding/addresses": {
+      "post": {
+        "description": "Port of `@InvocableMethod GeocodingService.geocodeAddresses` (called from the Create_property flow). Returns one Coordinates entry per input address, in order.",
+        "operationId": "geocodeAddresses",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeocodeAddressesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoordinatesDto"
+                  }
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-17)"
+          }
+        },
+        "summary": "Geocode one or more addresses",
+        "tags": [
+          "geocoding"
+        ]
+      }
+    },
+    "/sample-data/import": {
+      "post": {
+        "description": "Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC).",
+        "operationId": "importSampleData",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SampleDataImportResultDto"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not ported yet (UNT3-18)"
+          }
+        },
+        "summary": "Reset and reload the sample data set",
+        "tags": [
+          "sample-data"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Dreamhouse API",
+    "description": "Dreamhouse API — NestJS + Prisma on PostgreSQL; target of the Salesforce (dreamhouse-lwc) migration",
+    "version": "0.1.0",
+    "contact": {},
+    "license": {
+      "name": "CC0-1.0",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Liveness and readiness probes"
+    },
+    {
+      "name": "properties",
+      "description": "Property__c — PropertyController, Property record page, Create_property flow"
+    },
+    {
+      "name": "brokers",
+      "description": "Broker__c — Broker record page, brokerCard"
+    },
+    {
+      "name": "contacts",
+      "description": "Contact (standard object; sample data only)"
+    },
+    {
+      "name": "files",
+      "description": "ContentVersion / ContentDocumentLink — FileUtilities"
+    },
+    {
+      "name": "geocoding",
+      "description": "GeocodingService (Nominatim callout)"
+    },
+    {
+      "name": "sample-data",
+      "description": "SampleDataController — sampleDataImporter"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "HealthDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "service": {
+            "type": "string",
+            "example": "dreamhouse-api"
+          },
+          "version": {
+            "type": "string",
+            "example": "0.1.0"
+          },
+          "uptimeSeconds": {
+            "type": "number",
+            "example": 12.3
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-10-06T07:00:00.000Z"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "version",
+          "uptimeSeconds",
+          "timestamp"
+        ]
+      },
+      "ReadinessDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "error"
+            ]
+          },
+          "checks": {
+            "type": "object",
+            "example": {
+              "database": "up"
+            },
+            "description": "Per-dependency state; `down` entries carry the error message in `errors`."
+          },
+          "errors": {
+            "type": "object",
+            "example": {
+              "database": "connection refused"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "checks"
+        ]
+      },
+      "PropertySummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Property__c.Name"
+          },
+          "address": {
+            "type": "string",
+            "description": "Address__c"
+          },
+          "city": {
+            "type": "string",
+            "description": "City__c"
+          },
+          "state": {
+            "type": "string",
+            "description": "State__c"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description__c"
+          },
+          "price": {
+            "type": "number",
+            "description": "Price__c"
+          },
+          "baths": {
+            "type": "number",
+            "description": "Baths__c"
+          },
+          "beds": {
+            "type": "number",
+            "description": "Beds__c"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "Thumbnail__c"
+          },
+          "latitude": {
+            "type": "number",
+            "description": "Location__Latitude__s"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "Location__Longitude__s"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "PagedPropertiesDto": {
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "type": "number",
+            "example": 9
+          },
+          "pageNumber": {
+            "type": "number",
+            "example": 1
+          },
+          "totalItemCount": {
+            "type": "number",
+            "example": 42
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertySummaryDto"
+            }
+          }
+        },
+        "required": [
+          "pageSize",
+          "pageNumber",
+          "totalItemCount",
+          "records"
+        ]
+      },
+      "PropertyPictureDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "fileExtension": {
+            "type": "string",
+            "description": "ContentVersion.FileExtension"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "fileExtension",
+          "url"
+        ]
+      },
+      "BrokerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Broker__c.Name"
+          },
+          "brokerId": {
+            "type": "string",
+            "description": "Broker_Id__c"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title__c"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email__c",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Phone__c"
+          },
+          "mobilePhone": {
+            "type": "string",
+            "description": "Mobile_Phone__c"
+          },
+          "picture": {
+            "type": "string",
+            "description": "Picture__c",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "ContactDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "CreateFileDto": {
+        "type": "object",
+        "properties": {
+          "base64Data": {
+            "type": "string",
+            "description": "File body, base64 encoded (ContentVersion.VersionData)"
+          },
+          "filename": {
+            "type": "string",
+            "description": "ContentVersion.Title / PathOnClient"
+          },
+          "recordId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Record the file is linked to (ContentDocumentLink.LinkedEntityId)"
+          }
+        },
+        "required": [
+          "base64Data",
+          "filename",
+          "recordId"
+        ]
+      },
+      "FileCreatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Equivalent of the returned ContentDocumentLink.Id"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Where the stored file can be fetched from (S3)"
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
+      "GeocodingAddressDto": {
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "postalcode": {
+            "type": "string"
+          }
+        }
+      },
+      "GeocodeAddressesDto": {
+        "type": "object",
+        "properties": {
+          "addresses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeocodingAddressDto"
+            }
+          }
+        },
+        "required": [
+          "addresses"
+        ]
+      },
+      "CoordinatesDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "object",
+            "nullable": true
+          },
+          "lon": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "SampleDataImportResultDto": {
+        "type": "object",
+        "properties": {
+          "inserted": {
+            "type": "object",
+            "example": {
+              "brokers": 8,
+              "properties": 12,
+              "contacts": 10
+            }
+          }
+        },
+        "required": [
+          "inserted"
+        ]
+      }
+    }
+  }
+}

@@ -42,8 +42,26 @@ docs/migration/    Migration docs; docs/migration/mapping.yaml is the 1:1 mappin
 .github/workflows/ CI for this branch
 ```
 
-`app/api`, `app/web` and `infra/` are intentionally empty here; they are filled by
-the later migration tickets.
+`app/web` and `infra/` are intentionally empty here; they are filled by the later
+migration tickets.
+
+## Target API (`app/api`)
+
+[`app/api`](app/api/) is the NestJS + Prisma service (Node 20, TypeScript). It is laid
+out as one Nest module per Salesforce object / Apex domain (`properties`, `brokers`,
+`contacts`, `files`, `geocoding`, `sample-data`) so every Apex class has an obvious home;
+its [README](app/api/README.md) maps Apex concepts (triggers, SOQL, DML, `@AuraEnabled`,
+`Database.Batchable`, …) to their equivalents in the service.
+
+```bash
+cd app/api && npm ci && cp .env.example .env
+npm test && npm run build      # Vitest, nest build
+npm run start:dev              # GET /health, GET /health/ready, GET /openapi.json, GET /docs
+```
+
+[`api.yml`](.github/workflows/api.yml) lints, tests, builds, checks that
+[`app/api/openapi/openapi.json`](app/api/openapi/openapi.json) matches the controllers
+and smoke-tests `/health` and `/openapi.json` on every PR touching `app/api`.
 
 ## Mapping matrix
 
