@@ -38,6 +38,8 @@ services:
     user: *dev-user
     environment:
       NODE_ENV: development
+      # stub tokens from the web stub client (VITE_AUTH_MODE=stub below); groups by username convention
+      AUTH_MODE: stub
       PORT: "3000"
       LOG_LEVEL: ${API_LOG_LEVEL:-debug}
       DATABASE_URL: postgresql://dreamhouse:dreamhouse@db:5432/dreamhouse?schema=public

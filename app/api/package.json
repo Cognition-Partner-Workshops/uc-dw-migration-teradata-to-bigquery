@@ -2,7 +2,7 @@
   "name": "dreamhouse-api",
   "version": "0.1.0",
   "private": true,
-  "description": "Dreamhouse API \u2014 NestJS + Prisma on PostgreSQL; target of the Salesforce (dreamhouse-lwc) migration",
+  "description": "Dreamhouse API — NestJS + Prisma on PostgreSQL; target of the Salesforce (dreamhouse-lwc) migration",
   "license": "CC0-1.0",
   "engines": {
     "node": ">=20 <21"
@@ -36,6 +36,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
+    "jose": "^6.2.12",
     "nestjs-pino": "^4.4.0",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",

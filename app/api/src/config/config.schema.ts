@@ -27,6 +27,21 @@ export const configSchema = z.object({
   GEOCODING_CACHE_MAX_ENTRIES: z.coerce.number().int().positive().default(1000),
   AWS_REGION: z.string().default('us-east-1'),
   AWS_SECRETS_MANAGER_SECRET_ID: z.string().optional(),
+  // Authentication (src/auth): how bearer tokens are verified. Defaults per NODE_ENV —
+  // production: cognito, test: test (HS256 fixtures), development: stub (web stub client).
+  AUTH_MODE: z.enum(['cognito', 'test', 'stub']).optional(),
+  // Cognito user pool the ECS task definition passes (infra/modules/api); required when AUTH_MODE=cognito.
+  COGNITO_USER_POOL_ID: z.string().min(1).optional(),
+  COGNITO_CLIENT_ID: z.string().min(1).optional(),
+  // Region of the pool (defaults to the prefix of the pool id) / full issuer override (local emulators).
+  COGNITO_REGION: z.string().min(1).optional(),
+  COGNITO_ISSUER: z.string().url().optional(),
+  // AUTH_MODE=test: the secret/issuer tests/parity/fixtures/users.ts signs its `System.runAs` tokens with.
+  AUTH_TEST_JWT_SECRET: z.string().min(1).default('dreamhouse-characterisation'),
+  AUTH_TEST_ISSUER: z
+    .string()
+    .url()
+    .default('https://cognito-idp.us-east-1.amazonaws.com/dreamhouse-test'),
 });
 
 export type RawConfig = z.input<typeof configSchema>;

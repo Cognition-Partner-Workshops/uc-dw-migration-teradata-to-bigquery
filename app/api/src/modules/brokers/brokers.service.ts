@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { assertRecordAccess, ownershipColumns, recordAccessWhere } from '../../auth/sharing';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BrokerDto, CreateBrokerDto, UpdateBrokerDto } from './dto/broker.dto';
@@ -20,7 +21,10 @@ export class BrokersService {
 
   /** `SELECT ... FROM Broker__c ORDER BY Name` (Broker__c tab list view). */
   async findAll(): Promise<BrokerDto[]> {
-    const rows = await this.prisma.broker.findMany({ orderBy: [{ name: 'asc' }, { id: 'asc' }] });
+    const rows = await this.prisma.broker.findMany({
+      where: recordAccessWhere('Broker__c', 'read'),
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
     return rows.map(toBroker);
   }
 
@@ -28,19 +32,21 @@ export class BrokersService {
   async findOne(id: string): Promise<BrokerDto> {
     const row = await this.prisma.broker.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Broker not found');
+    assertRecordAccess('Broker__c', 'read', row);
     return toBroker(row);
   }
 
   /** LDS `createRecord(Broker__c)`. */
   async create(input: CreateBrokerDto): Promise<BrokerDto> {
     const row = await this.prisma.broker.create({
-      data: toData(input) as Prisma.BrokerUncheckedCreateInput,
+      data: { ...toData(input), ...ownershipColumns() } as Prisma.BrokerUncheckedCreateInput,
     });
     return toBroker(row);
   }
 
   /** LDS `updateRecord(Broker__c)`; 404 when the record is gone (P2025 → PrismaExceptionFilter). */
   async update(id: string, input: UpdateBrokerDto): Promise<BrokerDto> {
+    await this.assertAccess(id, 'edit');
     const row = await this.prisma.broker.update({ where: { id }, data: toData(input) });
     return toBroker(row);
   }
@@ -50,7 +56,15 @@ export class BrokersService {
    * (schema: ON DELETE SET NULL), as the Salesforce lookup did.
    */
   async remove(id: string): Promise<void> {
+    await this.assertAccess(id, 'delete');
     await this.prisma.broker.delete({ where: { id } });
+  }
+
+  /** Sharing check before a write (owner-only unless Modify All / Public Read/Write, see sharing.ts). */
+  private async assertAccess(id: string, operation: 'edit' | 'delete'): Promise<void> {
+    const row = await this.prisma.broker.findUnique({ where: { id }, select: { ownerId: true } });
+    if (!row) throw new NotFoundException('Broker not found');
+    assertRecordAccess('Broker__c', operation, row);
   }
 }
 

@@ -6,12 +6,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { Public } from '../auth/decorators';
 import { PrismaService } from '../prisma/prisma.service';
 import { HealthDto, ReadinessDto } from './health.dto';
 import { packageInfo } from '../common/package-info';
 
 @ApiTags('health')
 @Controller('health')
+@Public()
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module';
 import { AppConfigModule } from './config/app-config.module';
 import { HealthModule } from './health/health.module';
 import { LoggerModule } from './logging/logger.module';
@@ -16,6 +17,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AppConfigModule,
     LoggerModule,
     PrismaModule,
+    AuthModule,
     HealthModule,
     // one module per Salesforce object / Apex domain (see docs/migration/mapping.yaml)
     PropertiesModule,

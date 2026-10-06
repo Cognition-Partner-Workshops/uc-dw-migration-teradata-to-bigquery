@@ -12,14 +12,16 @@ import { useApiTestContext } from './harness/api-test-context';
 import { characterise } from './harness/characterise';
 import { VALID_BASE64_DATA } from '../fixtures/files';
 import { createProperty } from '../fixtures/properties';
-import { standardUser, asUser } from '../fixtures/users';
+import { adminUser, standardUser, asUser } from '../fixtures/users';
 
 const { spec } = characterise('FileUtilitiesTest', 'UNT3-18');
 const ctx = useApiTestContext();
 
 async function createFile(body: { base64Data: string; filename: string; recordId: string }) {
-  // FileUtilities.createFile(base64Data, filename, recordId) → POST /files.
-  return ctx.api().post('/files').set(asUser(standardUser)).send(body);
+  // FileUtilities.createFile(base64Data, filename, recordId) → POST /files. FileUtilitiesTest has no
+  // runAs: it runs as the test context's System Administrator, and the `dreamhouse` permission set
+  // grants no access to the FileUtilities class (a Standard User gets 403, see permission-set.spec.ts).
+  return ctx.api().post('/files').set(asUser(adminUser)).send(body);
 }
 
 function expectAuraHandledException(response: { status: number; body: unknown }) {

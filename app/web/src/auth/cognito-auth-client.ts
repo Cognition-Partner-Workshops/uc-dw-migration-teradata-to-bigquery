@@ -20,10 +20,16 @@ function getSession(user: CognitoUser): Promise<CognitoUserSession | null> {
 }
 
 function toUser(session: CognitoUserSession, fallbackUsername: string): AuthUser {
-  const payload = session.getIdToken().payload as Record<string, string | undefined>;
-  const username = payload['cognito:username'] ?? fallbackUsername;
-  const email = payload.email;
-  return { username, email, displayName: payload.name ?? email ?? username };
+  const payload = session.getIdToken().payload as Record<string, unknown>;
+  const str = (key: string) =>
+    typeof payload[key] === 'string' ? (payload[key] as string) : undefined;
+  const username = str('cognito:username') ?? fallbackUsername;
+  const email = str('email');
+  const rawGroups = payload['cognito:groups'];
+  const groups = Array.isArray(rawGroups)
+    ? rawGroups.filter((g): g is string => typeof g === 'string')
+    : [];
+  return { username, email, displayName: str('name') ?? email ?? username, groups };
 }
 
 /** Amazon Cognito user pool client (USER_SRP_AUTH via amazon-cognito-identity-js). */

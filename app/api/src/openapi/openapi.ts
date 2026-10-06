@@ -33,7 +33,11 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .setTitle('Dreamhouse API')
     .setDescription(packageInfo.description)
     .setVersion(packageInfo.version)
-    .setLicense('CC0-1.0', 'https://creativecommons.org/publicdomain/zero/1.0/');
+    .setLicense('CC0-1.0', 'https://creativecommons.org/publicdomain/zero/1.0/')
+    // Cognito access token (groups = Salesforce permission sets, see src/auth/policy.ts);
+    // 401 without one, 403 when the groups lack the route's permission.
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'cognito')
+    .addSecurityRequirements('cognito');
   for (const tag of API_TAGS) {
     builder.addTag(tag.name, tag.description);
   }

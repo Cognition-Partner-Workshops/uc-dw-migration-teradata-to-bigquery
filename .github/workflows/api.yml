@@ -57,6 +57,9 @@ jobs:
           NODE_ENV: production
           PORT: 3000
           DATABASE_URL: postgresql://unused:unused@127.0.0.1:1/unused
+          # production boots only with AUTH_MODE=cognito (src/auth/auth.config.ts); /health is public, no JWKS fetch
+          COGNITO_USER_POOL_ID: us-east-1_smoketest
+          COGNITO_CLIENT_ID: smoketest
         run: |
           node dist/main.js & echo $! > server.pid
           for i in $(seq 1 20); do curl -fs localhost:3000/health && break; sleep 1; done

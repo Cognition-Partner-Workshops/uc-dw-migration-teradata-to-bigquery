@@ -761,6 +761,13 @@
   ],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "cognito": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
     "schemas": {
       "HealthDto": {
         "type": "object",
@@ -1267,7 +1274,10 @@
               "INVALID_CROSS_REFERENCE_KEY",
               "INVALID_FIELD",
               "DUPLICATE_VALUE",
-              "GEOCODING_FAULT"
+              "GEOCODING_FAULT",
+              "INVALID_SESSION_ID",
+              "INSUFFICIENT_ACCESS_OR_READONLY",
+              "INVALID_FIELD_FOR_INSERT_UPDATE"
             ],
             "example": "FIELD_INTEGRITY_EXCEPTION"
           },
@@ -1298,7 +1308,10 @@
               "INVALID_CROSS_REFERENCE_KEY",
               "INVALID_FIELD",
               "DUPLICATE_VALUE",
-              "GEOCODING_FAULT"
+              "GEOCODING_FAULT",
+              "INVALID_SESSION_ID",
+              "INSUFFICIENT_ACCESS_OR_READONLY",
+              "INVALID_FIELD_FOR_INSERT_UPDATE"
             ],
             "example": "GEOCODING_FAULT"
           },
@@ -1853,5 +1866,10 @@
         ]
       }
     }
-  }
+  },
+  "security": [
+    {
+      "cognito": []
+    }
+  ]
 }

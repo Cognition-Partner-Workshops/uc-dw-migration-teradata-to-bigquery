@@ -22,7 +22,7 @@ source:
 target:
   api: app/api (TypeScript, NestJS 11 + Prisma 7, PostgreSQL 16) on ECS Fargate + ALB
   web: app/web (Vite + React 18 + TypeScript, React Router, TanStack Query, Mantine, Leaflet) on S3 + CloudFront
-  auth: Amazon Cognito user pool; groups dreamhouse and dreamhouse-admin; NestJS RolesGuard
+  auth: Amazon Cognito user pool; groups dreamhouse and dreamhouse-admin; NestJS AuthGuard (JWT) + PermissionsGuard (policy keys) + FieldSecurityInterceptor (FLS) in app/api/src/auth
   infra: infra/ (Terraform, AWS 599083837640, us-east-1)
   local_dev: docker-compose.yml + Makefile (make up / migrate / seed / test / e2e) - Postgres 16, API hot reload, web HMR; make seed loads data/migrated/ (written by UNT3-12/13)
   parity: tests/parity/ (live against both apps); characterisation specs under tests/parity/characterisation
@@ -34,7 +34,7 @@ conventions:
   sql: snake_case; plural table names (properties, brokers, contacts, files); column = field API name without __c in snake_case; lookups get _id; Currency -> numeric(18,2); Picklist -> enum; Geolocation -> *_latitude/*_longitude; every table has id uuid PK + sf_id char(18) unique + audit columns
   api: one Nest module per object/Apex domain (app/api/src/modules/<kebab>); <Pascal>Service, <Pascal>Dto; routes kebab-case plural (GET /properties, GET /properties/{id}/pictures, POST /geocoding/addresses); @AuraEnabled(cacheable=true) -> GET, otherwise POST/PATCH/DELETE; @InvocableMethod -> POST; Apex tests -> tests/parity/characterisation/<kebab-class>.spec.ts::<testMethod>
   web: components PascalCase in app/web/src/components/<Name>/<Name>.tsx with <Name>.test.tsx; pages in app/web/src/pages; routes kebab-case (/property-explorer, /property-finder, /properties, /properties/:id, /properties/new, /brokers, /brokers/:id, /settings); LMS channels -> URL search params + store in app/web/src/state; LDS wires -> TanStack Query over the generated API client
-  security: permission set -> Cognito group (role); object/field/class permissions -> policy keys in app/api/src/auth/policy.ts; tab visibility -> app/web/src/app/navigation.ts
+  security: permission set -> Cognito group (role); object/class permissions -> policy keys in app/api/src/auth/policy.ts (@RequirePermission); field permissions -> app/api/src/auth/field-policy.ts (FieldSecurityInterceptor); org-wide defaults / with sharing -> app/api/src/auth/sharing.ts; tab visibility -> requiredGroup in app/web/src/app/navigation.ts; matrix in docs/migration/permissions.md
   integration: remote site setting / named credential -> env var in app/api/src/config/config.schema.ts; callout -> <Pascal>Service.<method> using fetch; CSP trusted site -> CloudFront response headers policy in infra/
   platform_only_features: LDS caching -> TanStack Query; barcode scanner -> browser BarcodeDetector + manual entry (substitute); device contacts -> dropped; in-app guidance prompts -> dropped; Lightning Message Service -> URL params + store
 rows:
@@ -448,7 +448,7 @@ rows:
   status: ported
   ticket: UNT3-16
   parity_tests: []
-  notes: app/api/src/modules/properties/properties.service.ts (getPagedPropertyList, getPictures); HTTP surface in properties.controller.ts; cacheable=true -> Cache-Control private, max-age=30 (+ ETag/304) and TanStack Query staleTime 30s (app/web/src/api/queries.ts propertiesQuery / propertyPicturesQuery); with sharing -> permission guard (UNT3-20) once it lands; unit spec properties.service.spec.ts, HTTP spec test/properties.e2e.spec.ts
+  notes: app/api/src/modules/properties/properties.service.ts (getPagedPropertyList, getPictures); HTTP surface in properties.controller.ts; cacheable=true -> Cache-Control private, max-age=30 (+ ETag/304) and TanStack Query staleTime 30s (app/web/src/api/queries.ts propertiesQuery / propertyPicturesQuery); with sharing -> sharing.ts recordAccessWhere/assertRecordAccess in PropertiesService + @RequirePermission on the controller (UNT3-20); unit spec properties.service.spec.ts, HTTP spec test/properties.e2e.spec.ts
 - id: apexClass:SampleDataController
   source: class, with sharing, 5 methods
   target: {kind: service, name: SampleDataService}
@@ -1057,7 +1057,7 @@ rows:
   status: ported
   ticket: UNT3-23
   parity_tests: []
-  notes: nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); admin-only visibility (UNT3-20) and page body (UNT3-23) pending
+  notes: 'nav tab Settings (navigation.ts) -> /settings; route mounted (UNT3-7); visible to / openable by group dreamhouse-admin only (UNT3-20, RequireGroup in routes.tsx); page body (UNT3-23) pending'
 - id: application:Dreamhouse
   source: 'Dreamhouse: tabs standard-home, Property_Explorer, Property_Finder, standard-Contact, Property__c, Broker__c, standard-File, Settings'
   target: {kind: component, name: AppShell}
@@ -1070,362 +1070,362 @@ rows:
   source: dreamhouse
   target: {kind: role, name: dreamhouse}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: Cognito user-pool group dreamhouse (plus dreamhouse-admin for Settings/sample import); enforced by RolesGuard in app/api/src/auth; policy table app/api/src/auth/policy.ts
+  parity_tests: [permission-set-standard-user-crud, permission-set-no-group-403, permission-set-no-token-401]
+  notes: 'Cognito user-pool group dreamhouse (infra/modules/auth) = this permission set; dreamhouse-admin = System Administrator superset (Settings, sample import, FileUtilities, all Contact/file rows). Token: AuthGuard (app/api/src/auth/auth.guard.ts; Cognito JWKS RS256, HS256 in NODE_ENV=test, stub tokens in dev) -> 401 INVALID_SESSION_ID; groups -> PermissionsGuard over policy.ts -> 403 INSUFFICIENT_ACCESS_OR_READONLY. Matrix docs/migration/permissions.md; tests app/api/test/permissions.e2e.spec.ts (group x object x operation + hidden fields, asserted against this XML by src/auth/salesforce-metadata.test-support.ts), src/auth/policy.spec.ts, tests/parity/characterisation/permission-set.spec.ts'
 - id: permission:dreamhouse.application.Dreamhouse
   source: application visible=True
   target: {kind: policy, name: policy.app.access}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: any member of group dreamhouse may sign in to the web app; others get the access-denied page
+  parity_tests: [permission-set-no-group-403]
+  notes: 'policy key app.access (policy.ts APP_ACCESS: dreamhouse, dreamhouse-admin) is required by PermissionsGuard on every non-@Public route; web: RequireAuth renders AccessDeniedPage for a signed-in user without the group (AppShell.test.tsx)'
 - id: permission:dreamhouse.apexClass.PagedResult
   source: Apex class access enabled=True
   target: {kind: policy, name: policy.properties.invoke}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: RolesGuard on the properties controller routes (group dreamhouse)
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'policy.ts CLASS_ACCESS PagedResult -> group dreamhouse; the PagedResult DTO is only reachable through GET /properties (properties.read)'
 - id: permission:dreamhouse.apexClass.PropertyController
   source: Apex class access enabled=True
   target: {kind: policy, name: policy.properties.invoke}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: RolesGuard on the properties controller routes (group dreamhouse)
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'policy.ts CLASS_ACCESS PropertyController -> group dreamhouse; @RequirePermission(properties.read) on GET /properties and GET /properties/{id}/pictures (+ files.read for ContentDocument) in properties.controller.ts; with sharing -> sharing.ts recordAccessWhere in PropertiesService'
 - id: permission:dreamhouse.apexClass.SampleDataController
   source: Apex class access enabled=True
   target: {kind: policy, name: policy.sampleData.invoke}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: RolesGuard on the sampleData controller routes (group dreamhouse; sample import additionally requires dreamhouse-admin)
+  parity_tests: [permission-set-class-access-admin-only]
+  notes: 'policy.ts CLASS_ACCESS SampleDataController -> dreamhouse-admin only (documented deviation DEVIATIONS.sampleDataAdminOnly: the demo must not let every user wipe and reload the data set); @RequirePermission(sampleData.invoke) on POST /sample-data/import -> standard group 403'
 - id: permission:dreamhouse.object.Broker__c
   source: object CRUD create,read,edit,delete + viewAllRecords,modifyAllRecords
   target: {kind: policy, name: policy.brokers.crud}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: 'group dreamhouse: create/read/update/delete on /brokers (endpoints POST /brokers, GET /brokers + /brokers/{id}, PATCH /brokers/{id}, DELETE /brokers/{id} exist since UNT3-19); viewAll/modifyAll -> no ownership filter (matches org-wide ReadWrite)'
+  parity_tests: [permission-set-standard-user-crud, permission-set-no-group-403, permission-set-no-token-401, permission-set-sharing-read-write-all]
+  notes: 'policy keys brokers.create/read/edit/delete (policy.ts OBJECT_PERMISSIONS, FULL_ACCESS for dreamhouse) on POST /brokers, GET /brokers + /brokers/{id}, PATCH /brokers/{id}, DELETE /brokers/{id}; viewAllRecords/modifyAllRecords + sharingModel ReadWrite -> sharing.ts recordAccessWhere returns no ownership filter; create stamps ownerId/createdBy'
 - id: permission:dreamhouse.object.Property__c
   source: object CRUD create,read,edit,delete + viewAllRecords,modifyAllRecords
   target: {kind: policy, name: policy.properties.crud}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: 'group dreamhouse: create/read/update/delete on /properties (endpoints POST /properties, GET /properties + /properties/{id}, PATCH /properties/{id}, DELETE /properties/{id} exist since UNT3-19); viewAll/modifyAll -> no ownership filter (matches org-wide ReadWrite)'
+  parity_tests: [permission-set-standard-user-crud, permission-set-no-group-403, permission-set-no-token-401, permission-set-sharing-read-write-all]
+  notes: 'policy keys properties.create/read/edit/delete (policy.ts OBJECT_PERMISSIONS, FULL_ACCESS for dreamhouse) on POST /properties, GET /properties + /properties/{id} (+ /pictures), PATCH /properties/{id}, DELETE /properties/{id}; viewAllRecords/modifyAllRecords + sharingModel ReadWrite -> no ownership filter (sharing.ts); create stamps ownerId/createdBy'
 - id: permission:dreamhouse.field.Broker__c.Broker_Id__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.broker_id}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Broker__c.Email__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.email}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Broker__c.Mobile_Phone__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.mobile_phone}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Broker__c.Phone__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.phone}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Broker__c.Picture_IMG__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.brokers.fields.picture_img}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: read-only (formula) for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-formula-fields-read-only]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] formula field: readable=true, editable=false -> returned by FieldSecurityInterceptor, a value in a POST/PATCH body is rejected 403 INVALID_FIELD_FOR_INSERT_UPDATE (assertWritable) for every group'
 - id: permission:dreamhouse.field.Broker__c.Picture__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.picture}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Broker__c.Title__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.brokers.fields.title}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Broker__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Address__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.address}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Assessed_Value__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.assessed_value}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Baths__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.baths}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Beds__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.beds}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Broker__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.broker}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.City__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.city}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Date_Agreement__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_agreement}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Date_Closed__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_closed}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Date_Contracted__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_contracted}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Date_Listed__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_listed}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Date_Pre_Market__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.date_pre_market}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Days_On_Market__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.days_on_market}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: read-only (formula) for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-formula-fields-read-only]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] formula field: readable=true, editable=false -> returned by FieldSecurityInterceptor, a value in a POST/PATCH body is rejected 403 INVALID_FIELD_FOR_INSERT_UPDATE (assertWritable) for every group'
 - id: permission:dreamhouse.field.Property__c.Description__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.description}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Location__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.location}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Name
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.name}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Picture_IMG__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.picture_img}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: read-only (formula) for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-formula-fields-read-only]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] formula field: readable=true, editable=false -> returned by FieldSecurityInterceptor, a value in a POST/PATCH body is rejected 403 INVALID_FIELD_FOR_INSERT_UPDATE (assertWritable) for every group'
 - id: permission:dreamhouse.field.Property__c.Picture__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.picture}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Price_Sold__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.price_sold}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Price__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.price}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Record_Link__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.record_link}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: read-only (formula) for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-formula-fields-read-only]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] formula field: readable=true, editable=false -> returned by FieldSecurityInterceptor, a value in a POST/PATCH body is rejected 403 INVALID_FIELD_FOR_INSERT_UPDATE (assertWritable) for every group'
 - id: permission:dreamhouse.field.Property__c.State__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.state}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Status__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.status}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Tags__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.tags}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Thumbnail_IMG__c
   source: field readable=True editable=False
   target: {kind: policy, name: policy.properties.fields.thumbnail_img}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: read-only (formula) for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-formula-fields-read-only]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] formula field: readable=true, editable=false -> returned by FieldSecurityInterceptor, a value in a POST/PATCH body is rejected 403 INVALID_FIELD_FOR_INSERT_UPDATE (assertWritable) for every group'
 - id: permission:dreamhouse.field.Property__c.Thumbnail__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.thumbnail}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.field.Property__c.Zip__c
   source: field readable=True editable=True
   target: {kind: policy, name: policy.properties.fields.zip}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
-  parity_tests: []
-  notes: readable + editable for group dreamhouse; field policy list app/api/src/auth/field-policy.ts filters DTOs and rejects writes
+  parity_tests: [permission-set-standard-user-crud]
+  notes: 'field-policy.ts FIELD_PERMISSIONS[Property__c] readable+editable for group dreamhouse (and dreamhouse-admin); FieldSecurityInterceptor strips the column for a caller without read access and rejects a write without edit access; hidden-field cases in app/api/test/permissions.e2e.spec.ts'
 - id: permission:dreamhouse.tab.Broker__c
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Broker__c'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: tab /brokers visible to group dreamhouse
+  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
 - id: permission:dreamhouse.tab.Property_Explorer
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Property_Explorer'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: tab /property-explorer visible to group dreamhouse
+  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
 - id: permission:dreamhouse.tab.Property_Finder
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Property_Finder'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: tab /property-finder visible to group dreamhouse
+  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
 - id: permission:dreamhouse.tab.Property__c
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Property__c'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: tab /properties visible to group dreamhouse
+  notes: 'navigation.ts requiredGroup dreamhouse on the tab (visibleTabs filters the navbar in AppShell.tsx); asserted against this <tabSettings> block by navigation.test.ts'
 - id: permission:dreamhouse.tab.Settings
   source: tab Visible
   target: {kind: config, name: 'app/web/src/app/navigation.ts::Settings'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  notes: 'tab /settings visible to group dreamhouse (Settings: dreamhouse-admin)'
+  notes: 'deviation: navigation.ts requiredGroup dreamhouse-admin (the XML grants Visible to dreamhouse; the migrated Settings tab only hosts the sample-data import, which is admin-only - see permission:dreamhouse.apexClass.SampleDataController); route /settings wrapped in RequireGroup -> AccessDeniedPage for group dreamhouse; navigation.test.ts lists it in ADMIN_ONLY_DEVIATIONS'
 - id: staticResource:leafletjs
   source: JS library that renders maps (168861 bytes)
   target: {kind: dependency, name: leaflet}

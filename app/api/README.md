@@ -69,6 +69,21 @@ For local development use the root docker-compose stack (`make up && make migrat
 [root README](../../README.md#local-development-docker-compose)); [`Dockerfile.dev`](Dockerfile.dev) is its
 hot-reload image. A stand-alone Postgres: `docker run -d --name dreamhouse-pg -e POSTGRES_USER=dreamhouse -e POSTGRES_PASSWORD=dreamhouse -e POSTGRES_DB=dreamhouse -p 5432:5432 postgres:16-alpine`. The [`Dockerfile`](Dockerfile) builds the Fargate image.
 
+## Authentication and permissions
+
+Every route except `GET /health` needs `Authorization: Bearer <token>`. `src/auth/` ports the `dreamhouse` permission
+set and the org-wide defaults: `AuthGuard` validates the token (401 `INVALID_SESSION_ID`), `PermissionsGuard` checks the
+caller's Cognito groups against the policy keys a route declares with `@RequirePermission(...)` (403
+`INSUFFICIENT_ACCESS_OR_READONLY`), `FieldSecurityInterceptor` applies field-level security to bodies and responses of
+`@SfObjectAccess` controllers (403 `INVALID_FIELD_FOR_INSERT_UPDATE` for formula fields), and `sharing.ts` adds the
+row-level filter the sharing model implies. Routes without `@Public()` or `@RequirePermission` fail closed.
+
+`AUTH_MODE` selects how tokens are verified: `cognito` (JWKS of `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID`; the only
+mode allowed in production), `test` (HS256 with `AUTH_TEST_JWT_SECRET`, used by `test/support/test-users.ts` and the
+parity fixtures), `stub` (the web stub client's `stub-token-for-<user>` for `make up`; `admin*` users get
+`dreamhouse-admin`, `guest*` users no group). The full group × object × operation matrix is
+[docs/migration/permissions.md](../../docs/migration/permissions.md).
+
 ## Configuration
 
 Validated in [`src/config/config.schema.ts`](src/config/config.schema.ts); loaded by

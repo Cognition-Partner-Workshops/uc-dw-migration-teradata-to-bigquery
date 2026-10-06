@@ -5,6 +5,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { RequirePermission } from '../../auth/decorators';
 import { SampleDataImportResultDto } from './dto/sample-data.dto';
 import { SampleDataService } from './sample-data.service';
 
@@ -14,6 +15,15 @@ export class SampleDataController {
   constructor(private readonly sampleData: SampleDataService) {}
 
   @Post('import')
+  @RequirePermission(
+    'sampleData.invoke',
+    'properties.delete',
+    'brokers.delete',
+    'contacts.delete',
+    'properties.create',
+    'brokers.create',
+    'contacts.create',
+  )
   @ApiOperation({
     summary: 'Reset and reload the sample data set',
     description:

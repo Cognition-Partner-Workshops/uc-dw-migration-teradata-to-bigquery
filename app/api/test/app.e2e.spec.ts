@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { adminUser, asUser, standardUser } from './support/test-users';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import './setup-env';
 import { AppModule } from '../src/app.module';
@@ -91,7 +92,10 @@ describe('Dreamhouse API (http)', () => {
   });
 
   it('not-yet-ported endpoints answer 501 and name the owning ticket', async () => {
-    const res = await request(app.getHttpServer()).post('/sample-data/import').expect(501);
+    const res = await request(app.getHttpServer())
+      .post('/sample-data/import')
+      .set(asUser(adminUser))
+      .expect(501);
     expect(res.body).toMatchObject({
       statusCode: 501,
       apexSource: 'SampleDataController.importSampleData',
@@ -100,7 +104,13 @@ describe('Dreamhouse API (http)', () => {
   });
 
   it('validates query parameters like the Apex method normalises its inputs', async () => {
-    await request(app.getHttpServer()).get('/properties?pageSize=0').expect(400);
-    await request(app.getHttpServer()).get('/properties?unknown=1').expect(400);
+    await request(app.getHttpServer())
+      .get('/properties?pageSize=0')
+      .set(asUser(standardUser))
+      .expect(400);
+    await request(app.getHttpServer())
+      .get('/properties?unknown=1')
+      .set(asUser(standardUser))
+      .expect(400);
   });
 });
