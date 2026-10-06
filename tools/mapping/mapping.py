@@ -101,7 +101,7 @@ TARGET_KINDS = OrderedDict([
     ("infra", (r"^infra/[A-Za-z0-9_./\-]+(::[A-Za-z0-9_.\-]+)?$", "Terraform file path, optionally ::resource")),
     ("asset", (r"^app/web/public/[A-Za-z0-9_./\-]+$", "static web asset path")),
     ("dependency", (r"^(@[a-z0-9\-]+/)?[a-z0-9\-.]+$", "npm package name")),
-    ("mock", (r"^app/web/src/test/[A-Za-z0-9_./\-]+\.tsx?(::[A-Za-z0-9_]+)?$", "web test helper path, optionally ::exportName")),
+    ("mock", (r"^(app/web/src/test|tests/parity/mocks)/[A-Za-z0-9_./\-]+\.tsx?(::[A-Za-z0-9_]+)?$", "web test helper or parity mock path, optionally ::exportName")),
 ])
 
 # Which target kinds are acceptable for each source kind (null target only when dropped).
@@ -115,7 +115,7 @@ KIND_MATRIX = {
     "standardObject": {"table", "column", "service", "role", "fixture"},
     "apexClass": {"service", "dto", "spec", "module"},
     "apexInnerClass": {"dto", "mock", "spec"},
-    "apexMethod": {"endpoint", "serviceMethod", "spec", "fixture", "hook"},
+    "apexMethod": {"endpoint", "serviceMethod", "spec", "fixture", "hook", "mock"},
     "apexTrigger": {"hook"},
     "lwc": {"component", "util", "store"},
     "lwcTest": {"spec"},
