@@ -373,18 +373,18 @@ rows:
   source: used by TestPropertyController (DML)
   target: {kind: fixture, name: tests/parity/fixtures/users.ts}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  reason: 'Test-only: adding the test user to the Cognito group dreamhouse is done by the parity fixture (admin-add-user-to-group).'
+  reason: 'Test-only: group membership is a claim (cognito:groups) in the HS256 test token minted by asUser(standardUser); UNT3-20 makes the guard accept AUTH_TEST_JWT_SECRET tokens in NODE_ENV=test.'
 - id: standardObject:Profile
   source: used by TestPropertyController (SOQL)
   target: {kind: fixture, name: tests/parity/fixtures/users.ts}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  reason: 'Test-only: the Standard User profile lookup becomes creating a test user in the Cognito user pool.'
+  reason: 'Test-only: the Standard User profile lookup becomes the standardUser fixture (group dreamhouse); no Cognito user is created.'
 - id: standardObject:StaticResource
   source: used by SampleDataController (SOQL)
   target: {kind: fixture, name: app/api/src/modules/sample-data/fixtures}
@@ -397,10 +397,10 @@ rows:
   source: used by TestPropertyController (DML)
   target: {kind: fixture, name: tests/parity/fixtures/users.ts}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-20
   parity_tests: []
-  reason: 'Test-only: User records created with System.runAs become Cognito test users created by the parity fixture.'
+  reason: 'Test-only: User records created for System.runAs become TestUser fixtures (standardUser, adminUser) whose bearer tokens asUser() mints; UNT3-20 wires the guard.'
 - id: apexClass:FileUtilities
   source: class, with sharing, 1 methods
   target: {kind: service, name: FilesService}
@@ -413,10 +413,10 @@ rows:
   source: test class, with sharing, 4 methods
   target: {kind: spec, name: tests/parity/characterisation/file-utilities.spec.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: Characterisation spec run against both systems; unit variant app/api/src/modules/files/files.service.spec.ts
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now; unit variant app/api/src/modules/files/files.service.spec.ts
 - id: apexClass:GeocodingService
   source: class, with sharing, 1 methods
   target: {kind: service, name: GeocodingService}
@@ -429,9 +429,10 @@ rows:
   source: test class, with sharing, 3 methods
   target: {kind: spec, name: tests/parity/characterisation/geocoding-service.spec.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-17 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now
 - id: apexClass:PagedResult
   source: class, with sharing, 0 methods
   target: {kind: dto, name: PagedResultDto}
@@ -460,16 +461,18 @@ rows:
   source: test class, omitted, 4 methods
   target: {kind: spec, name: tests/parity/characterisation/property-controller.spec.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-16 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now
 - id: apexClass:TestSampleDataController
   source: test class, omitted, 1 methods
   target: {kind: spec, name: tests/parity/characterisation/sample-data-controller.spec.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
+  notes: Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now
 - id: apexInnerClass:GeocodingService.GeocodingAddress
   source: class, 5 fields
   target: {kind: dto, name: GeocodingAddressDto}
@@ -488,20 +491,20 @@ rows:
   notes: app/api/src/modules/geocoding/dto/geocoding.dto.ts (lat, lon)
 - id: apexInnerClass:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImpl
   source: class implements HttpCalloutMock, 0 fields
-  target: {kind: mock, name: 'app/web/src/test/mocks/nominatim.ts::nominatimSuccess'}
+  target: {kind: mock, name: 'tests/parity/mocks/nominatim.ts::nominatimSuccess'}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
-  reason: HttpCalloutMock has no equivalent; outbound fetch is stubbed (vi.fn on global fetch / msw handler) with the same success payload.
+  reason: 'HttpCalloutMock has no equivalent; an MSW handler for GEOCODING_BASE_URL answers 200 [{lat: 3.123, lon: 31.333}] and records the intercepted calls.'
 - id: apexInnerClass:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImplError
   source: class implements HttpCalloutMock, 0 fields
-  target: {kind: mock, name: 'app/web/src/test/mocks/nominatim.ts::nominatimError'}
+  target: {kind: mock, name: 'tests/parity/mocks/nominatim.ts::nominatimError'}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
-  reason: HttpCalloutMock has no equivalent; outbound fetch is stubbed with the same error payload.
+  reason: HttpCalloutMock has no equivalent; an MSW handler for GEOCODING_BASE_URL answers 400 with an empty JSON body.
 - id: apexMethod:FileUtilities.createFile
   source: '@AuraEnabled String createFile(String base64data, String filename, String recordId)'
   target: {kind: endpoint, name: POST /files}
@@ -509,33 +512,33 @@ rows:
   status: mapped
   ticket: UNT3-18
   parity_tests: []
-  notes: 'FilesService.createFile(base64data, filename, recordId): PUT to S3 + insert files row in one transaction; returns FileCreatedDto {contentDocumentId}; errors -> 400 (bad base64 / filename) and 404 (unknown recordId) like AuraHandledException'
+  notes: 'FilesService.createFile(base64data, filename, recordId): PUT to S3 + insert files row in one transaction; returns FileCreatedDto {id, url}; title = filename minus extension, file_type from the extension; must accept unpadded base64 like EncodingUtil.base64Decode (the Apex fixture is 659 chars); errors -> 400 (bad base64 / blank filename) and 404 (unknown recordId) like AuraHandledException'
 - id: apexMethod:FileUtilitiesTest.createFileSucceedsWhenCorrectInput
   source: '@isTest void createFileSucceedsWhenCorrectInput()'
   target: {kind: spec, name: 'tests/parity/characterisation/file-utilities.spec.ts::createFileSucceedsWhenCorrectInput'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectRecordId
   source: '@isTest void createFileFailsWhenIncorrectRecordId()'
   target: {kind: spec, name: 'tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectRecordId'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectBase64Data
   source: '@isTest void createFileFailsWhenIncorrectBase64Data()'
   target: {kind: spec, name: 'tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectBase64Data'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectFilename
   source: '@isTest void createFileFailsWhenIncorrectFilename()'
   target: {kind: spec, name: 'tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectFilename'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:GeocodingService.geocodeAddresses
@@ -545,44 +548,44 @@ rows:
   status: mapped
   ticket: UNT3-17
   parity_tests: []
-  notes: GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim call per address; blank address -> {lat:null, lon:null}; upstream error -> 502
+  notes: GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim GET per address with the non-blank fields as query params; blank address -> {lat:null, lon:null} without a callout; upstream non-200 -> {lat:null, lon:null} with HTTP 200 (Apex swallows the error, pinned by geocoding-service.spec.ts::errorResponse)
 - id: apexMethod:GeocodingServiceTest.successResponse
   source: '@isTest void successResponse()'
   target: {kind: spec, name: 'tests/parity/characterisation/geocoding-service.spec.ts::successResponse'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:GeocodingServiceTest.blankAddress
   source: '@isTest void blankAddress()'
   target: {kind: spec, name: 'tests/parity/characterisation/geocoding-service.spec.ts::blankAddress'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:GeocodingServiceTest.errorResponse
   source: '@isTest void errorResponse()'
   target: {kind: spec, name: 'tests/parity/characterisation/geocoding-service.spec.ts::errorResponse'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImpl.respond
   source: HTTPResponse respond(HTTPRequest req)
-  target: {kind: spec, name: 'tests/parity/characterisation/geocoding-service.spec.ts::OpenStreetMapHttpCalloutMockImpl'}
+  target: {kind: mock, name: 'tests/parity/mocks/nominatim.ts::nominatimSuccess'}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
-  reason: respond() is the HttpCalloutMock body; it becomes the stubbed fetch response inside the spec.
+  reason: respond() is the HttpCalloutMock body; it is the MSW resolver returned by nominatimSuccess().
 - id: apexMethod:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImplError.respond
   source: HTTPResponse respond(HTTPRequest req)
-  target: {kind: spec, name: 'tests/parity/characterisation/geocoding-service.spec.ts::OpenStreetMapHttpCalloutMockImplError'}
+  target: {kind: mock, name: 'tests/parity/mocks/nominatim.ts::nominatimError'}
   disposition: substitute
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
-  reason: respond() is the HttpCalloutMock body; it becomes the stubbed fetch response inside the spec.
+  reason: respond() is the HttpCalloutMock body; it is the MSW resolver returned by nominatimError().
 - id: apexMethod:PropertyController.getPagedPropertyList
   source: '@AuraEnabled PagedResult getPagedPropertyList(String searchKey, Decimal maxPrice, Integer minBedrooms, Integer minBathrooms, Integer pageSize, Integer pageNumber)'
   target: {kind: endpoint, name: GET /properties}
@@ -598,7 +601,7 @@ rows:
   status: mapped
   ticket: UNT3-16
   parity_tests: []
-  notes: PropertyPictureDto[] from files where record_id = :id (latest version), ordered by created_at desc
+  notes: PropertyPictureDto[] from files where record_id = :id and file_type in (PNG, JPG, GIF), latest version, ordered by created_at asc (Apex ORDER BY CreatedDate); 200 [] when the record has no pictures (Apex returns null)
 - id: apexMethod:SampleDataController.importSampleData
   source: '@AuraEnabled void importSampleData()'
   target: {kind: endpoint, name: POST /sample-data/import}
@@ -639,36 +642,36 @@ rows:
   source: void createProperties(Integer amount)
   target: {kind: fixture, name: tests/parity/fixtures/properties.ts}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
-  notes: createProperties(amount) test helper
+  notes: createProperties(prisma, amount) inserts 'Name <i>' / 20000 / 3 / 3 rows through the per-test transaction (admin DML equivalent)
 - id: apexMethod:TestPropertyController.testGetPagedPropertyList
   source: '@isTest void testGetPagedPropertyList()'
   target: {kind: spec, name: 'tests/parity/characterisation/property-controller.spec.ts::testGetPagedPropertyList'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:TestPropertyController.testGetPicturesNoResults
   source: '@isTest void testGetPicturesNoResults()'
   target: {kind: spec, name: 'tests/parity/characterisation/property-controller.spec.ts::testGetPicturesNoResults'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:TestPropertyController.testGetPicturesWithResults
   source: '@isTest void testGetPicturesWithResults()'
   target: {kind: spec, name: 'tests/parity/characterisation/property-controller.spec.ts::testGetPicturesWithResults'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: apexMethod:TestSampleDataController.importSampleData
   source: '@isTest void importSampleData()'
   target: {kind: spec, name: 'tests/parity/characterisation/sample-data-controller.spec.ts::importSampleData'}
   disposition: port
-  status: mapped
+  status: ported
   ticket: UNT3-15
   parity_tests: []
 - id: lwc:barcodeScanner

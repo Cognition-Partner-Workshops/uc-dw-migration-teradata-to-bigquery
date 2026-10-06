@@ -18,7 +18,7 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 ## Summary
 
 - Rows: **200** (inventory ids: 200)
-- Status: mapped **152**, ported **42**, tested **0**, passing **0**, dropped **6**
+- Status: mapped **129**, ported **65**, tested **0**, passing **0**, dropped **6**
 - Disposition: port **174**, substitute **20**, dropped **6**
 - Rows with parity tests: **0**
 
@@ -28,10 +28,10 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | Custom fields | 32 | 4 | 28 | 0 | 0 | 0 | 4 |
 | List views | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
 | Compact layouts | 2 | 2 | 0 | 0 | 0 | 0 | 0 |
-| Standard objects referenced | 10 | 8 | 1 | 0 | 0 | 1 | 5 |
-| Apex classes | 9 | 8 | 1 | 0 | 0 | 0 | 0 |
-| Apex inner classes | 4 | 2 | 2 | 0 | 0 | 0 | 2 |
-| Apex methods | 23 | 23 | 0 | 0 | 0 | 0 | 2 |
+| Standard objects referenced | 10 | 5 | 4 | 0 | 0 | 1 | 5 |
+| Apex classes | 9 | 4 | 5 | 0 | 0 | 0 | 0 |
+| Apex inner classes | 4 | 0 | 4 | 0 | 0 | 0 | 2 |
+| Apex methods | 23 | 9 | 14 | 0 | 0 | 0 | 2 |
 | Lightning Web Components | 17 | 16 | 0 | 0 | 0 | 1 | 1 |
 | LWC jest tests | 17 | 17 | 0 | 0 | 0 | 0 | 0 |
 | Aura bundles | 1 | 1 | 0 | 0 | 0 | 0 | 0 |
@@ -119,24 +119,24 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | `standardObject:ContentDocumentLink` | used by Create_property (record element), FileUtilities (DML), PropertyController (SOQL), TestPropertyController (DML) | column `files.record_id` (uuid) | port | mapped | UNT3-18 | — | LinkedEntityId -> files.record_id (polymorphic: properties.id today); ShareType/Visibility dropped (no sharing model) |
 | `standardObject:ContentVersion` | used by Create_property (record element), FileUtilities (DML), FileUtilities (SOQL), PropertyController (SOQL), TestPropertyController (DML) | table `files` | port | mapped | UNT3-18 | — | VersionData -> S3 object (bucket from infra, key files/<id>/<filename>); Title/IsLatest/CreatedDate -> files columns; only the latest version is kept |
 | `standardObject:PermissionSet` | used by TestPropertyController (SOQL) | role `dreamhouse` | substitute | mapped | UNT3-20 | — | **substitute**: Queried only by TestPropertyController to assign the permission set to a test user; the equivalent is the Cognito group dreamhouse. |
-| `standardObject:PermissionSetAssignment` | used by TestPropertyController (DML) | fixture `tests/parity/fixtures/users.ts` | substitute | mapped | UNT3-20 | — | **substitute**: Test-only: adding the test user to the Cognito group dreamhouse is done by the parity fixture (admin-add-user-to-group). |
-| `standardObject:Profile` | used by TestPropertyController (SOQL) | fixture `tests/parity/fixtures/users.ts` | substitute | mapped | UNT3-20 | — | **substitute**: Test-only: the Standard User profile lookup becomes creating a test user in the Cognito user pool. |
+| `standardObject:PermissionSetAssignment` | used by TestPropertyController (DML) | fixture `tests/parity/fixtures/users.ts` | substitute | ported | UNT3-20 | — | **substitute**: Test-only: group membership is a claim (cognito:groups) in the HS256 test token minted by asUser(standardUser); UNT3-20 makes the guard accept AUTH_TEST_JWT_SECRET tokens in NODE_ENV=test. |
+| `standardObject:Profile` | used by TestPropertyController (SOQL) | fixture `tests/parity/fixtures/users.ts` | substitute | ported | UNT3-20 | — | **substitute**: Test-only: the Standard User profile lookup becomes the standardUser fixture (group dreamhouse); no Cognito user is created. |
 | `standardObject:StaticResource` | used by SampleDataController (SOQL) | fixture `app/api/src/modules/sample-data/fixtures` | substitute | mapped | UNT3-18 | — | **substitute**: SampleDataController reads sample_data_* static resources via SOQL; the service reads the same JSON from bundled fixtures. |
-| `standardObject:User` | used by TestPropertyController (DML) | fixture `tests/parity/fixtures/users.ts` | substitute | mapped | UNT3-20 | — | **substitute**: Test-only: User records created with System.runAs become Cognito test users created by the parity fixture. |
+| `standardObject:User` | used by TestPropertyController (DML) | fixture `tests/parity/fixtures/users.ts` | substitute | ported | UNT3-20 | — | **substitute**: Test-only: User records created for System.runAs become TestUser fixtures (standardUser, adminUser) whose bearer tokens asUser() mints; UNT3-20 wires the guard. |
 
 ## Apex classes
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `apexClass:FileUtilities` | class, with sharing, 1 methods | service `FilesService` | port | mapped | UNT3-18 | — | app/api/src/modules/files/files.service.ts |
-| `apexClass:FileUtilitiesTest` | test class, with sharing, 4 methods | spec `tests/parity/characterisation/file-utilities.spec.ts` | port | mapped | UNT3-15 | — | Characterisation spec run against both systems; unit variant app/api/src/modules/files/files.service.spec.ts |
+| `apexClass:FileUtilitiesTest` | test class, with sharing, 4 methods | spec `tests/parity/characterisation/file-utilities.spec.ts` | port | ported | UNT3-15 | — | Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now; unit variant app/api/src/modules/files/files.service.spec.ts |
 | `apexClass:GeocodingService` | class, with sharing, 1 methods | service `GeocodingService` | port | mapped | UNT3-17 | — | app/api/src/modules/geocoding/geocoding.service.ts |
-| `apexClass:GeocodingServiceTest` | test class, with sharing, 3 methods | spec `tests/parity/characterisation/geocoding-service.spec.ts` | port | mapped | UNT3-15 | — |  |
+| `apexClass:GeocodingServiceTest` | test class, with sharing, 3 methods | spec `tests/parity/characterisation/geocoding-service.spec.ts` | port | ported | UNT3-15 | — | Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-17 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now |
 | `apexClass:PagedResult` | class, with sharing, 0 methods | dto `PagedResultDto` | port | ported | UNT3-6 | — | app/api/src/common/dto/paged-result.dto.ts (pageSize, pageNumber, totalItemCount, records) |
 | `apexClass:PropertyController` | class, with sharing, 2 methods | service `PropertiesService` | port | mapped | UNT3-16 | — | app/api/src/modules/properties/properties.service.ts; HTTP surface in properties.controller.ts |
 | `apexClass:SampleDataController` | class, with sharing, 5 methods | service `SampleDataService` | port | mapped | UNT3-18 | — | app/api/src/modules/sample-data/sample-data.service.ts |
-| `apexClass:TestPropertyController` | test class, omitted, 4 methods | spec `tests/parity/characterisation/property-controller.spec.ts` | port | mapped | UNT3-15 | — |  |
-| `apexClass:TestSampleDataController` | test class, omitted, 1 methods | spec `tests/parity/characterisation/sample-data-controller.spec.ts` | port | mapped | UNT3-15 | — |  |
+| `apexClass:TestPropertyController` | test class, omitted, 4 methods | spec `tests/parity/characterisation/property-controller.spec.ts` | port | ported | UNT3-15 | — | Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-16 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now |
+| `apexClass:TestSampleDataController` | test class, omitted, 1 methods | spec `tests/parity/characterisation/sample-data-controller.spec.ts` | port | ported | UNT3-15 | — | Characterisation spec (one `spec()` per @isTest method, each assertion commented with its Apex line); reported as todo until UNT3-18 adds itself to tests/parity/characterisation/harness/ported.ts, `PARITY_RUN_ALL=1 npm test` runs it now |
 
 ## Apex inner classes
 
@@ -144,36 +144,36 @@ Rendered from [`mapping.yaml`](mapping.yaml) by `python3 tools/mapping/mapping.p
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `apexInnerClass:GeocodingService.GeocodingAddress` | class, 5 fields | dto `GeocodingAddressDto` | port | ported | UNT3-6 | — | app/api/src/modules/geocoding/dto/geocoding.dto.ts (street, city, state, country, postalcode) |
 | `apexInnerClass:GeocodingService.Coordinates` | class, 2 fields | dto `CoordinatesDto` | port | ported | UNT3-6 | — | app/api/src/modules/geocoding/dto/geocoding.dto.ts (lat, lon) |
-| `apexInnerClass:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImpl` | class implements HttpCalloutMock, 0 fields | mock `app/web/src/test/mocks/nominatim.ts::nominatimSuccess` | substitute | mapped | UNT3-15 | — | **substitute**: HttpCalloutMock has no equivalent; outbound fetch is stubbed (vi.fn on global fetch / msw handler) with the same success payload. |
-| `apexInnerClass:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImplError` | class implements HttpCalloutMock, 0 fields | mock `app/web/src/test/mocks/nominatim.ts::nominatimError` | substitute | mapped | UNT3-15 | — | **substitute**: HttpCalloutMock has no equivalent; outbound fetch is stubbed with the same error payload. |
+| `apexInnerClass:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImpl` | class implements HttpCalloutMock, 0 fields | mock `tests/parity/mocks/nominatim.ts::nominatimSuccess` | substitute | ported | UNT3-15 | — | **substitute**: HttpCalloutMock has no equivalent; an MSW handler for GEOCODING_BASE_URL answers 200 [{lat: 3.123, lon: 31.333}] and records the intercepted calls. |
+| `apexInnerClass:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImplError` | class implements HttpCalloutMock, 0 fields | mock `tests/parity/mocks/nominatim.ts::nominatimError` | substitute | ported | UNT3-15 | — | **substitute**: HttpCalloutMock has no equivalent; an MSW handler for GEOCODING_BASE_URL answers 400 with an empty JSON body. |
 
 ## Apex methods
 
 | Id | Source | Target | Disposition | Status | Ticket | Parity tests | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `apexMethod:FileUtilities.createFile` | @AuraEnabled String createFile(String base64data, String filename, String recordId) | endpoint `POST /files` | port | mapped | UNT3-18 | — | FilesService.createFile(base64data, filename, recordId): PUT to S3 + insert files row in one transaction; returns FileCreatedDto {contentDocumentId}; errors -> 400 (bad base64 / filename) and 404 (unknown recordId) like AuraHandledException |
-| `apexMethod:FileUtilitiesTest.createFileSucceedsWhenCorrectInput` | @isTest void createFileSucceedsWhenCorrectInput() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileSucceedsWhenCorrectInput` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectRecordId` | @isTest void createFileFailsWhenIncorrectRecordId() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectRecordId` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectBase64Data` | @isTest void createFileFailsWhenIncorrectBase64Data() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectBase64Data` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectFilename` | @isTest void createFileFailsWhenIncorrectFilename() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectFilename` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:GeocodingService.geocodeAddresses` | @InvocableMethod List<Coordinates> geocodeAddresses(List<GeocodingAddress> addresses) | endpoint `POST /geocoding/addresses` | port | mapped | UNT3-17 | — | GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim call per address; blank address -> {lat:null, lon:null}; upstream error -> 502 |
-| `apexMethod:GeocodingServiceTest.successResponse` | @isTest void successResponse() | spec `tests/parity/characterisation/geocoding-service.spec.ts::successResponse` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:GeocodingServiceTest.blankAddress` | @isTest void blankAddress() | spec `tests/parity/characterisation/geocoding-service.spec.ts::blankAddress` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:GeocodingServiceTest.errorResponse` | @isTest void errorResponse() | spec `tests/parity/characterisation/geocoding-service.spec.ts::errorResponse` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImpl.respond` | HTTPResponse respond(HTTPRequest req) | spec `tests/parity/characterisation/geocoding-service.spec.ts::OpenStreetMapHttpCalloutMockImpl` | substitute | mapped | UNT3-15 | — | **substitute**: respond() is the HttpCalloutMock body; it becomes the stubbed fetch response inside the spec. |
-| `apexMethod:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImplError.respond` | HTTPResponse respond(HTTPRequest req) | spec `tests/parity/characterisation/geocoding-service.spec.ts::OpenStreetMapHttpCalloutMockImplError` | substitute | mapped | UNT3-15 | — | **substitute**: respond() is the HttpCalloutMock body; it becomes the stubbed fetch response inside the spec. |
+| `apexMethod:FileUtilities.createFile` | @AuraEnabled String createFile(String base64data, String filename, String recordId) | endpoint `POST /files` | port | mapped | UNT3-18 | — | FilesService.createFile(base64data, filename, recordId): PUT to S3 + insert files row in one transaction; returns FileCreatedDto {id, url}; title = filename minus extension, file_type from the extension; must accept unpadded base64 like EncodingUtil.base64Decode (the Apex fixture is 659 chars); errors -> 400 (bad base64 / blank filename) and 404 (unknown recordId) like AuraHandledException |
+| `apexMethod:FileUtilitiesTest.createFileSucceedsWhenCorrectInput` | @isTest void createFileSucceedsWhenCorrectInput() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileSucceedsWhenCorrectInput` | port | ported | UNT3-15 | — |  |
+| `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectRecordId` | @isTest void createFileFailsWhenIncorrectRecordId() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectRecordId` | port | ported | UNT3-15 | — |  |
+| `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectBase64Data` | @isTest void createFileFailsWhenIncorrectBase64Data() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectBase64Data` | port | ported | UNT3-15 | — |  |
+| `apexMethod:FileUtilitiesTest.createFileFailsWhenIncorrectFilename` | @isTest void createFileFailsWhenIncorrectFilename() | spec `tests/parity/characterisation/file-utilities.spec.ts::createFileFailsWhenIncorrectFilename` | port | ported | UNT3-15 | — |  |
+| `apexMethod:GeocodingService.geocodeAddresses` | @InvocableMethod List<Coordinates> geocodeAddresses(List<GeocodingAddress> addresses) | endpoint `POST /geocoding/addresses` | port | mapped | UNT3-17 | — | GeocodingService.geocodeAddresses(GeocodeAddressesDto) -> CoordinatesDto[]; one Nominatim GET per address with the non-blank fields as query params; blank address -> {lat:null, lon:null} without a callout; upstream non-200 -> {lat:null, lon:null} with HTTP 200 (Apex swallows the error, pinned by geocoding-service.spec.ts::errorResponse) |
+| `apexMethod:GeocodingServiceTest.successResponse` | @isTest void successResponse() | spec `tests/parity/characterisation/geocoding-service.spec.ts::successResponse` | port | ported | UNT3-15 | — |  |
+| `apexMethod:GeocodingServiceTest.blankAddress` | @isTest void blankAddress() | spec `tests/parity/characterisation/geocoding-service.spec.ts::blankAddress` | port | ported | UNT3-15 | — |  |
+| `apexMethod:GeocodingServiceTest.errorResponse` | @isTest void errorResponse() | spec `tests/parity/characterisation/geocoding-service.spec.ts::errorResponse` | port | ported | UNT3-15 | — |  |
+| `apexMethod:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImpl.respond` | HTTPResponse respond(HTTPRequest req) | mock `tests/parity/mocks/nominatim.ts::nominatimSuccess` | substitute | ported | UNT3-15 | — | **substitute**: respond() is the HttpCalloutMock body; it is the MSW resolver returned by nominatimSuccess(). |
+| `apexMethod:GeocodingServiceTest.OpenStreetMapHttpCalloutMockImplError.respond` | HTTPResponse respond(HTTPRequest req) | mock `tests/parity/mocks/nominatim.ts::nominatimError` | substitute | ported | UNT3-15 | — | **substitute**: respond() is the HttpCalloutMock body; it is the MSW resolver returned by nominatimError(). |
 | `apexMethod:PropertyController.getPagedPropertyList` | @AuraEnabled PagedResult getPagedPropertyList(String searchKey, Decimal maxPrice, Integer minBedrooms, Integer minBathrooms, Integer pageSize, Integer pageNumber) | endpoint `GET /properties` | port | mapped | UNT3-16 | — | query searchKey, maxPrice, minBedrooms, minBathrooms, pageSize, pageNumber -> PagedPropertiesDto; LIKE %searchKey% on name/city/tags -> Prisma contains (insensitive); same ordering/offset semantics as the SOQL |
-| `apexMethod:PropertyController.getPictures` | @AuraEnabled List<ContentVersion> getPictures(Id propertyId) | endpoint `GET /properties/{id}/pictures` | port | mapped | UNT3-16 | — | PropertyPictureDto[] from files where record_id = :id (latest version), ordered by created_at desc |
+| `apexMethod:PropertyController.getPictures` | @AuraEnabled List<ContentVersion> getPictures(Id propertyId) | endpoint `GET /properties/{id}/pictures` | port | mapped | UNT3-16 | — | PropertyPictureDto[] from files where record_id = :id and file_type in (PNG, JPG, GIF), latest version, ordered by created_at asc (Apex ORDER BY CreatedDate); 200 [] when the record has no pictures (Apex returns null) |
 | `apexMethod:SampleDataController.importSampleData` | @AuraEnabled void importSampleData() | endpoint `POST /sample-data/import` | port | mapped | UNT3-18 | — | admin-only (role dreamhouse-admin); deletes properties/brokers/contacts then inserts brokers, properties, contacts in one transaction; Case cleanup dropped |
 | `apexMethod:SampleDataController.insertBrokers` | void insertBrokers() | serviceMethod `SampleDataService.insertBrokers` | port | mapped | UNT3-18 | — |  |
 | `apexMethod:SampleDataController.insertProperties` | void insertProperties() | serviceMethod `SampleDataService.insertProperties` | port | mapped | UNT3-18 | — |  |
 | `apexMethod:SampleDataController.insertContacts` | void insertContacts() | serviceMethod `SampleDataService.insertContacts` | port | mapped | UNT3-18 | — |  |
 | `apexMethod:SampleDataController.randomizeDateListed` | void randomizeDateListed(List<Property__c> properties) | serviceMethod `SampleDataService.randomizeDateListed` | port | mapped | UNT3-18 | — |  |
-| `apexMethod:TestPropertyController.createProperties` | void createProperties(Integer amount) | fixture `tests/parity/fixtures/properties.ts` | port | mapped | UNT3-15 | — | createProperties(amount) test helper |
-| `apexMethod:TestPropertyController.testGetPagedPropertyList` | @isTest void testGetPagedPropertyList() | spec `tests/parity/characterisation/property-controller.spec.ts::testGetPagedPropertyList` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:TestPropertyController.testGetPicturesNoResults` | @isTest void testGetPicturesNoResults() | spec `tests/parity/characterisation/property-controller.spec.ts::testGetPicturesNoResults` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:TestPropertyController.testGetPicturesWithResults` | @isTest void testGetPicturesWithResults() | spec `tests/parity/characterisation/property-controller.spec.ts::testGetPicturesWithResults` | port | mapped | UNT3-15 | — |  |
-| `apexMethod:TestSampleDataController.importSampleData` | @isTest void importSampleData() | spec `tests/parity/characterisation/sample-data-controller.spec.ts::importSampleData` | port | mapped | UNT3-15 | — |  |
+| `apexMethod:TestPropertyController.createProperties` | void createProperties(Integer amount) | fixture `tests/parity/fixtures/properties.ts` | port | ported | UNT3-15 | — | createProperties(prisma, amount) inserts 'Name <i>' / 20000 / 3 / 3 rows through the per-test transaction (admin DML equivalent) |
+| `apexMethod:TestPropertyController.testGetPagedPropertyList` | @isTest void testGetPagedPropertyList() | spec `tests/parity/characterisation/property-controller.spec.ts::testGetPagedPropertyList` | port | ported | UNT3-15 | — |  |
+| `apexMethod:TestPropertyController.testGetPicturesNoResults` | @isTest void testGetPicturesNoResults() | spec `tests/parity/characterisation/property-controller.spec.ts::testGetPicturesNoResults` | port | ported | UNT3-15 | — |  |
+| `apexMethod:TestPropertyController.testGetPicturesWithResults` | @isTest void testGetPicturesWithResults() | spec `tests/parity/characterisation/property-controller.spec.ts::testGetPicturesWithResults` | port | ported | UNT3-15 | — |  |
+| `apexMethod:TestSampleDataController.importSampleData` | @isTest void importSampleData() | spec `tests/parity/characterisation/sample-data-controller.spec.ts::importSampleData` | port | ported | UNT3-15 | — |  |
 
 ## Lightning Web Components
 

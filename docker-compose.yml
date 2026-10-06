@@ -48,6 +48,10 @@ services:
       - ./app/api:/workspace/app/api
       - api_node_modules:/workspace/app/api/node_modules
       - ./data/migrated:/workspace/data/migrated:ro
+      # Apex characterisation specs (`make test` / `make characterise`); they depend on app/api as a
+      # `file:` package, so they install and run inside this container (node_modules stays on the host
+      # bind mount, owned by you).
+      - ./tests/parity:/workspace/tests/parity
     depends_on:
       db:
         condition: service_healthy
@@ -84,8 +88,8 @@ services:
       retries: 24
       start_period: 10s
 
-  # End-to-end runner for the parity harness (tests/parity, ticket UNT3-24); `make e2e` starts it
-  # only when tests/parity/package.json exists. Opt-in profile so `make up` never builds it.
+  # End-to-end runner for the Playwright suite (tests/parity, ticket UNT3-24); `make e2e` starts it
+  # only when tests/parity/playwright.config.ts exists. Opt-in profile so `make up` never builds it.
   e2e:
     image: mcr.microsoft.com/playwright:v1.56.1-noble
     profiles: ["e2e"]
