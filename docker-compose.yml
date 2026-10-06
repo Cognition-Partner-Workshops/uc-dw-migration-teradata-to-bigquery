@@ -50,6 +50,8 @@ services:
       - ./app/api:/workspace/app/api
       - api_node_modules:/workspace/app/api/node_modules
       - ./data/migrated:/workspace/data/migrated:ro
+      # Frozen Salesforce metadata the permission specs assert against (src/auth/salesforce-metadata.test-support.ts)
+      - ./salesforce:/workspace/salesforce:ro
       # Apex characterisation specs (`make test` / `make characterise`); they depend on app/api as a
       # `file:` package, so they install and run inside this container (node_modules stays on the host
       # bind mount, owned by you).

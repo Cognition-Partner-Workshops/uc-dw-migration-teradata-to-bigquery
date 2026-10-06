@@ -6,6 +6,8 @@ import { join } from 'node:path';
 // app/api/.env.example so `npm test` works after `prisma migrate deploy`.
 process.env.NODE_ENV ??= 'test';
 process.env.LOG_LEVEL ??= 'silent';
+// The specs mint HS256 tokens (fixtures/users.ts); the compose dev container runs AUTH_MODE=stub.
+process.env.AUTH_MODE = 'test';
 process.env.DATABASE_URL ??=
   'postgresql://dreamhouse:dreamhouse@localhost:5432/dreamhouse?schema=public';
 process.env.GEOCODING_BASE_URL ??= 'https://nominatim.openstreetmap.org/search?format=json';
