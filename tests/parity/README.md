@@ -39,7 +39,8 @@ until then, so:
   everything and shows the current red baseline.
 
 A port ticket (UNT3-16/17/18) adds itself to `PORTED_TICKETS`; from then on its suite is a
-required check. Live today: `TestPropertyController` (UNT3-16).
+required check. Live today: `TestPropertyController` (UNT3-16), `FileUtilitiesTest` and
+`TestSampleDataController` (UNT3-18).
 
 ## Running locally
 

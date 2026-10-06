@@ -60,6 +60,8 @@ describe('Dreamhouse API (http)', () => {
         '/brokers/{id}',
         '/contacts',
         '/files',
+        '/files/presigned-upload',
+        '/files/{id}',
         '/geocode',
         '/geocoding/addresses',
         '/health',
@@ -79,11 +81,11 @@ describe('Dreamhouse API (http)', () => {
   });
 
   it('not-yet-ported endpoints answer 501 and name the owning ticket', async () => {
-    const res = await request(app.getHttpServer()).post('/sample-data/import').expect(501);
+    const res = await request(app.getHttpServer()).get('/contacts').expect(501);
     expect(res.body).toMatchObject({
       statusCode: 501,
-      apexSource: 'SampleDataController.importSampleData',
-      ticket: 'UNT3-18',
+      apexSource: 'Contact list',
+      ticket: 'UNT3-19',
     });
   });
 

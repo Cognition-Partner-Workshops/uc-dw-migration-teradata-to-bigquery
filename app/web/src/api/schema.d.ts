@@ -69,9 +69,49 @@ export type paths = {
         put?: never;
         /**
          * Upload a file and link it to a record
-         * @description Port of `@AuraEnabled FileUtilities.createFile` (used by the Property record page picture upload).
+         * @description Port of `@AuraEnabled FileUtilities.createFile(base64data, filename, recordId)` (Property record page picture upload). Stores the body in the files bucket and inserts the `files` row linked to the record; the file then shows up in `GET /properties/{id}/pictures` and is served by `GET /files/{id}`. Bodies larger than FILES_MAX_INLINE_BYTES go through `POST /files/presigned-upload` first and are finalised here with `uploadKey` instead of `base64Data`.
          */
         post: operations["files_createFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download a file
+         * @description Body of the file behind a `files` row (`ContentVersion.VersionData`). With the S3 bucket this answers `302` to a pre-signed URL; without it the API streams the object itself.
+         */
+        get: operations["files_getFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/files/presigned-upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pre-signed S3 upload for large files
+         * @description Returns a short-lived pre-signed `PUT` URL into the files bucket. After the upload succeeds, call `POST /files` with the returned `uploadKey` to create the file row (no counterpart in Apex, which was limited by request size).
+         */
+        post: operations["files_createPresignedUpload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -202,8 +242,8 @@ export type paths = {
         get?: never;
         put?: never;
         /**
-         * Reset and reload the sample data set
-         * @description Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC).
+         * Reset and reload the sample data set (admin only)
+         * @description Port of `@AuraEnabled SampleDataController.importSampleData` (Settings tab, sampleDataImporter LWC): deletes every property, broker and contact, then inserts the `sample_data_*` static resources, all in one transaction. Requires the `dreamhouse-admin` group and is refused unless the deployment allows it (SAMPLE_DATA_IMPORT_ENABLED).
          */
         post: operations["sampleData_importSampleData"];
         delete?: never;
@@ -254,25 +294,42 @@ export type components = {
             lon?: Record<string, never> | null;
         };
         CreateFileDto: {
-            /** @description File body, base64 encoded (ContentVersion.VersionData) */
-            base64Data: string;
-            /** @description ContentVersion.Title / PathOnClient */
+            /** @description File body, base64 encoded (ContentVersion.VersionData). Missing padding and a `data:` URL prefix are accepted. Required unless `uploadKey` is given; decoded size is capped by FILES_MAX_INLINE_BYTES. */
+            base64Data?: string;
+            /**
+             * @description ContentVersion.Title / PathOnClient
+             * @example house01.jpg
+             */
             filename: string;
             /**
              * Format: uuid
              * @description Record the file is linked to (ContentDocumentLink.LinkedEntityId)
              */
             recordId: string;
+            /**
+             * @description Key returned by POST /files/presigned-upload once the PUT to S3 completed
+             * @example uploads/4f0c.../8e1a.../house01.jpg
+             */
+            uploadKey?: string;
         };
         FileCreatedDto: {
+            /**
+             * @description ContentDocument.FileType (upper-case extension)
+             * @example JPG
+             */
+            fileType: string;
             /**
              * Format: uuid
              * @description Equivalent of the returned ContentDocumentLink.Id
              */
             id: string;
+            /** @description Stored size in bytes */
+            size: number;
+            /** @description ContentVersion.Title (filename without extension) */
+            title: string;
             /**
-             * Format: uri
-             * @description Where the stored file can be fetched from (S3)
+             * @description API path that serves the file (same value GET /properties/{id}/pictures returns)
+             * @example /files/4f0c6a9e-1b2d-4c3e-8f90-123456789abc
              */
             url: string;
         };
@@ -306,6 +363,43 @@ export type components = {
             records: components["schemas"]["PropertySummaryDto"][];
             /** @example 42 */
             totalItemCount: number;
+        };
+        PresignedUploadDto: {
+            /** Format: date-time */
+            expiresAt: string;
+            /**
+             * @description Headers the PUT must carry (signed into the URL)
+             * @example {
+             *       "Content-Type": "image/jpeg"
+             *     }
+             */
+            headers: Record<string, never>;
+            /** @enum {string} */
+            method: "PUT";
+            /** @description Pass back as `uploadKey` to POST /files after the PUT succeeded */
+            uploadKey: string;
+            /**
+             * Format: uri
+             * @description Pre-signed S3 URL to PUT the file body to
+             */
+            url: string;
+        };
+        PresignedUploadRequestDto: {
+            /**
+             * @description MIME type the client will send; derived from the filename when omitted
+             * @example image/jpeg
+             */
+            contentType?: string;
+            /**
+             * @description ContentVersion.Title / PathOnClient
+             * @example house01.jpg
+             */
+            filename: string;
+            /**
+             * Format: uuid
+             * @description Record the file will be linked to
+             */
+            recordId: string;
         };
         PropertyPictureDto: {
             /** @description ContentVersion.FileExtension */
@@ -359,15 +453,19 @@ export type components = {
             /** @enum {string} */
             status: "ok" | "error";
         };
+        SampleDataCountsDto: {
+            /** @example 8 */
+            brokers: number;
+            /** @example 5 */
+            contacts: number;
+            /** @example 12 */
+            properties: number;
+        };
         SampleDataImportResultDto: {
-            /**
-             * @example {
-             *       "brokers": 8,
-             *       "properties": 12,
-             *       "contacts": 10
-             *     }
-             */
-            inserted: Record<string, never>;
+            /** @description Rows deleted before the reload */
+            deleted: components["schemas"]["SampleDataCountsDto"];
+            /** @description Rows inserted from the sample data JSON */
+            inserted: components["schemas"]["SampleDataCountsDto"];
         };
     };
     responses: never;
@@ -461,7 +559,9 @@ export interface operations {
     files_createFile: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                authorization: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -479,7 +579,97 @@ export interface operations {
                     "application/json": components["schemas"]["FileCreatedDto"];
                 };
             };
-            /** @description Not ported yet (UNT3-18) */
+            /** @description Blank or invalid filename / base64Data (Apex AuraHandledException) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description recordId does not exist (Apex: ContentDocumentLink insert failed) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Decoded body exceeds FILES_MAX_INLINE_BYTES */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    files_getFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File body (local storage) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                    "image/gif": string;
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            /** @description Redirect to a pre-signed S3 URL */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such file */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    files_createPresignedUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PresignedUploadRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresignedUploadDto"];
+                };
+            };
+            /** @description recordId does not exist */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Deployment has no S3 files bucket (FILES_BUCKET unset) */
             501: {
                 headers: {
                     [name: string]: unknown;
@@ -637,7 +827,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -645,8 +835,15 @@ export interface operations {
                     "application/json": components["schemas"]["SampleDataImportResultDto"];
                 };
             };
-            /** @description Not ported yet (UNT3-18) */
-            501: {
+            /** @description Missing or invalid bearer token */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Import disabled on this deployment, or caller is not a dreamhouse-admin */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

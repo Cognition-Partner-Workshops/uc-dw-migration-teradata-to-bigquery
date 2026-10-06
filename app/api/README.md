@@ -36,13 +36,20 @@ Ported Apex endpoints (see [`docs/migration/mapping.yaml`](../../docs/migration/
 GET /properties               -> PagedResult of PropertyController.getPagedPropertyList
                                  (?searchKey=&maxPrice=&minBedrooms=&minBathrooms=&pageSize=&pageNumber=)
 GET /properties/{id}/pictures -> PropertyController.getPictures (PNG/JPG/GIF rows of the files table, [] when none)
+POST /files                   -> FileUtilities.createFile {base64Data, filename, recordId} -> 201 {id, url, title, fileType, size}
+                                 (or {uploadKey, filename, recordId} after POST /files/presigned-upload for large files)
+POST /files/presigned-upload  -> pre-signed S3 PUT for bodies above FILES_MAX_INLINE_BYTES (501 without FILES_BUCKET)
+GET /files/{id}               -> the file body (302 to a pre-signed S3 URL; streamed when files live on local disk)
+POST /sample-data/import      -> SampleDataController.importSampleData: admin-only (dreamhouse-admin bearer token),
+                                 wipes properties/brokers/contacts and reloads the sample_data_* JSON in one transaction;
+                                 403 unless the deployment allows it (SAMPLE_DATA_IMPORT_ENABLED, see Configuration)
 ```
 
-Both were `@AuraEnabled(cacheable=true)`, so they answer with `Cache-Control: private, max-age=30` and an
-ETag (304 on conditional refetch); the web keeps them in TanStack Query for the same 30 s.
+The two `GET`s were `@AuraEnabled(cacheable=true)`, so they answer with `Cache-Control: private, max-age=30`
+and an ETag (304 on conditional refetch); the web keeps them in TanStack Query for the same 30 s.
 
 Everything else currently answers `501 Not Implemented` with the Apex source and the
-ticket that ports it, e.g. `POST /files` → `{"apexSource":"FileUtilities.createFile","ticket":"UNT3-18"}`.
+ticket that ports it, e.g. `GET /contacts` → `{"apexSource":"Contact list","ticket":"UNT3-19"}`.
 
 Useful scripts:
 
@@ -93,8 +100,14 @@ on ECS the task definition sets `AWS_SECRETS_MANAGER_SECRET_ID` and the task rol
 | `GEOCODING_CACHE_TTL_SECONDS` | `86400` | In-process cache of geocoding results (policy: cache results); `0` disables |
 | `GEOCODING_CACHE_MAX_ENTRIES` | `1000` | Cache size cap (oldest entries evicted first) |
 | `GEOCODING_LIVE_SMOKE` | — | `1` runs the live Nominatim smoke test (`src/modules/geocoding/geocoding.live.spec.ts`); off by default |
-| `AWS_REGION` | `us-east-1` | Region for Secrets Manager |
+| `AWS_REGION` | `us-east-1` | Region for Secrets Manager and S3 |
 | `AWS_SECRETS_MANAGER_SECRET_ID` | — | Optional secret to overlay |
+| `FILES_BUCKET` | — | Private S3 bucket for Salesforce Files (`infra/modules/files`; the ECS task role has the object permissions). Unset → bodies are kept on disk under `FILES_LOCAL_DIR` |
+| `FILES_LOCAL_DIR` | `.data/files` | Local stand-in for the bucket (docker-compose, tests) |
+| `FILES_MAX_INLINE_BYTES` | `6291456` | Largest decoded body `POST /files` accepts as `base64Data` (the JSON body limit follows it); larger files use the pre-signed upload |
+| `FILES_PRESIGNED_URL_TTL_SECONDS` | `900` | Lifetime of the pre-signed PUT/GET URLs |
+| `SAMPLE_DATA_IMPORT_ENABLED` | — | `true`/`false` overrides the default of `POST /sample-data/import`: allowed outside `production` and off `*.rds.amazonaws.com`, refused otherwise — so the demo RDS is never wiped without this flag |
+| `AUTH_TEST_JWT_SECRET` | `dreamhouse-characterisation` outside production | HS256 secret of the test bearer tokens (`tests/parity/fixtures/users.ts`) the admin guard verifies until the Cognito verifier (UNT3-20) lands; in production there is no default |
 
 ## Layout — one Nest module per Salesforce object / Apex domain
 
@@ -158,7 +171,7 @@ decorators) + `<name>.service.ts` (the ported Apex logic, talking to `PrismaServ
 | `AuraHandledException` | Nest `HttpException` subclasses (`BadRequestException`, `NotFoundException`, …); the global exception filter formats them. [`NotPortedException`](src/common/not-ported.exception.ts) (501) marks endpoints not yet ported. |
 | `Http` / `HttpRequest` callouts + Remote Site Settings / Named Credentials | A typed client class around Node `fetch` (`geocoding/nominatim.client.ts`): base URL, User-Agent, timeout, bounded retries and a 1 req/s limiter all from configuration (`GEOCODING_*`); results cached in the service (Nominatim usage policy). Egress is controlled by the VPC security groups in `infra/`. A non-200 answer still becomes `{lat: null, lon: null}` like the Apex code. |
 | Custom Metadata / Custom Settings / Custom Labels | Typed config in `src/config` (env + Secrets Manager); UI strings live in `app/web`. |
-| `ContentVersion` / `ContentDocumentLink` (Files) | S3 object + a `files` table row linking it to a record (`files` module). |
-| Static resources (`sample_data_*`) | JSON fixtures loaded by the `sample-data` module. |
+| `ContentVersion` / `ContentDocumentLink` (Files) | S3 object + a `files` table row linking it to a record (`files` module): `FilesService.createFile` writes both in one transaction behind a `FileStorage` port (`S3FileStorage` in AWS, `LocalFileStorage` on disk); large files go straight to S3 with a pre-signed PUT and are finalised with their `uploadKey`. |
+| Static resources (`sample_data_*`) | The same JSON bundled under `src/modules/sample-data/fixtures/` (keys renamed to the Prisma field names; a spec asserts they still equal the static resources), loaded by `SampleDataService` inside one transaction. The wipe-and-reload is admin-only and fenced by `SAMPLE_DATA_IMPORT_ENABLED`. |
 | `System.debug` | Injected pino `Logger` (`this.logger.debug({ ... })`), structured JSON shipped to CloudWatch. |
 | Governor limits (SOQL/DML per transaction, heap) | None, but the same rules of thumb apply: no queries in loops, bulk operations, pagination for large result sets; `ValidationPipe` + `ArrayMaxSize` cap request sizes. |
