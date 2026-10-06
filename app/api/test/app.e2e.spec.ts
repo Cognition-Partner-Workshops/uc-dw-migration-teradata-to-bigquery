@@ -92,15 +92,6 @@ describe('Dreamhouse API (http)', () => {
     expect(res.text).toContain('swagger-ui');
   });
 
-  it('not-yet-ported endpoints answer 501 and name the owning ticket', async () => {
-    const res = await request(app.getHttpServer()).get('/contacts').expect(501);
-    expect(res.body).toMatchObject({
-      statusCode: 501,
-      apexSource: 'Contact list',
-      ticket: 'UNT3-19',
-    });
-  });
-
   it('validates query parameters like the Apex method normalises its inputs', async () => {
     await request(app.getHttpServer()).get('/properties?pageSize=0').expect(400);
     await request(app.getHttpServer()).get('/properties?unknown=1').expect(400);

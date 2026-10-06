@@ -48,8 +48,8 @@ POST /sample-data/import      -> SampleDataController.importSampleData: admin-on
 The two `GET`s were `@AuraEnabled(cacheable=true)`, so they answer with `Cache-Control: private, max-age=30`
 and an ETag (304 on conditional refetch); the web keeps them in TanStack Query for the same 30 s.
 
-Everything else currently answers `501 Not Implemented` with the Apex source and the
-ticket that ports it, e.g. `GET /contacts` → `{"apexSource":"Contact list","ticket":"UNT3-19"}`.
+Every scaffolded Apex endpoint is now ported; `NotPortedException` (501 with the Apex source and
+ticket) is kept for the next scaffold.
 
 Useful scripts:
 
